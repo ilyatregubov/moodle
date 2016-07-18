@@ -61,6 +61,9 @@ define('ASSIGN_MARKING_WORKFLOW_STATE_INREVIEW', 'inreview');
 define('ASSIGN_MARKING_WORKFLOW_STATE_READYFORRELEASE', 'readyforrelease');
 define('ASSIGN_MARKING_WORKFLOW_STATE_RELEASED', 'released');
 
+/** ASSIGN_MAX_EVENT_LENGTH = 432000 ; 5 days maximum */
+define("ASSIGN_MAX_EVENT_LENGTH", "432000");
+
 // Name of file area for intro attachments.
 define('ASSIGN_INTROATTACHMENT_FILEAREA', 'introattachment');
 
@@ -740,6 +743,8 @@ class assign {
             $result = false;
         }
 
+        $this->delete_all_overrides();
+
         // Delete_records will throw an exception if it fails - so no need for error checking here.
         $DB->delete_records('assign_submission', array('assignment' => $this->get_instance()->id));
         $DB->delete_records('assign_grades', array('assignment' => $this->get_instance()->id));
@@ -756,6 +761,227 @@ class assign {
         $DB->delete_records('assign', array('id'=>$this->get_instance()->id));
 
         return $result;
+    }
+
+    /**
+     * Deletes a assign override from the database and clears any corresponding calendar events
+     *
+     * @param int $overrideid The id of the override being deleted
+     * @return bool true on success
+     */
+    public function delete_override($overrideid) {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/calendar/lib.php');
+
+        $cm = get_coursemodule_from_instance('assign', $this->get_context()->id, $this->get_context()->course);
+
+        $override = $DB->get_record('assign_overrides', array('id' => $overrideid), '*', MUST_EXIST);
+
+        // Delete the events.
+        $conds = array('modulename' => 'assign',
+            'instance' => $this->get_context()->id);
+        if (isset($override->userid)) {
+            $conds['userid'] = $override->userid;
+        } else {
+            $conds['groupid'] = $override->groupid;
+        }
+        $events = $DB->get_records('event', $conds);
+        foreach ($events as $event) {
+            $eventold = calendar_event::load($event);
+            $eventold->delete();
+        }
+
+        $DB->delete_records('assign_overrides', array('id' => $overrideid));
+
+        // Set the common parameters for one of the events we will be triggering.
+        $params = array(
+            'objectid' => $override->id,
+            'context' => context_module::instance($cm->id),
+            'other' => array(
+                'assignid' => $override->assignid
+            )
+        );
+        // Determine which override deleted event to fire.
+        if (!empty($override->userid)) {
+            $params['relateduserid'] = $override->userid;
+            $event = \mod_assign\event\user_override_deleted::create($params);
+        } else {
+            $params['other']['groupid'] = $override->groupid;
+            $event = \mod_assign\event\group_override_deleted::create($params);
+        }
+
+        // Trigger the override deleted event.
+        $event->add_record_snapshot('assign_overrides', $override);
+        $event->trigger();
+
+        return true;
+    }
+
+    /**
+     * Deletes all assign overrides from the database and clears any corresponding calendar events
+     */
+    public function delete_all_overrides() {
+        global $DB;
+
+        $overrides = $DB->get_records('assign_overrides', array('assignid' => $this->get_context()->id), 'id');
+        foreach ($overrides as $override) {
+            $this->delete_override($override->id);
+        }
+    }
+
+    /**
+     * Updates the assign properties with override information for a user.
+     *
+     * Algorithm:  For each assign setting, if there is a matching user-specific override,
+     *   then use that otherwise, if there are group-specific overrides, return the most
+     *   lenient combination of them.  If neither applies, leave the assign setting unchanged.
+     *
+     * @param int $userid The userid.
+     */
+    public function update_effective_access($userid) {
+        global $DB;
+
+        // Check for user override.
+        $override = $DB->get_record('assign_overrides', array('assignid' => $this->get_instance()->id, 'userid' => $userid));
+
+        if (!$override) {
+            $override = new stdClass();
+            $override->duedate = null;
+            $override->cutoffdate = null;
+            $override->allowsubmissionsfromdate = null;
+        }
+
+        // Check for group overrides.
+        $groupings = groups_get_user_groups($this->get_instance()->course, $userid);
+
+        if (!empty($groupings[0])) {
+            // Select all overrides that apply to the User's groups.
+            list($extra, $params) = $DB->get_in_or_equal(array_values($groupings[0]));
+            $sql = "SELECT * FROM {assign_overrides}
+                    WHERE groupid $extra AND assignid = ?";
+            $params[] = $this->get_instance()->id;
+            $records = $DB->get_records_sql($sql, $params);
+
+            // Combine the overrides.
+            $duedates = array();
+            $cutoffdates = array();
+            $allowsubmissionsfromdates = array();
+
+            foreach ($records as $gpoverride) {
+                if (isset($gpoverride->duedate)) {
+                    $duedates[] = $gpoverride->duedate;
+                }
+                if (isset($gpoverride->cutoffdate)) {
+                    $cutoffdates[] = $gpoverride->cutoffdate;
+                }
+                if (isset($gpoverride->allowsubmissionsfromdate)) {
+                    $allowsubmissionsfromdates[] = $gpoverride->allowsubmissionsfromdate;
+                }
+            }
+            // If there is a user override for a setting, ignore the group override.
+            if (is_null($override->allowsubmissionsfromdate) && count($allowsubmissionsfromdates)) {
+                $override->allowsubmissionsfromdate = min($allowsubmissionsfromdates);
+            }
+            if (is_null($override->cutoffdate) && count($cutoffdates)) {
+                if (in_array(0, $cutoffdates)) {
+                    $override->cutoffdate = 0;
+                } else {
+                    $override->cutoffdate = max($cutoffdates);
+                }
+            }
+            if (is_null($override->duedate) && count($duedates)) {
+                if (in_array(0, $duedates)) {
+                    $override->duedate = 0;
+                } else {
+                    $override->duedate = max($duedates);
+                }
+            }
+
+        }
+
+        // Merge with assign defaults.
+        $keys = array('duedate', 'cutoffdate', 'allowsubmissionsfromdate');
+        foreach ($keys as $key) {
+            if (isset($override->{$key})) {
+                $this->get_instance()->{$key} = $override->{$key};
+            }
+        }
+
+    }
+
+    /**
+     * Returns user override
+     *
+     * Algorithm:  For each assign setting, if there is a matching user-specific override,
+     *   then use that otherwise, if there are group-specific overrides, return the most
+     *   lenient combination of them.  If neither applies, leave the assign setting unchanged.
+     *
+     * @param int $userid The userid.
+     * @return override  if exist
+     */
+    public function override_exists($userid) {
+        global $DB;
+
+        // Check for user override.
+        $override = $DB->get_record('assign_overrides', array('assignid' => $this->get_instance()->id, 'userid' => $userid));
+
+        if (!$override) {
+            $override = new stdClass();
+            $override->duedate = null;
+            $override->cutoffdate = null;
+            $override->allowsubmissionsfromdate = null;
+        }
+
+        // Check for group overrides.
+        $groupings = groups_get_user_groups($this->get_instance()->course, $userid);
+
+        if (!empty($groupings[0])) {
+            // Select all overrides that apply to the User's groups.
+            list($extra, $params) = $DB->get_in_or_equal(array_values($groupings[0]));
+            $sql = "SELECT * FROM {assign_overrides}
+                    WHERE groupid $extra AND assignid = ?";
+            $params[] = $this->get_instance()->id;
+            $records = $DB->get_records_sql($sql, $params);
+
+            // Combine the overrides.
+            $duedates = array();
+            $cutoffdates = array();
+            $allowsubmissionsfromdates = array();
+
+            foreach ($records as $gpoverride) {
+                if (isset($gpoverride->duedate)) {
+                    $duedates[] = $gpoverride->duedate;
+                }
+                if (isset($gpoverride->cutoffdate)) {
+                    $cutoffdates[] = $gpoverride->cutoffdate;
+                }
+                if (isset($gpoverride->allowsubmissionsfromdate)) {
+                    $allowsubmissionsfromdates[] = $gpoverride->allowsubmissionsfromdate;
+                }
+            }
+            // If there is a user override for a setting, ignore the group override.
+            if (is_null($override->allowsubmissionsfromdate) && count($allowsubmissionsfromdates)) {
+                $override->allowsubmissionsfromdate = min($allowsubmissionsfromdates);
+            }
+            if (is_null($override->cutoffdate) && count($cutoffdates)) {
+                if (in_array(0, $cutoffdates)) {
+                    $override->cutoffdate = 0;
+                } else {
+                    $override->cutoffdate = max($cutoffdates);
+                }
+            }
+            if (is_null($override->duedate) && count($duedates)) {
+                if (in_array(0, $duedates)) {
+                    $override->duedate = 0;
+                } else {
+                    $override->duedate = max($duedates);
+                }
+            }
+
+        }
+
+        return $override;
     }
 
     /**
@@ -826,8 +1052,37 @@ class assign {
                 }
             }
         }
+
+        // Remove user overrides.
+        if (!empty($data->reset_assign_user_overrides)) {
+            $DB->delete_records_select('assign_overrides',
+                'assignid IN (SELECT id FROM {assign} WHERE course = ?) AND userid IS NOT NULL', array($data->courseid));
+            $status[] = array(
+                'component' => $componentstr,
+                'item' => get_string('useroverridesdeleted', 'assign'),
+                'error' => false);
+        }
+        // Remove group overrides.
+        if (!empty($data->reset_assign_group_overrides)) {
+            $DB->delete_records_select('assign_overrides',
+                'assignid IN (SELECT id FROM {assign} WHERE course = ?) AND groupid IS NOT NULL', array($data->courseid));
+            $status[] = array(
+                'component' => $componentstr,
+                'item' => get_string('groupoverridesdeleted', 'assign'),
+                'error' => false);
+        }
+
         // Updating dates - shift may be negative too.
         if ($data->timeshift) {
+            $DB->execute("UPDATE {assign_overrides}
+                         SET allowsubmissionsfromdate = allowsubmissionsfromdate + ?
+                       WHERE assignid IN (SELECT id FROM {assign} WHERE course = ?)
+                         AND allowsubmissionsfromdate <> 0", array($data->timeshift, $data->courseid));
+            $DB->execute("UPDATE {assign_overrides}
+                         SET duedate = duedate + ?
+                       WHERE assignid IN (SELECT id FROM {assign} WHERE course = ?)
+                         AND duedate <> 0", array($data->timeshift, $data->courseid));
+
             shift_course_mod_dates('assign',
                                     array('duedate', 'allowsubmissionsfromdate', 'cutoffdate'),
                                     $data->timeshift,
@@ -5802,6 +6057,8 @@ class assign {
 
         $usershtml = '';
         $usercount = 0;
+        $keys = array('duedate', 'cutoffdate', 'allowsubmissionsfromdate');
+        $max_override = array('allowsubmissionsfromdate' => 0, 'duedate' => 0, 'cutoffdate' => 0);
         foreach ($userlist as $userid) {
             if ($usercount >= 5) {
                 $usershtml .= get_string('moreusers', 'assign', count($userlist) - 5);
@@ -5820,6 +6077,27 @@ class assign {
 
             $usershtml .= $this->get_renderer()->render($assign_user_summary);
             $usercount += 1;
+
+            // To validate extension date with user overrides
+            $override = $this->override_exists($userid);
+
+            foreach ($keys as $key) {
+                if ($override->{$key}) {
+                    if ($max_override[$key] < $override->{$key}) {
+                        $max_override[$key] = $override->{$key};
+                    }
+                }
+                else {
+                    $max_override[$key] = $this->get_instance()->{$key};
+                }
+            }
+
+        }
+
+        foreach ($keys as $key) {
+            if ($max_override[$key]) {
+                $this->get_instance()->{$key} = $max_override[$key];
+            }
         }
 
         $formparams['userscount'] = count($userlist);
@@ -8372,4 +8650,40 @@ class assign_portfolio_caller extends portfolio_module_caller_base {
     public static function base_supported_formats() {
         return array(PORTFOLIO_FORMAT_FILE, PORTFOLIO_FORMAT_LEAP2A);
     }
+}
+
+/**
+ * Logic to happen when a/some group(s) has/have been deleted in a course.
+ *
+ * @param int $courseid The course ID.
+ * @param int $groupid The group id if it is known
+ * @return void
+ */
+function assign_process_group_deleted_in_course($courseid, $groupid = null) {
+    global $DB;
+
+    $params = array('courseid' => $courseid);
+    if ($groupid) {
+        $params['groupid'] = $groupid;
+        // We just update the group that was deleted.
+        $sql = "SELECT o.id, o.assignid
+                  FROM {assign_overrides} o
+                  JOIN {assign} assign ON assign.id = o.assignid
+                 WHERE assign.course = :courseid
+                   AND o.groupid = :groupid";
+    } else {
+        // No groupid, we update all orphaned group overrides for all assign in course.
+        $sql = "SELECT o.id, o.assignid
+                  FROM {assign_overrides} o
+                  JOIN {assign} assign ON assign.id = o.assignid
+             LEFT JOIN {groups} grp ON grp.id = o.groupid
+                 WHERE assign.course = :courseid
+                   AND o.groupid IS NOT NULL
+                   AND grp.id IS NULL";
+    }
+    $records = $DB->get_records_sql_menu($sql, $params);
+    if (!$records) {
+        return; // Nothing to do.
+    }
+    $DB->delete_records_list('assign_overrides', 'id', array_keys($records));
 }

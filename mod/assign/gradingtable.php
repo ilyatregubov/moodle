@@ -295,6 +295,18 @@ class assign_grading_table extends table_sql implements renderable {
         $columns[] = 'status';
         $headers[] = get_string('status', 'assign');
 
+        // Allowsubmissionsfromdate.
+        $columns[] = 'allowsubmissionsfromdate';
+        $headers[] = get_string('allowsubmissionsfromdate', 'assign');
+
+        // Duedate.
+        $columns[] = 'duedate';
+        $headers[] = get_string('duedate', 'assign');
+
+        // Cutoffdate.
+        $columns[] = 'cutoffdate';
+        $headers[] = get_string('cutoffdate', 'assign');
+
         // Team submission columns.
         if ($assignment->get_instance()->teamsubmission) {
             $columns[] = 'team';
@@ -995,6 +1007,78 @@ class assign_grading_table extends table_sql implements renderable {
         }
 
         return $o;
+    }
+
+    /**
+     * Format a column of data for display.
+     *
+     * @param stdClass $row
+     * @return string
+     */
+    public function col_allowsubmissionsfromdate(stdClass $row) {
+        $o = '';
+
+        $override = $this->assignment->override_exists($row->id);
+        if ($override->allowsubmissionsfromdate) {
+            $userdate = userdate($override->allowsubmissionsfromdate);
+        } else if ($this->assignment->get_instance()->allowsubmissionsfromdate > 0) {
+            $userdate = userdate($this->assignment->get_instance()->allowsubmissionsfromdate);
+        }
+
+        if (isset($userdate)) {
+            $o = $this->output->container($userdate, 'allowsubmissionsfromdate');
+        }
+
+        return $o;
+
+    }
+
+    /**
+     * Format a column of data for display.
+     *
+     * @param stdClass $row
+     * @return string
+     */
+    public function col_duedate(stdClass $row) {
+        $o = '';
+
+        $override = $this->assignment->override_exists($row->id);
+        if ($override->duedate) {
+            $userdate = userdate($override->duedate);
+        } else if ($this->assignment->get_instance()->duedate > 0) {
+            $userdate = userdate($this->assignment->get_instance()->duedate);
+        }
+
+        if (isset($userdate)) {
+            $o = $this->output->container($userdate, 'duedate');
+        }
+
+        return $o;
+
+    }
+
+    /**
+     * Format a column of data for display.
+     *
+     * @param stdClass $row
+     * @return string
+     */
+    public function col_cutoffdate(stdClass $row) {
+        $o = '';
+
+        $override = $this->assignment->override_exists($row->id);
+        if ($override->cutoffdate) {
+            $userdate = userdate($override->cutoffdate);
+        } else if ($this->assignment->get_instance()->cutoffdate > 0) {
+            $userdate = userdate($this->assignment->get_instance()->cutoffdate);
+        }
+
+        if (isset($userdate)) {
+            $o = $this->output->container($userdate, 'cutoffdate');
+        }
+
+        return $o;
+
     }
 
     /**
