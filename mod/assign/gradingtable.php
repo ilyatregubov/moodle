@@ -471,10 +471,17 @@ class assign_grading_table extends table_sql implements renderable {
         foreach ($keys as $key) {
             if (isset($override->{$key})) {
                 $row->{$key} = $override->{$key};
-            } else {
-                $row->{$key} = null;
+            }
+            else {
+                if ($this->assignment->get_instance()->{$key} > 0) {
+                    $row->{$key} = $this->assignment->get_instance()->{$key};
+                }
+                else {
+                    $row->{$key} = NULL;
+                }
             }
         }
+
         return parent::format_row($row);
     }
 
@@ -1030,11 +1037,6 @@ class assign_grading_table extends table_sql implements renderable {
 
         if ($row->allowsubmissionsfromdate) {
             $userdate = userdate($row->allowsubmissionsfromdate);
-        } else if ($this->assignment->get_instance()->allowsubmissionsfromdate > 0) {
-            $userdate = userdate($this->assignment->get_instance()->allowsubmissionsfromdate);
-        }
-
-        if (isset($userdate)) {
             $o = $this->output->container($userdate, 'allowsubmissionsfromdate');
         }
 
@@ -1053,11 +1055,6 @@ class assign_grading_table extends table_sql implements renderable {
 
         if ($row->duedate) {
             $userdate = userdate($row->duedate);
-        } else if ($this->assignment->get_instance()->duedate > 0) {
-            $userdate = userdate($this->assignment->get_instance()->duedate);
-        }
-
-        if (isset($userdate)) {
             $o = $this->output->container($userdate, 'duedate');
         }
 
@@ -1076,11 +1073,6 @@ class assign_grading_table extends table_sql implements renderable {
 
         if ($row->cutoffdate) {
             $userdate = userdate($row->cutoffdate);
-        } else if ($this->assignment->get_instance()->cutoffdate > 0) {
-            $userdate = userdate($this->assignment->get_instance()->cutoffdate);
-        }
-
-        if (isset($userdate)) {
             $o = $this->output->container($userdate, 'cutoffdate');
         }
 
