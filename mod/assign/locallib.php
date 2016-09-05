@@ -6088,7 +6088,9 @@ class assign {
                     }
                 }
                 else {
-                    $max_override[$key] = $this->get_instance()->{$key};
+                    if ($max_override[$key] < $this->get_instance()->{$key}) {
+                        $max_override[$key] = $this->get_instance()->{$key};
+                    }
                 }
             }
 

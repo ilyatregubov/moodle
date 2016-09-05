@@ -465,6 +465,16 @@ class assign_grading_table extends table_sql implements renderable {
             $this->rownum += 1;
         }
 
+        $override = $this->assignment->override_exists($row->id);
+        // Overrides for row entry
+        $keys = array('duedate', 'cutoffdate', 'allowsubmissionsfromdate');
+        foreach ($keys as $key) {
+            if (isset($override->{$key})) {
+                $row->{$key} = $override->{$key};
+            } else {
+                $row->{$key} = null;
+            }
+        }
         return parent::format_row($row);
     }
 
@@ -1018,9 +1028,8 @@ class assign_grading_table extends table_sql implements renderable {
     public function col_allowsubmissionsfromdate(stdClass $row) {
         $o = '';
 
-        $override = $this->assignment->override_exists($row->id);
-        if ($override->allowsubmissionsfromdate) {
-            $userdate = userdate($override->allowsubmissionsfromdate);
+        if ($row->allowsubmissionsfromdate) {
+            $userdate = userdate($row->allowsubmissionsfromdate);
         } else if ($this->assignment->get_instance()->allowsubmissionsfromdate > 0) {
             $userdate = userdate($this->assignment->get_instance()->allowsubmissionsfromdate);
         }
@@ -1042,9 +1051,8 @@ class assign_grading_table extends table_sql implements renderable {
     public function col_duedate(stdClass $row) {
         $o = '';
 
-        $override = $this->assignment->override_exists($row->id);
-        if ($override->duedate) {
-            $userdate = userdate($override->duedate);
+        if ($row->duedate) {
+            $userdate = userdate($row->duedate);
         } else if ($this->assignment->get_instance()->duedate > 0) {
             $userdate = userdate($this->assignment->get_instance()->duedate);
         }
@@ -1066,9 +1074,8 @@ class assign_grading_table extends table_sql implements renderable {
     public function col_cutoffdate(stdClass $row) {
         $o = '';
 
-        $override = $this->assignment->override_exists($row->id);
-        if ($override->cutoffdate) {
-            $userdate = userdate($override->cutoffdate);
+        if ($row->cutoffdate) {
+            $userdate = userdate($row->cutoffdate);
         } else if ($this->assignment->get_instance()->cutoffdate > 0) {
             $userdate = userdate($this->assignment->get_instance()->cutoffdate);
         }
