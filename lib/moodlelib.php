@@ -3647,6 +3647,41 @@ function get_extra_user_fields_sql($context, $alias='', $prefix='', $already = a
 }
 
 /**
+ * If the current user is to be shown extra user fields when searching users,
+ * returns a string suitable for including in an SQL select clause to retrieve
+ * those fields.
+ *
+ * @param context $search url parameter used for search
+ * @param array $fields user fields in table to search in
+ * @return string Partial SQL select clause, beginning with comma, for example
+ * ', username, firstname' unless it is blank
+ */
+function get_extra_user_fields_search_sql($search, $fields = null) {
+
+    global $DB, $context;
+
+    static $i = 1;
+    $keywords = preg_split("/\s+/", $search);
+
+    $fields = array_merge(get_all_user_name_fields(), get_extra_user_fields($context));
+
+    foreach ($keywords as $word) {
+        $condition = '';
+        foreach ($fields as $field) {
+            if ($condition) {
+                $condition .= ' OR ';
+            }
+            $condition .= $DB->sql_like($field, ':isearch' . $field . $i, false, false);
+            $whereparams['isearch' . $field . $i] = '%' . $word . '%';
+        }
+        $where[] = "($condition)";
+        $i++;
+    }
+    return array(join('', $where), $whereparams);
+
+}
+
+/**
  * Returns the display name of a field in the user table. Works for most fields that are commonly displayed to users.
  * @param string $field Field name, e.g. 'phone1'
  * @return string Text description taken from language file, e.g. 'Phone number'

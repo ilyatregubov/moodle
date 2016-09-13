@@ -103,7 +103,7 @@ class core_user_renderer extends plugin_renderer_base {
      * @param string $heading heading of the subset being searched, default is All Participants
      * @return string html output
      */
-    public function user_search($url, $firstinitial, $lastinitial, $usercount, $totalcount, $heading = null) {
+    public function user_search($url, $firstinitial, $lastinitial, $search, $usercount, $totalcount, $heading = null) {
         global $OUTPUT;
 
         if ($firstinitial !== 'all') {
@@ -111,6 +111,17 @@ class core_user_renderer extends plugin_renderer_base {
         }
         if ($lastinitial !== 'all') {
             set_user_preference('ilast', $lastinitial);
+        }
+
+        if (!is_null($search)) {
+            set_user_preference('isearch', $search);
+        }
+
+        if (!empty($_GET['treset'])) {
+            $firstinitial = '';
+            $lastinitial = '';
+            $search = '';
+            set_user_preferences(array('ifirst' => $firstinitial, 'ilast' => $lastinitial, 'isearch' => $search));
         }
 
         if (!isset($heading)) {
@@ -126,7 +137,9 @@ class core_user_renderer extends plugin_renderer_base {
         // Initials bar.
         $prefixfirst = 'sifirst';
         $prefixlast = 'silast';
-        $content .= $OUTPUT->render_table_filters($url, $firstinitial, $lastinitial, $prefixfirst, $prefixlast);
+        $prefixsearch = 'sisearch';
+        $content .= $OUTPUT->render_table_filters($url, $firstinitial, $lastinitial, $search,
+            $prefixfirst, $prefixlast, $prefixsearch);
 
         $content .= html_writer::end_tag('div');
         $content .= html_writer::tag('div', '&nbsp;');

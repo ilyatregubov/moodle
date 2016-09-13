@@ -28,13 +28,14 @@ defined('MOODLE_INTERNAL') || die();
 /**#@+
  * These constants relate to the table's handling of URL parameters.
  */
-define('TABLE_VAR_SORT',   1);
-define('TABLE_VAR_HIDE',   2);
-define('TABLE_VAR_SHOW',   3);
-define('TABLE_VAR_IFIRST', 4);
-define('TABLE_VAR_ILAST',  5);
-define('TABLE_VAR_PAGE',   6);
-define('TABLE_VAR_RESET',  7);
+define('TABLE_VAR_SORT',    1);
+define('TABLE_VAR_HIDE',    2);
+define('TABLE_VAR_SHOW',    3);
+define('TABLE_VAR_IFIRST',  4);
+define('TABLE_VAR_ILAST',   5);
+define('TABLE_VAR_PAGE',    6);
+define('TABLE_VAR_RESET',   7);
+define('TABLE_VAR_ISEARCH', 8);
 /**#@-*/
 
 /**#@+
@@ -133,13 +134,14 @@ class flexible_table {
     function __construct($uniqueid) {
         $this->uniqueid = $uniqueid;
         $this->request  = array(
-            TABLE_VAR_SORT   => 'tsort',
-            TABLE_VAR_HIDE   => 'thide',
-            TABLE_VAR_SHOW   => 'tshow',
-            TABLE_VAR_IFIRST => 'tifirst',
-            TABLE_VAR_ILAST  => 'tilast',
-            TABLE_VAR_PAGE   => 'page',
-            TABLE_VAR_RESET  => 'treset'
+            TABLE_VAR_SORT    => 'tsort',
+            TABLE_VAR_HIDE    => 'thide',
+            TABLE_VAR_SHOW    => 'tshow',
+            TABLE_VAR_IFIRST  => 'tifirst',
+            TABLE_VAR_ILAST   => 'tilast',
+            TABLE_VAR_PAGE    => 'page',
+            TABLE_VAR_RESET   => 'treset',
+            TABLE_VAR_ISEARCH => 'tisearch',
         );
     }
 
@@ -462,6 +464,7 @@ class flexible_table {
                 'sortby'   => array(),
                 'i_first'  => '',
                 'i_last'   => '',
+                'i_search' => '',
                 'textsort' => $this->column_textsort,
             );
         }
@@ -525,6 +528,11 @@ class flexible_table {
         $ifirst = optional_param($this->request[TABLE_VAR_IFIRST], null, PARAM_RAW);
         if (!is_null($ifirst) && ($ifirst === '' || strpos(get_string('alphabet', 'langconfig'), $ifirst) !== false)) {
             $this->prefs['i_first'] = $ifirst;
+        }
+
+        $isearch = optional_param($this->request[TABLE_VAR_ISEARCH], null, PARAM_RAW);
+        if (!is_null($isearch)) {
+            $this->prefs['i_search'] = $isearch;
         }
 
         // Save user preferences if they have changed.
@@ -667,6 +675,11 @@ class flexible_table {
         $params = array();
 
         if (isset($this->columns['fullname'])) {
+
+            if (!empty($this->prefs['i_search'])) {
+                list($conditions[], $params) = get_extra_user_fields_search_sql($this->prefs['i_search']);
+            }
+
             static $i = 0;
             $i++;
 
@@ -934,7 +947,10 @@ class flexible_table {
     function print_initials_bar() {
         global $OUTPUT;
 
-        if ((!empty($this->prefs['i_last']) || !empty($this->prefs['i_first']) ||$this->use_initials)
+        if ((!empty($this->prefs['i_last']) ||
+             !empty($this->prefs['i_first']) ||
+             !empty($this->prefs['i_search']) ||
+                $this->use_initials)
             && isset($this->columns['fullname'])) {
 
             if (!empty($this->prefs['i_first'])) {
@@ -949,9 +965,16 @@ class flexible_table {
                 $ilast = '';
             }
 
+            if (!empty($this->prefs['i_search'])) {
+                $isearch = $this->prefs['i_search'];
+            } else {
+                $isearch = '';
+            }
+
             $prefixfirst = $this->request[TABLE_VAR_IFIRST];
             $prefixlast = $this->request[TABLE_VAR_ILAST];
-            echo $OUTPUT->render_table_filters($this->baseurl, $ifirst, $ilast, $prefixfirst, $prefixlast);
+            $prefixsearch = $this->request[TABLE_VAR_ISEARCH];
+            echo $OUTPUT->render_table_filters($this->baseurl, $ifirst, $ilast, $isearch, $prefixfirst, $prefixlast, $prefixsearch);
         }
 
     }

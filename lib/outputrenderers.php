@@ -4316,16 +4316,18 @@ EOD;
     }
 
     /**
-     * Renders an table filters.
+     * Renders table filters.
      *
      * @param string $url URL object.
      * @param string $ifirst the first initial of the firstname.
      * @param string $ilast the last initial of the firstname.
+     * @param string $isearch used for search.
      * @param string $prefixfirst prefix in URL for firstname.
      * @param string $prefixlast prefix in URL for lastname.
+     * @param string $prefixsearch prefix in URL for search.
      */
-    public function render_table_filters($url, $ifirst, $ilast, $prefixfirst, $prefixlast) {
-        global $OUTPUT, $USER;
+    public function render_table_filters($url, $ifirst, $ilast, $isearch, $prefixfirst, $prefixlast, $prefixsearch) {
+        global $OUTPUT;
 
         $html = '';
 
@@ -4337,7 +4339,55 @@ EOD;
         $html .= $OUTPUT->render_initials_bar($ilast, 'lastinitial',
             get_string('lastname'), $prefixlast, $url);
 
+        // Search bar.
+        $html .= $OUTPUT->render_search_bar($isearch, 'search visibleifjs',
+            get_string('search'), $prefixsearch, $url);
+
+        $reset = array($ifirst, $ilast, $isearch);
+        $html .= $OUTPUT->render_reset_link($reset, $url);
+
         return $html;
+
+    }
+
+    /**
+     * Renders a search bar.
+     *
+     * @param string $isearch used for search.
+     * @param string $class class name to add to this initial bar.
+     * @param string $title the name to put in front of this initial bar.
+     * @param string $urlvar URL parameter name for this initial.
+     * @param string $url URL object.
+     */
+    public function render_search_bar($isearch, $class, $title, $urlvar, $url) {
+
+        $data = new stdClass();
+        $data->class = $class;
+        $data->title = $title;
+        $data->url = $url->out(false, array($urlvar => ''));
+        $data->value = $isearch;
+        $data->urlvar = $urlvar;
+        return $this->render_from_template('core/search_bar', $data);
+
+    }
+
+    /**
+     * Renders a reset preferences link.
+     *
+     * @param array $reset of user preferences.
+     * @param string $url URL object.
+     */
+    public function render_reset_link($reset, $url) {
+
+        if (!array_filter($reset)) {
+            return '';
+        }
+
+        $data = new stdClass();
+        $data->url = $url->out(false, array('treset' => 1));
+        $data->resettable = get_string('resettable');
+
+        return $this->render_from_template('core/reset_preferences', $data);
 
     }
 
