@@ -1590,7 +1590,9 @@ class assign {
 
         static $scalegrades = array();
 
-        $decimals = $this->get_grade_item()->get_decimals();
+        if ($this->get_instance()->grade) {
+            $decimals = $this->get_grade_item()->get_decimals();
+        }
         $o = '';
 
         if ($this->get_instance()->grade >= 0) {
