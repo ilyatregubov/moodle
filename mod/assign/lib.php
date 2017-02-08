@@ -25,6 +25,8 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->dirroot . '/mod/assign/locallib.php');
+
 /**
  * Adds an assignment instance
  *
@@ -510,7 +512,7 @@ function assign_page_type_list($pagetype, $parentcontext, $currentcontext) {
  * @return true
  */
 function assign_print_overview($courses, &$htmlarray) {
-    global $CFG, $DB;
+    global $CFG, $DB, $USER;
 
     if (empty($courses) || !is_array($courses) || count($courses) == 0) {
         return true;
@@ -524,6 +526,18 @@ function assign_print_overview($courses, &$htmlarray) {
 
     // Do assignment_base::isopen() here without loading the whole thing for speed.
     foreach ($assignments as $key => $assignment) {
+        // Apply overrides.
+        list ($course, $cm) = get_course_and_cm_from_cmid($assignment->coursemodule, 'assign');
+        $context = context_module::instance($cm->id);
+        $assign = new assign($context, $cm, $course);
+        $assign->update_effective_access($USER->id);
+
+        // Merge with assign defaults.
+        $keys = array('duedate', 'cutoffdate', 'allowsubmissionsfromdate');
+        foreach ($keys as $keydate) {
+            $assignment->{$keydate} = $assign->get_instance()->{$keydate};
+        }
+
         $time = time();
         $isopen = false;
         if ($assignment->duedate) {
