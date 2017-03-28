@@ -35,6 +35,7 @@ define('TABLE_VAR_IFIRST', 4);
 define('TABLE_VAR_ILAST',  5);
 define('TABLE_VAR_PAGE',   6);
 define('TABLE_VAR_RESET',  7);
+define('TABLE_VAR_ISEARCH', 8);
 /**#@-*/
 
 /**#@+
@@ -139,7 +140,8 @@ class flexible_table {
             TABLE_VAR_IFIRST => 'tifirst',
             TABLE_VAR_ILAST  => 'tilast',
             TABLE_VAR_PAGE   => 'page',
-            TABLE_VAR_RESET  => 'treset'
+            TABLE_VAR_RESET  => 'treset',
+            TABLE_VAR_ISEARCH => 'tisearch',
         );
     }
 
@@ -462,6 +464,7 @@ class flexible_table {
                 'sortby'   => array(),
                 'i_first'  => '',
                 'i_last'   => '',
+                'i_search' => '',
                 'textsort' => $this->column_textsort,
             );
         }
@@ -525,6 +528,11 @@ class flexible_table {
         $ifirst = optional_param($this->request[TABLE_VAR_IFIRST], null, PARAM_RAW);
         if (!is_null($ifirst) && ($ifirst === '' || strpos(get_string('alphabet', 'langconfig'), $ifirst) !== false)) {
             $this->prefs['i_first'] = $ifirst;
+        }
+
+        $isearch = optional_param($this->request[TABLE_VAR_ISEARCH], null, PARAM_RAW);
+        if (!is_null($isearch)) {
+            $this->prefs['i_search'] = $isearch;
         }
 
         // Save user preferences if they have changed.
@@ -677,6 +685,9 @@ class flexible_table {
             if (!empty($this->prefs['i_last'])) {
                 $conditions[] = $DB->sql_like('lastname', ':ilastc'.$i, false, false);
                 $params['ilastc'.$i] = $this->prefs['i_last'].'%';
+            }
+            if (!empty($this->prefs['i_search'])) {
+                list($conditions[], $params) = get_extra_user_fields_search_sql($this->prefs['i_search']);
             }
         }
 
@@ -976,7 +987,10 @@ class flexible_table {
     function print_initials_bar() {
         global $OUTPUT;
 
-        if ((!empty($this->prefs['i_last']) || !empty($this->prefs['i_first']) ||$this->use_initials)
+        if ((!empty($this->prefs['i_last']) ||
+                !empty($this->prefs['i_first']) ||
+                !empty($this->prefs['i_search']) ||
+                $this->use_initials)
             && isset($this->columns['fullname'])) {
 
             if (!empty($this->prefs['i_first'])) {
@@ -991,10 +1005,23 @@ class flexible_table {
                 $ilast = '';
             }
 
+            if (!empty($this->prefs['i_search'])) {
+                $isearch = $this->prefs['i_search'];
+            } else {
+                $isearch = '';
+            }
+
             $prefixfirst = $this->request[TABLE_VAR_IFIRST];
             $prefixlast = $this->request[TABLE_VAR_ILAST];
+            $prefixsearch = $this->request[TABLE_VAR_ISEARCH];
+            $prefixreset = $this->request[TABLE_VAR_RESET];
             echo $OUTPUT->initials_bar($ifirst, 'firstinitial', get_string('firstname'), $prefixfirst, $this->baseurl);
             echo $OUTPUT->initials_bar($ilast, 'lastinitial', get_string('lastname'), $prefixlast, $this->baseurl);
+            echo $OUTPUT->search_bar($isearch, 'search visibleifjs', get_string('search'), $prefixsearch, $this->baseurl);
+            $reset = array($ifirst, $ilast, $isearch);
+            if (array_filter($reset)) {
+                echo $OUTPUT->reset_link('initialbarall', $this->baseurl, $prefixreset, get_string('resettable'));
+            }
         }
 
     }
@@ -1004,9 +1031,6 @@ class flexible_table {
      */
     function print_nothing_to_display() {
         global $OUTPUT;
-
-        // Render button to allow user to reset table preferences.
-        echo $this->render_reset_button();
 
         $this->print_initials_bar();
 
@@ -1350,9 +1374,6 @@ class flexible_table {
     function start_html() {
         global $OUTPUT;
 
-        // Render button to allow user to reset table preferences.
-        echo $this->render_reset_button();
-
         // Do we need to print initial bars?
         $this->print_initials_bar();
 
@@ -1396,9 +1417,13 @@ class flexible_table {
      * Generate the HTML for the table preferences reset button.
      *
      * @return string HTML fragment, empty string if no need to reset
+     *
+     * @deprecated since Moodle 3.3
      */
     protected function render_reset_button() {
 
+        debugging('Method render_reset_button() is no longer used and has been deprecated, ' .
+                  'to render reset preferences link call reset_link()', DEBUG_DEVELOPER);
         if (!$this->can_be_reset()) {
             return '';
         }

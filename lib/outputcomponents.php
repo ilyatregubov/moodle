@@ -3182,6 +3182,143 @@ class initials_bar implements renderable, templatable {
 }
 
 /**
+ * Component representing search bar.
+ *
+ * @copyright 2017 Ilya Tregubov
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since Moodle 3.3
+ * @package core
+ * @category output
+ */
+class search_bar implements renderable, templatable {
+
+    /**
+     * @var string String to search.
+     */
+    public $current;
+
+    /**
+     * @var string Class name to add to this initial bar.
+     */
+    public $class;
+
+    /**
+     * @var string The name to put in front of this initial bar.
+     */
+    public $title;
+
+    /**
+     * @var string URL parameter name for this initial.
+     */
+    public $urlvar;
+
+    /**
+     * @var string URL object.
+     */
+    public $url;
+
+    /**
+     * Constructor search_bar with only the required params.
+     *
+     * @param string $current string to search.
+     * @param string $class class name to add to this search bar.
+     * @param string $title the name to put in front of this search bar.
+     * @param string $urlvar URL parameter name for this initial.
+     * @param string $url URL object.
+     */
+    public function __construct($current, $class, $title, $urlvar, $url) {
+        $this->current       = $current;
+        $this->class    = $class;
+        $this->title    = $title;
+        $this->urlvar    = $urlvar;
+        $this->url    = $url;
+    }
+
+    /**
+     * Export for template.
+     *
+     * @param renderer_base $output The renderer.
+     * @return stdClass
+     */
+    public function export_for_template(renderer_base $output) {
+
+        $data = new stdClass();
+
+        $data->class = $this->class;
+        $data->title = $this->title;
+        $data->url = $this->url->out(false, array($this->urlvar => ''));
+        $data->value = $this->current;
+        $data->urlvar = $this->urlvar;
+
+        return $data;
+    }
+}
+
+/**
+ * Component representing reset link.
+ *
+ * @copyright 2017 Ilya Tregubov
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since Moodle 3.3
+ * @package core
+ * @category output
+ */
+class reset_link implements renderable, templatable {
+
+    /**
+     * @var string Class name to add to this initial bar.
+     */
+    public $class;
+
+    /**
+     * @var string URL object.
+     */
+    public $url;
+
+    /**
+     * @var string URL parameter name for this initial.
+     */
+    public $urlvar;
+
+    /**
+     * @var string The name to put in front of this initial bar.
+     */
+    public $title;
+
+    /**
+     * Constructor reset_link with only the required params.
+     *
+     * @param string $class class name to add to this search bar.
+     * @param string $url URL object.
+     * @param string $urlvar URL parameter name for this initial.
+     * @param string $title the name to put in front of this search bar.
+     */
+    public function __construct($class, $url, $urlvar, $title) {
+        $this->class    = $class;
+        $this->url    = $url;
+        $this->urlvar    = $urlvar;
+        $this->title   = $title;
+    }
+
+    /**
+     * Export for template.
+     *
+     * @param renderer_base $output The renderer.
+     * @return stdClass
+     */
+    public function export_for_template(renderer_base $output) {
+
+        $data = new stdClass();
+
+        $data->class = $this->class;
+        $data->url = $this->url->out(false, array($this->urlvar => 1));
+        $data->title = $this->title;
+
+        return $data;
+    }
+}
+
+/**
  * This class represents how a block appears on a page.
  *
  * During output, each block instance is asked to return a block_contents object,

@@ -42,6 +42,8 @@ $toggle_type   = optional_param('toggle_type', 0, PARAM_ALPHANUM);
 
 $graderreportsifirst  = optional_param('sifirst', null, PARAM_NOTAGS);
 $graderreportsilast   = optional_param('silast', null, PARAM_NOTAGS);
+$graderreportsisearch = optional_param('sisearch', null, PARAM_RAW);
+$graderreportreset = optional_param('treset', null, PARAM_RAW);
 
 // The report object is recreated each time, save search information to SESSION object for future use.
 if (isset($graderreportsifirst)) {
@@ -49,6 +51,16 @@ if (isset($graderreportsifirst)) {
 }
 if (isset($graderreportsilast)) {
     $SESSION->gradereport['filtersurname'] = $graderreportsilast;
+}
+
+if (isset($graderreportsisearch)) {
+    $SESSION->gradereport['filtersearch'] = $graderreportsisearch;
+}
+
+if (isset($graderreportreset)) {
+    $SESSION->gradereport['filterfirstname'] = null;
+    $SESSION->gradereport['filtersurname'] = null;
+    $SESSION->gradereport['filtersearch'] = null;
 }
 
 $PAGE->set_url(new moodle_url('/grade/report/grader/index.php', array('id'=>$courseid)));
@@ -156,9 +168,10 @@ echo $report->group_selector;
 $url = new moodle_url('/grade/report/grader/index.php', array('id' => $course->id));
 $firstinitial = isset($SESSION->gradereport['filterfirstname']) ? $SESSION->gradereport['filterfirstname'] : '';
 $lastinitial  = isset($SESSION->gradereport['filtersurname']) ? $SESSION->gradereport['filtersurname'] : '';
+$search = isset($SESSION->gradereport['filtersearch']) ? $SESSION->gradereport['filtersearch'] : '';
 $totalusers = $report->get_numusers(true, false);
 $renderer = $PAGE->get_renderer('core_user');
-echo $renderer->user_search($url, $firstinitial, $lastinitial, $numusers, $totalusers, $report->currentgroupname);
+echo $renderer->user_search($url, $firstinitial, $lastinitial, $search, $numusers, $totalusers, $report->currentgroupname);
 
 //show warnings if any
 foreach ($warnings as $warning) {

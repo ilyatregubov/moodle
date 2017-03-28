@@ -399,6 +399,10 @@ abstract class grade_report {
             $this->userwheresql .= ' AND '.$DB->sql_like('u.lastname', ':lastname', false, false);
             $this->userwheresql_params['lastname'] = $SESSION->gradereport['filtersurname'].'%';
         }
+        if (isset($SESSION->gradereport['filtersearch']) && !empty($SESSION->gradereport['filtersearch'])) {
+            list($where, $this->userwheresql_params) = get_extra_user_fields_search_sql($SESSION->gradereport['filtersearch']);
+            $this->userwheresql = " AND" . $where;
+        }
     }
 
     /**

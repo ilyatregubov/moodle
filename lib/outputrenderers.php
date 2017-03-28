@@ -2962,6 +2962,55 @@ EOD;
     }
 
     /**
+     * Returns HTML to display search bar
+     *
+     * @param string $current string to search.
+     * @param string $class class name to add to this search bar.
+     * @param string $title the name to put in front of this search bar.
+     * @param string $urlvar URL parameter name for this search bar.
+     * @param string $url URL object.
+     * @return string the HTML to output.
+     */
+    public function search_bar($current, $class, $title, $urlvar, $url) {
+        $ib = new search_bar($current, $class, $title, $urlvar, $url);
+        return $this->render($ib);
+    }
+
+    /**
+     * Internal implementation of search bar rendering.
+     *
+     * @param search_bar $searchbar
+     * @return string
+     */
+    protected function render_search_bar(search_bar $searchbar) {
+        return $this->render_from_template('core/search_bar', $searchbar->export_for_template($this));
+    }
+
+    /**
+     * Returns HTML to display reset preferences link
+     *
+     * @param string $class class name to add to reset link.
+     * @param string $url URL object.
+     * @param string $urlvar URL parameter name for reset link.
+     * @param string $title the name to put in front of reset link.
+     * @return string the HTML to output.
+     */
+    public function reset_link($class, $url, $urlvar, $title) {
+        $ib = new reset_link($class, $url, $urlvar, $title);
+        return $this->render($ib);
+    }
+
+    /**
+     * Internal implementation of reset link rendering.
+     *
+     * @param reset_link $resetlink
+     * @return string
+     */
+    protected function render_reset_link(reset_link $resetlink) {
+        return $this->render_from_template('core/reset_preferences', $resetlink->export_for_template($this));
+    }
+
+    /**
      * Output the place a skip link goes to.
      *
      * @param string $id The target name from the corresponding $PAGE->requires->skip_link_to($target) call.

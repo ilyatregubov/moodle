@@ -103,7 +103,7 @@ class core_user_renderer extends plugin_renderer_base {
      * @param string $heading heading of the subset being searched, default is All Participants
      * @return string html output
      */
-    public function user_search($url, $firstinitial, $lastinitial, $usercount, $totalcount, $heading = null) {
+    public function user_search($url, $firstinitial, $lastinitial, $search, $usercount, $totalcount, $heading = null) {
         global $OUTPUT;
 
         if ($firstinitial !== 'all') {
@@ -111,6 +111,10 @@ class core_user_renderer extends plugin_renderer_base {
         }
         if ($lastinitial !== 'all') {
             set_user_preference('ilast', $lastinitial);
+        }
+
+        if (!is_null($search)) {
+            set_user_preference('isearch', $search);
         }
 
         if (!isset($heading)) {
@@ -126,8 +130,15 @@ class core_user_renderer extends plugin_renderer_base {
         // Initials bar.
         $prefixfirst = 'sifirst';
         $prefixlast = 'silast';
+        $prefixsearch = 'sisearch';
+        $prefixreset = 'treset';
         $content .= $OUTPUT->initials_bar($firstinitial, 'firstinitial', get_string('firstname'), $prefixfirst, $url);
         $content .= $OUTPUT->initials_bar($lastinitial, 'lastinitial', get_string('lastname'), $prefixlast, $url);
+        $content .= $OUTPUT->search_bar($search, 'search visibleifjs', get_string('search'), $prefixsearch, $url);
+        $reset = array($firstinitial, $lastinitial, $search);
+        if (array_filter($reset)) {
+            echo $OUTPUT->reset_link('initialbarall', $url, $prefixreset, get_string('resettable'));
+        }
 
         $content .= html_writer::end_tag('div');
         $content .= html_writer::tag('div', '&nbsp;');
