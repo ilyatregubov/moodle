@@ -3613,6 +3613,11 @@ body#page-lib-editor-tinymce-plugins-moodlemedia-preview {
 .initialbar {
   overflow: auto;
 }
+.initialbar input[type=text].initialbarsearch,
+.initialbar input[type=text] + button.initialbarsearch {
+  margin: 0 0 2px;
+  padding: 2px 4px;
+}
 .initialbar .initialbarlabel {
   display: inline-block;
   width: 6em;

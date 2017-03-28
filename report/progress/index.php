@@ -49,6 +49,8 @@ $csv = $format == 'csv' || $excel;
 $start   = optional_param('start', 0, PARAM_INT);
 $sifirst = optional_param('sifirst', 'all', PARAM_NOTAGS);
 $silast  = optional_param('silast', 'all', PARAM_NOTAGS);
+$sisearch = optional_param('sisearch', null, PARAM_RAW);
+$treset = optional_param('treset', null, PARAM_RAW);
 $start   = optional_param('start', 0, PARAM_INT);
 
 // Whether to show extra user identity information
@@ -101,6 +103,17 @@ if ($silast !== 'all') {
     set_user_preference('ilast', $silast);
 }
 
+if (!is_null($sisearch)) {
+    set_user_preference('isearch', $sisearch);
+}
+
+if (!is_null($treset)) {
+    $sifirst = '';
+    $silast = '';
+    $sisearch = '';
+    set_user_preferences(array('ifirst' => $sifirst, 'ilast' => $silast, 'isearch' => $sisearch));
+}
+
 if (!empty($USER->preference['ifirst'])) {
     $sifirst = $USER->preference['ifirst'];
 } else {
@@ -113,22 +126,30 @@ if (!empty($USER->preference['ilast'])) {
     $silast = 'all';
 }
 
+if (!empty($USER->preference['isearch'])) {
+    $sisearch = $USER->preference['isearch'];
+}
+
 // Generate where clause
 $where = array();
-$where_params = array();
+$whereparams = array();
+
+if (!is_null($sisearch)) {
+    list($where[], $whereparams) = get_extra_user_fields_search_sql($sisearch);
+}
 
 if ($sifirst !== 'all') {
     $where[] = $DB->sql_like('u.firstname', ':sifirst', false);
-    $where_params['sifirst'] = $sifirst.'%';
+    $whereparams['sifirst'] = $sifirst.'%';
 }
 
 if ($silast !== 'all') {
     $where[] = $DB->sql_like('u.lastname', ':silast', false);
-    $where_params['silast'] = $silast.'%';
+    $whereparams['silast'] = $silast.'%';
 }
 
 // Get user match count
-$total = $completion->get_num_tracked_users(implode(' AND ', $where), $where_params, $group);
+$total = $completion->get_num_tracked_users(implode(' AND ', $where), $whereparams, $group);
 
 // Total user count
 $grandtotal = $completion->get_num_tracked_users('', array(), $group);
@@ -139,7 +160,7 @@ $progress = array();
 if ($total) {
     $progress = $completion->get_progress_all(
         implode(' AND ', $where),
-        $where_params,
+        $whereparams,
         $group,
         $firstnamesort ? 'u.firstname ASC' : 'u.lastname ASC',
         $csv ? 0 : COMPLETION_REPORT_PAGE,
@@ -203,8 +224,15 @@ $pagingbar = '';
 // Initials bar.
 $prefixfirst = 'sifirst';
 $prefixlast = 'silast';
+$prefixsearch = 'sisearch';
+$prefixreset = 'treset';
 $pagingbar .= $OUTPUT->initials_bar($sifirst, 'firstinitial', get_string('firstname'), $prefixfirst, $url);
 $pagingbar .= $OUTPUT->initials_bar($silast, 'lastinitial', get_string('lastname'), $prefixlast, $url);
+$pagingbar .= $OUTPUT->search_bar($sisearch, 'search visibleifjs', get_string('search'), $prefixsearch, $url);
+$reset = array($sifirst, $silast, $sisearch);
+if (array_filter($reset)) {
+    echo $OUTPUT->reset_link('initialbarall', $url, $prefixreset, get_string('resettable'));
+}
 
 // Do we need a paging bar?
 if ($total > COMPLETION_REPORT_PAGE) {
