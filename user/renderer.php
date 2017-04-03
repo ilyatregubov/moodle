@@ -134,7 +134,7 @@ class core_user_renderer extends plugin_renderer_base {
         $prefixreset = 'treset';
         $content .= $OUTPUT->initials_bar($firstinitial, 'firstinitial', get_string('firstname'), $prefixfirst, $url);
         $content .= $OUTPUT->initials_bar($lastinitial, 'lastinitial', get_string('lastname'), $prefixlast, $url);
-        $content .= $OUTPUT->search_bar($search, 'search visibleifjs', get_string('search'), get_string('go'), $prefixsearch, $url);
+        $content .= $OUTPUT->search_bar($search, 'search', get_string('search'), get_string('go'), $prefixsearch, $url);
         $reset = array($firstinitial, $lastinitial, $search);
         if (array_filter($reset)) {
             echo $OUTPUT->reset_link('initialbarall', $url, $prefixreset, get_string('resettable'));

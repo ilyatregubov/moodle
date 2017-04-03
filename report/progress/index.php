@@ -228,7 +228,7 @@ $prefixsearch = 'sisearch';
 $prefixreset = 'treset';
 echo $OUTPUT->initials_bar($sifirst, 'firstinitial', get_string('firstname'), $prefixfirst, $url);
 echo $OUTPUT->initials_bar($silast, 'lastinitial', get_string('lastname'), $prefixlast, $url);
-echo $OUTPUT->search_bar($sisearch, 'search visibleifjs', get_string('search'), get_string('go'), $prefixsearch, $url);
+echo $OUTPUT->search_bar($sisearch, 'search', get_string('search'), get_string('go'), $prefixsearch, $url);
 $reset = array($sifirst, $silast, $sisearch);
 foreach ($reset as $key => $value) {
     if ($value == 'all') {
