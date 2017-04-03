@@ -2967,12 +2967,13 @@ EOD;
      * @param string $current string to search.
      * @param string $class class name to add to this search bar.
      * @param string $title the name to put in front of this search bar.
+     * @param string $titlebutton the name to put on search button.
      * @param string $urlvar URL parameter name for this search bar.
      * @param string $url URL object.
      * @return string the HTML to output.
      */
-    public function search_bar($current, $class, $title, $urlvar, $url) {
-        $ib = new search_bar($current, $class, $title, $urlvar, $url);
+    public function search_bar($current, $class, $title, $titlebutton, $urlvar, $url) {
+        $ib = new search_bar($current, $class, $title, $titlebutton, $urlvar, $url);
         return $this->render($ib);
     }
 

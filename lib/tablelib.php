@@ -1017,7 +1017,7 @@ class flexible_table {
             $prefixreset = $this->request[TABLE_VAR_RESET];
             echo $OUTPUT->initials_bar($ifirst, 'firstinitial', get_string('firstname'), $prefixfirst, $this->baseurl);
             echo $OUTPUT->initials_bar($ilast, 'lastinitial', get_string('lastname'), $prefixlast, $this->baseurl);
-            echo $OUTPUT->search_bar($isearch, 'search visibleifjs', get_string('search'), $prefixsearch, $this->baseurl);
+            echo $OUTPUT->search_bar($isearch, 'search visibleifjs', get_string('search'), get_string('go'), $prefixsearch, $this->baseurl);
             $reset = array($ifirst, $ilast, $isearch);
             if (array_filter($reset)) {
                 echo $OUTPUT->reset_link('initialbarall', $this->baseurl, $prefixreset, get_string('resettable'));

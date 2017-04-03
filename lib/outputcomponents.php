@@ -3208,6 +3208,11 @@ class search_bar implements renderable, templatable {
     public $title;
 
     /**
+     * @var string The name to put in search button.
+     */
+    public $titlebutton;
+
+    /**
      * @var string URL parameter name for this initial.
      */
     public $urlvar;
@@ -3223,13 +3228,15 @@ class search_bar implements renderable, templatable {
      * @param string $current string to search.
      * @param string $class class name to add to this search bar.
      * @param string $title the name to put in front of this search bar.
+     * @param string $titlebutton the name to put on search button.
      * @param string $urlvar URL parameter name for this initial.
      * @param string $url URL object.
      */
-    public function __construct($current, $class, $title, $urlvar, $url) {
+    public function __construct($current, $class, $title, $titlebutton, $urlvar, $url) {
         $this->current       = $current;
         $this->class    = $class;
         $this->title    = $title;
+        $this->titlebutton    = $titlebutton;
         $this->urlvar    = $urlvar;
         $this->url    = $url;
     }
@@ -3246,6 +3253,7 @@ class search_bar implements renderable, templatable {
 
         $data->class = $this->class;
         $data->title = $this->title;
+        $data->titlebutton = $this->titlebutton;
         $data->url = $this->url->out(false, array($this->urlvar => ''));
         $data->value = $this->current;
         $data->urlvar = $this->urlvar;
