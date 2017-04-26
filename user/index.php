@@ -464,7 +464,7 @@ if (!empty($search)) {
     $params['search3'] = "%$search%";
 }
 
-list($twhere, $tparams) = $table->get_sql_where();
+list($twhere, $tparams) = $table->get_sql_where($context);
 if ($twhere) {
     $wheres[] = $twhere;
     $params = array_merge($params, $tparams);

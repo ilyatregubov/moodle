@@ -3667,9 +3667,9 @@ function get_extra_user_fields_sql($context, $alias='', $prefix='', $already = a
  * @return string Partial SQL select clause, beginning with comma, for example
  * ', username, firstname' unless it is blank
  */
-function get_extra_user_fields_search_sql($search, $fields = null) {
+function get_extra_user_fields_search_sql($context, $search, $alias='', $prefix='', $fields = null) {
 
-    global $DB, $context;
+    global $DB;
 
     static $i = 1;
     $keywords = preg_split("/\s+/", $search);

@@ -665,7 +665,7 @@ class flexible_table {
     /**
      * @return string sql to add to where statement.
      */
-    function get_sql_where() {
+    function get_sql_where($context = null) {
         global $DB;
 
         $conditions = array();
@@ -684,7 +684,7 @@ class flexible_table {
                 $params['ilastc'.$i] = $this->prefs['i_last'].'%';
             }
             if (isset($_REQUEST['tisearch'])) {
-                list($conditions[], $params) = get_extra_user_fields_search_sql($_REQUEST['tisearch']);
+                list($conditions[], $params) = get_extra_user_fields_search_sql($context, $_REQUEST['tisearch']);
             }
         }
 
@@ -1593,7 +1593,7 @@ class table_sql extends flexible_table {
                 $this->initialbars($grandtotal > $pagesize);
             }
 
-            list($wsql, $wparams) = $this->get_sql_where();
+            list($wsql, $wparams) = $this->get_sql_where($this->get_course_context());
             if ($wsql) {
                 $this->countsql .= ' AND '.$wsql;
                 $this->countparams = array_merge($this->countparams, $wparams);

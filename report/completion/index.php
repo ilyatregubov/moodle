@@ -196,7 +196,7 @@ $where = array();
 $whereparams = array();
 
 if (!is_null($sisearch)) {
-    list($where[], $whereparams) = get_extra_user_fields_search_sql($sisearch);
+    list($where[], $whereparams) = get_extra_user_fields_search_sql($context, $sisearch);
 }
 
 if ($sifirst !== 'all') {
