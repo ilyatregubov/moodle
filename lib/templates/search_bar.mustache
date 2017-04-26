@@ -31,14 +31,14 @@
 }}
 <div class="initialbar {{class}}">
        <span class="initialbarlabel">{{title}}</span>
-       <input type="text" id="{{urlvar}}" data-url="{{url}}" class="initialbarsearch" value="{{value}}">
+       <input type="text" name="{{urlvar}}" data-url="{{url}}" class="initialbarsearch" value="{{value}}">
        <button type="submit" class="initialbarsearchgo">{{titlebutton}}</button>
 </div>
 
 {{#js}}
-    require(['jquery'], function($) {
+    require(['jquery', 'core/key_codes'], function($, keyCodes) {
         $('.initialbar > input').keyup(function(e) {
-            if (e.which == 13) {
+            if (e.which == keyCodes.enter) {
                 e.preventDefault();
                 var s = e.target;
                 window.location = s.getAttribute('data-url') + '=' + encodeURIComponent(s.value);
