@@ -531,9 +531,6 @@ class flexible_table {
         }
 
         $isearch = optional_param($this->request[TABLE_VAR_ISEARCH], null, PARAM_RAW);
-        if (!is_null($isearch)) {
-            $this->prefs['i_search'] = $isearch;
-        }
 
         // Save user preferences if they have changed.
         if ($this->prefs != $oldprefs) {
@@ -686,8 +683,8 @@ class flexible_table {
                 $conditions[] = $DB->sql_like('lastname', ':ilastc'.$i, false, false);
                 $params['ilastc'.$i] = $this->prefs['i_last'].'%';
             }
-            if (!empty($this->prefs['i_search'])) {
-                list($conditions[], $params) = get_extra_user_fields_search_sql($this->prefs['i_search']);
+            if (isset($_REQUEST['tisearch'])) {
+                list($conditions[], $params) = get_extra_user_fields_search_sql($_REQUEST['tisearch']);
             }
         }
 
@@ -989,7 +986,6 @@ class flexible_table {
 
         if ((!empty($this->prefs['i_last']) ||
                 !empty($this->prefs['i_first']) ||
-                !empty($this->prefs['i_search']) ||
                 $this->use_initials)
             && isset($this->columns['fullname'])) {
 
@@ -1005,8 +1001,8 @@ class flexible_table {
                 $ilast = '';
             }
 
-            if (!empty($this->prefs['i_search'])) {
-                $isearch = $this->prefs['i_search'];
+            if (isset($_REQUEST['tisearch'])) {
+                $isearch = $_REQUEST['tisearch'];
             } else {
                 $isearch = '';
             }

@@ -169,15 +169,10 @@ if ($silast !== 'all') {
     set_user_preference('ilast', $silast);
 }
 
-if (!is_null($sisearch)) {
-    set_user_preference('isearch', $sisearch);
-}
-
 if (!is_null($treset)) {
     $sifirst = '';
     $silast = '';
-    $sisearch = '';
-    set_user_preferences(array('ifirst' => $sifirst, 'ilast' => $silast, 'isearch' => $sisearch));
+    set_user_preferences(array('ifirst' => $sifirst, 'ilast' => $silast));
 }
 
 if (!empty($USER->preference['ifirst'])) {
@@ -192,8 +187,8 @@ if (!empty($USER->preference['ilast'])) {
     $silast = 'all';
 }
 
-if (!empty($USER->preference['isearch'])) {
-    $sisearch = $USER->preference['isearch'];
+if (isset($_REQUEST['sisearch'])) {
+    $sisearch = $_REQUEST['sisearch'];
 }
 
 // Generate where clause
@@ -258,7 +253,7 @@ $prefixsearch = 'sisearch';
 $prefixreset = 'treset';
 echo $OUTPUT->initials_bar($sifirst, 'firstinitial', get_string('firstname'), $prefixfirst, $url);
 echo $OUTPUT->initials_bar($silast, 'lastinitial', get_string('lastname'), $prefixlast, $url);
-echo $OUTPUT->search_bar($sisearch, 'search', get_string('search'), get_string('Go'), $prefixsearch, $url);
+echo $OUTPUT->search_bar($sisearch, 'search', get_string('search'), get_string('go'), $prefixsearch, $url);
 $reset = array($sifirst, $silast, $sisearch);
 foreach ($reset as $key => $value) {
     if ($value == 'all') {

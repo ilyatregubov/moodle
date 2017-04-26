@@ -113,10 +113,6 @@ class core_user_renderer extends plugin_renderer_base {
             set_user_preference('ilast', $lastinitial);
         }
 
-        if (!is_null($search)) {
-            set_user_preference('isearch', $search);
-        }
-
         if (!isset($heading)) {
             $heading = get_string('allparticipants');
         }
