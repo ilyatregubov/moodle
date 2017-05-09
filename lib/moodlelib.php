@@ -3671,7 +3671,7 @@ function get_extra_user_fields_search_sql($context, $search, $alias='', $prefix=
 
     global $DB;
 
-    $i = 1;
+    static $i = 1;
     $keywords = preg_split("/\s+/", $search);
 
     $fields = array_merge(get_all_user_name_fields(), get_extra_user_fields($context));
