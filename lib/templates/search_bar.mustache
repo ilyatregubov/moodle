@@ -29,10 +29,12 @@
         "urlvar": "sisearch"
     }
 }}
-<div class="initialbar {{class}}">
+<div class="initialbar {{class}}" id="initialbar-{{class}}-{{uniqid}}">
        <span class="initialbarlabel">{{title}}</span>
-       <input type="text" name="{{urlvar}}" data-url="{{url}}" class="initialbarsearch" value="{{value}}">
-       <button type="submit" class="btn btn-secondary initialbarsearchgo">{{titlebutton}}</button>
+       <label for="initialbarsearch-{{uniqid}}"></label>
+       <input type="text" name="{{urlvar}}" data-url="{{url}}" class="initialbarsearch" value="{{value}}" id="initialbarsearch-{{uniqid}}">
+       <label for="btn-btn-secondary-initialbarsearchgo-{{uniqid}}"></label>
+       <button type="submit" class="btn btn-secondary initialbarsearchgo" id="btn-btn-secondary-initialbarsearchgo-{{uniqid}}">{{titlebutton}}</button>
 </div>
 
 {{#js}}
