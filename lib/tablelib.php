@@ -1593,7 +1593,12 @@ class table_sql extends flexible_table {
                 $this->initialbars($grandtotal > $pagesize);
             }
 
-            list($wsql, $wparams) = $this->get_sql_where($this->get_course_context());
+            if (isset($this->context)) {
+                list($wsql, $wparams) = $this->get_sql_where($this->context);
+            } else {
+                list($wsql, $wparams) = $this->get_sql_where($this->get_course_context());
+            }
+
             if ($wsql) {
                 $this->countsql .= ' AND '.$wsql;
                 $this->countparams = array_merge($this->countparams, $wparams);
