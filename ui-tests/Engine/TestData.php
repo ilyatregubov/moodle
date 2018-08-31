@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class TestData manages the test data. TODO: extract test data into stand-alone sql file.
+ * Class TestData manages the test data.
  */
 class TestData
 {
