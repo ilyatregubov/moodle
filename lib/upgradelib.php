@@ -2709,3 +2709,30 @@ function upgrade_find_theme_location($themename) {
 
     return $dir;
 }
+
+/**
+ * Deletes files records which have their repository deleted.
+ *
+ */
+function delete_orphaned_file_records() {
+    global $DB;
+
+    $sql = "SELECT DISTINCT r.id, r.repositoryid 
+                  FROM {files} f
+            LEFT JOIN {files_reference} r 
+                      ON f.referencefileid = r.id 
+                LEFT JOIN {repository_instances} i 
+                                ON i.id = r.repositoryid 
+                    WHERE r.repositoryid NOT IN 
+                         (SELECT i1.id FROM mdl_repository_instances i1)";
+
+    $deletedrepositories = $DB->get_records_sql($sql);
+
+    foreach ($deletedrepositories as $deletedrepository) {
+        $sql = "DELETE FROM {files_reference} WHERE repositoryid = ?";
+        $DB->execute($sql, array($deletedrepository->repositoryid));
+        $sql = "DELETE FROM {files} WHERE referencefileid = ?";
+        $DB->execute($sql, array($deletedrepository->id));
+    }
+
+}

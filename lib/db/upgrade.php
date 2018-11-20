@@ -2794,5 +2794,10 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2018111301.00);
     }
 
+    if ($oldversion < 2018112100.00) {
+        delete_orphaned_file_records();
+        upgrade_main_savepoint(true, 2018112100.00);
+    }
+
     return true;
 }
