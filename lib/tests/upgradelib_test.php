@@ -920,4 +920,82 @@ class core_upgradelib_testcase extends advanced_testcase {
         $record = $DB->get_record('block_instances', ['id' => $entryid]);
         $this->assertEquals($expected, $record->configdata);
     }
+
+    /**
+     * Check that orphaned files are deleted.
+     *
+     */
+    public function test_upgrade_delete_orphaned_file_records() {
+        global $DB;
+
+        $this->resetAfterTest();
+        // Create user.
+        $generator = $this->getDataGenerator();
+        $user = $generator->create_user();
+        $this->setUser($user);
+        $usercontext = context_user::instance($user->id);
+        $syscontext = context_system::instance();
+
+        $fs = get_file_storage();
+
+        $repositorypluginname = 'user';
+        // Override repository permission.
+        $capability = 'repository/' . $repositorypluginname . ':view';
+        $guestroleid = $DB->get_field('role', 'id', array('shortname' => 'guest'));
+        assign_capability($capability, CAP_ALLOW, $guestroleid, $syscontext->id, true);
+
+        $args = array();
+        $args['type'] = $repositorypluginname;
+        $repos = repository::get_instances($args);
+        $userrepository = reset($repos);
+        $this->assertInstanceOf('repository', $userrepository);
+
+        $component = 'user';
+        $filearea = 'private';
+        $itemid = 0;
+        $filepath = '/';
+        $filename = 'userfile.txt';
+
+        $filerecord = array(
+            'contextid' => $usercontext->id,
+            'component' => $component,
+            'filearea' => $filearea,
+            'itemid' => $itemid,
+            'filepath' => $filepath,
+            'filename' => $filename,
+        );
+
+        $content = 'Test content';
+        $originalfile = $fs->create_file_from_string($filerecord, $content);
+        $this->assertInstanceOf('stored_file', $originalfile);
+
+        $newfilerecord = array(
+            'contextid' => $syscontext->id,
+            'component' => 'core',
+            'filearea' => 'phpunit',
+            'itemid' => 0,
+            'filepath' => $filepath,
+            'filename' => $filename,
+        );
+        $ref = $fs->pack_reference($filerecord);
+        $newstoredfile = $fs->create_file_from_reference($newfilerecord, $userrepository->id, $ref);
+
+        // Look for references by repository ID.
+        $files = $fs->get_external_files($userrepository->id);
+        $file = reset($files);
+        $this->assertEquals($file, $newstoredfile);
+
+        // Make file orphaned by deleting repository.
+        $DB->delete_records('repository_instances', array('id' => $userrepository->id));
+        $DB->delete_records('repository_instance_config', array('instanceid' => $userrepository->id));
+
+        upgrade_delete_orphaned_file_records();
+
+        // Look for references by repository ID.
+        $files = $fs->get_external_files($userrepository->id);
+        $file = reset($files);
+        $this->assertFalse($file);
+
+    }
+
 }
