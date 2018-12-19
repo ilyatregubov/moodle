@@ -2891,8 +2891,10 @@ function require_login($courseorid = null, $autologinguest = true, $cm = null, $
         redirect(course_get_url($course), get_string('activityisscheduledfordeletion', 'error'));
     }
 
-    $modinfo = get_fast_modinfo($course);
-    $cm = $modinfo->get_cm($cm->id);
+    if ($cm) {
+        $modinfo = get_fast_modinfo($course);
+        $cm = $modinfo->get_cm($cm->id);
+    }
 
     // Check visibility of activity to current user; includes visible flag, conditional availability, etc.
     if ($cm && !$cm->uservisible) {
