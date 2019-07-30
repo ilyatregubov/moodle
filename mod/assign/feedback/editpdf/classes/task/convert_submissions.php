@@ -47,7 +47,7 @@ class convert_submissions extends scheduled_task {
 
     /**
      * Do the job.
-     * Throw exceptions on errors (the job will be retried).
+     * Throw exceptions if conversion is not completed the job will be retried (conversion can be slow for async converters).
      */
     public function execute() {
         global $CFG, $DB;
@@ -106,8 +106,9 @@ class convert_submissions extends scheduled_task {
                         case combined_document::STATUS_READY:
                         case combined_document::STATUS_READY_PARTIAL:
                         case combined_document::STATUS_PENDING_INPUT:
-                            // The document has not been converted yet or is somehow still ready.
-                            continue;
+                            // Creating combined document can be slow for async converters. Conversion can be still in process.
+                            throw new \Exception('Cannot copy file to readonly area.
+                                Generating combined pdf is still in progress. Attempt will be retried on next task run.');
                     }
                     document_services::get_page_images_for_attempt(
                             $assignment,
