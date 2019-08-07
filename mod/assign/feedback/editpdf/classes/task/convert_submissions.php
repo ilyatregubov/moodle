@@ -54,6 +54,7 @@ class convert_submissions extends scheduled_task {
 
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
 
+        $hasanyfailures = false;
         $records = $DB->get_records('assignfeedback_editpdf_queue');
 
         $assignmentcache = array();
@@ -123,12 +124,18 @@ class convert_submissions extends scheduled_task {
                         );
                 } catch (\moodle_exception $e) {
                     mtrace('Conversion failed with error:' . $e->errorcode);
+                    $hasanyfailures = true;
+                    continue 2;
                 }
             }
 
             // Remove from queue.
             $DB->delete_records('assignfeedback_editpdf_queue', array('id' => $record->id));
 
+        }
+
+        if ($hasanyfailures) {
+            throw new \moodle_exception('Some conversions failed. Failed conversions will be retried on next task run.');
         }
     }
 
