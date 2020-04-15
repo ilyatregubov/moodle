@@ -133,6 +133,12 @@ if ($mform->is_cancelled()) {
         $data->grademin = 0;
     }
 
+    if ($grade_item->hidden) {
+        if (empty($data->hidden)) {
+            $data->hidden = 1;
+        }
+    }
+
     $hidden      = empty($data->hidden) ? 0: $data->hidden;
     $hiddenuntil = empty($data->hiddenuntil) ? 0: $data->hiddenuntil;
     unset($data->hidden);
