@@ -383,6 +383,8 @@ class core_enrol_external extends external_api {
                                                 This option requires \'moodle/site:accessallgroups\' on the course context if the
                                                 user doesn\'t belong to the group.
                             * onlyactive (integer) return only users with active enrolments and matching time restrictions. This option requires \'moodle/course:enrolreview\' on the course context.
+                            * onlysuspended (integer) return only suspended users. This option requires
+                                            \'moodle/course:enrolreview\' on the course context.
                             * userfields (\'string, string, ...\') return only the values of these user fields.
                             * limitfrom (integer) sql limit from.
                             * limitnumber (integer) maximum number of returned users.', VALUE_DEFAULT, array()),
@@ -414,6 +416,7 @@ class core_enrol_external extends external_api {
         $withcapability = '';
         $groupid        = 0;
         $onlyactive     = false;
+        $onlysuspended  = false;
         $userfields     = array();
         $limitfrom = 0;
         $limitnumber = 0;
@@ -427,6 +430,9 @@ class core_enrol_external extends external_api {
                 break;
             case 'onlyactive':
                 $onlyactive = !empty($option['value']);
+                break;
+            case 'onlysuspended':
+                $onlysuspended = !empty($option['value']);
                 break;
             case 'userfields':
                 $thefields = explode(',', $option['value']);
@@ -473,11 +479,12 @@ class core_enrol_external extends external_api {
             require_capability('moodle/site:accessallgroups', $coursecontext);
         }
         // to overwrite this option, you need course:enrolereview permission
-        if ($onlyactive) {
+        if ($onlyactive || $onlysuspended) {
             require_capability('moodle/course:enrolreview', $coursecontext);
         }
 
-        list($enrolledsql, $enrolledparams) = get_enrolled_sql($coursecontext, $withcapability, $groupid, $onlyactive);
+        list($enrolledsql, $enrolledparams) = get_enrolled_sql($coursecontext, $withcapability, $groupid, $onlyactive,
+        $onlysuspended);
         $ctxselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
         $ctxjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = u.id AND ctx.contextlevel = :contextlevel)";
         $enrolledparams['contextlevel'] = CONTEXT_USER;
