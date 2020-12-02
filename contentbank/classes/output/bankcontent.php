@@ -77,16 +77,28 @@ class bankcontent implements renderable, templatable {
         $PAGE->requires->js_call_amd('core_contentbank/search', 'init');
         $PAGE->requires->js_call_amd('core_contentbank/sort', 'init');
 
+        $enabledcontenttypes = \core\plugininfo\contenttype::get_enabled_plugins(true);
+
         $data = new stdClass();
         $contentdata = array();
         foreach ($this->contents as $content) {
             $file = $content->get_file();
             $filesize = $file ? $file->get_filesize() : 0;
             $mimetype = $file ? get_mimetype_description($file) : '';
-            $contenttypeclass = $content->get_content_type().'\\contenttype';
+            $contenttypeclass = $content->get_content_type() . '\\contenttype';
             $contenttype = new $contenttypeclass($this->context);
             $name = $content->get_name();
             $author = \core_user::get_user($content->get_content()->usercreated);
+            $disabled = false;
+            if (!$enabledcontenttypes) {
+                $disabled = true;
+                $name = get_string('disabled', 'contentbank', $content->get_name());
+            } else {
+                if (!in_array(substr($content->get_content_type(), 12), $enabledcontenttypes)) {
+                    $disabled = true;
+                    $name = get_string('disabled', 'contentbank', $content->get_name());
+                }
+            }
             $contentdata[] = array(
                 'name' => $name,
                 'title' => strtolower($name),
@@ -98,6 +110,7 @@ class bankcontent implements renderable, templatable {
                 'size' => display_size($filesize),
                 'type' => $mimetype,
                 'author' => fullname($author),
+                'disabled' => $disabled,
             );
         }
         $data->viewlist = get_user_preferences('core_contentbank_view_list');

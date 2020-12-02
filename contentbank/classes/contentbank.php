@@ -43,28 +43,61 @@ class contentbank {
     /** @var array Enabled content types. */
     private $enabledcontenttypes = null;
 
+    /** @var array Installed content types. */
+    private $installedcontenttypes = null;
+
     /**
      * Obtains the list of core_contentbank_content objects currently active.
      *
      * The list does not include players which are disabled.
      *
      * @return string[] Array of contentbank contenttypes.
+     * @deprecated since Moodle 3.11 - please use get_available_content_types.
      */
     public function get_enabled_content_types(): array {
-        if (!is_null($this->enabledcontenttypes)) {
-            return $this->enabledcontenttypes;
+        debugging('get_enabled_content_types() is deprecated. Please use get_available_content_types instead.',
+            DEBUG_DEVELOPER);
+
+        return $this->get_available_content_types(true);
+    }
+
+    /**
+     * Obtains the list of core_contentbank_content objects.
+     *
+     * @param bool $enabledonly Optional only enabled types.
+     * @return string[] Array of contentbank contenttypes.
+     */
+    public function get_available_content_types(bool $enabledonly = false): array {
+
+        if ($enabledonly) {
+            if (!is_null($this->enabledcontenttypes)) {
+                return $this->enabledcontenttypes;
+            }
+        } else {
+            if (!is_null($this->installedcontenttypes)) {
+                return $this->installedcontenttypes;
+            }
         }
 
-        $enabledtypes = \core\plugininfo\contenttype::get_enabled_plugins();
+        $plugintypes = \core\plugininfo\contenttype::get_enabled_plugins($enabledonly);
         $types = [];
-        foreach ($enabledtypes as $name) {
+        foreach ($plugintypes as $name) {
             $contenttypeclassname = "\\contenttype_$name\\contenttype";
             $contentclassname = "\\contenttype_$name\\content";
             if (class_exists($contenttypeclassname) && class_exists($contentclassname)) {
                 $types[$contenttypeclassname] = $name;
             }
         }
-        return $this->enabledcontenttypes = $types;
+
+        if ($types) {
+            if ($enabledonly) {
+                return $this->enabledcontenttypes = $types;
+            } else {
+                return $this->installedcontenttypes = $types;
+            }
+        } else {
+            return $types;
+        }
     }
 
     /**
@@ -78,7 +111,7 @@ class contentbank {
         if ($supportedextensions === false) {
             // Load all enabled extensions.
             $supportedextensions = [];
-            foreach ($this->get_enabled_content_types() as $type) {
+            foreach ($this->get_available_content_types(true) as $type) {
                 $classname = "\\contenttype_$type\\contenttype";
                 $contenttype = new $classname;
                 if ($contenttype->is_feature_supported($contenttype::CAN_UPLOAD)) {
@@ -177,17 +210,18 @@ class contentbank {
      * @param  string|null $search Optional string to search (for now it will search only into the name).
      * @param  int $contextid Optional contextid to search.
      * @param  array $contenttypenames Optional array with the list of content-type names to search.
+     * @param  bool $enabledonly Search for enabled content types only.
      * @return array The contents for the enabled contentbank-type plugins having $search as name and placed in $contextid.
      */
-    public function search_contents(?string $search = null, ?int $contextid = 0, ?array $contenttypenames = null): array {
+    public function search_contents(?string $search = null, ?int $contextid = 0, ?array $contenttypenames = null,
+                                    ?bool $enabledonly = true): array {
         global $DB;
 
         $contents = [];
-
-        // Get only contents for enabled content-type plugins.
         $contenttypes = [];
-        $enabledcontenttypes = $this->get_enabled_content_types();
-        foreach ($enabledcontenttypes as $contenttypename) {
+        $availablecontenttypes = $this->get_available_content_types($enabledonly);
+
+        foreach ($availablecontenttypes as $contenttypename) {
             if (empty($contenttypenames) || in_array($contenttypename, $contenttypenames)) {
                 $contenttypes[] = "contenttype_$contenttypename";
             }
@@ -310,7 +344,7 @@ class contentbank {
         $contenttypes = [];
         // Check enabled content types or all of them.
         if ($enabled) {
-            $contenttypestocheck = $this->get_enabled_content_types();
+            $contenttypestocheck = $this->get_available_content_types(true);
         } else {
             $plugins = core_plugin_manager::instance()->get_plugins_of_type('contenttype');
             foreach ($plugins as $plugin) {
