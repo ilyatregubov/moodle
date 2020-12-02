@@ -38,21 +38,6 @@ Feature: H5P file upload to content bank for admins
     And I switch to "h5p-iframe" class iframe
     Then I should see "Of which countries"
 
-  Scenario: Users can't see content managed by disabled plugins
-    Given I click on "Upload" "link"
-    And I click on "Choose a file..." "button"
-    And I click on "Private files" "link" in the ".fp-repo-area" "css_element"
-    And I click on "filltheblanks.h5p" "link"
-    And I click on "Select this file" "button"
-    And I click on "Save changes" "button"
-    And I wait until the page is ready
-    And I should see "filltheblanks.h5p"
-    And I navigate to "Plugins > Content bank > Manage content types" in site administration
-    And I click on "Disable" "icon" in the "H5P" "table_row"
-    And I wait until the page is ready
-    When I click on "Content bank" "link"
-    Then I should not see "filltheblanks.h5p"
-
   Scenario: Contents in a context are not available from other contexts
     Given the following "courses" exist:
       | fullname | shortname | category |

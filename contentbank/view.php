@@ -40,8 +40,11 @@ $errormsg = optional_param('errormsg', '', PARAM_ALPHANUMEXT);
 
 $returnurl = new \moodle_url('/contentbank/index.php', ['contextid' => $context->id]);
 $plugin = core_plugin_manager::instance()->get_plugin_info($record->contenttype);
-if (!$plugin || !$plugin->is_enabled()) {
+if (!$plugin) {
     print_error('unsupported', 'core_contentbank', $returnurl);
+} else if ((!$plugin->is_enabled()) &&
+    (!has_capability('moodle/contentbank:viewdisabledtypes', $context))) {
+    print_error('disablederror', 'core_contentbank', $returnurl);
 }
 
 $title = get_string('contentbank');
@@ -53,7 +56,12 @@ if ($PAGE->course) {
 $PAGE->set_url(new \moodle_url('/contentbank/view.php', ['id' => $id]));
 $PAGE->set_context($context);
 $PAGE->navbar->add($record->name);
-$PAGE->set_heading($record->name);
+
+if (!$plugin->is_enabled()) {
+    $PAGE->set_heading(get_string('disabled', 'contentbank', $record->name . ''));
+} else {
+    $PAGE->set_heading($record->name);
+}
 $title .= ": ".$record->name;
 $PAGE->set_title($title);
 $PAGE->set_pagetype('contentbank');

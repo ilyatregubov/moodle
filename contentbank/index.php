@@ -53,8 +53,14 @@ $PAGE->set_pagetype('contentbank');
 
 // Get all contents managed by active plugins where the user has permission to render them.
 $contenttypes = [];
-$enabledcontenttypes = $cb->get_enabled_content_types();
-foreach ($enabledcontenttypes as $contenttypename) {
+
+$enabledonly = true;
+if (has_capability('moodle/contentbank:viewdisabledtypes', $context)) {
+    $enabledonly = false;
+}
+$availablecontenttypes = $cb->get_available_content_types($enabledonly);
+
+foreach ($availablecontenttypes as $contenttypename) {
     $contenttypeclass = "\\contenttype_$contenttypename\\contenttype";
     $contenttype = new $contenttypeclass($context);
     if ($contenttype->can_access()) {
@@ -62,7 +68,7 @@ foreach ($enabledcontenttypes as $contenttypename) {
     }
 }
 
-$foldercontents = $cb->search_contents($search, $contextid, $contenttypes);
+$foldercontents = $cb->search_contents($search, $contextid, $contenttypes, $enabledonly);
 
 // Get the toolbar ready.
 $toolbar = array ();
@@ -70,7 +76,8 @@ $toolbar = array ();
 // Place the Add button in the toolbar.
 if (has_capability('moodle/contentbank:useeditor', $context)) {
     // Get the content types for which the user can use an editor.
-    $editabletypes = $cb->get_contenttypes_with_capability_feature(\core_contentbank\contenttype::CAN_EDIT, $context);
+    $editabletypes = $cb->get_contenttypes_with_capability_feature(\core_contentbank\contenttype::CAN_EDIT,
+        $context, true);
     if (!empty($editabletypes)) {
         // Editor base URL.
         $editbaseurl = new moodle_url('/contentbank/edit.php', ['contextid' => $contextid]);

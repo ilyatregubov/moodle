@@ -56,8 +56,11 @@ if (!empty($id)) {
 
 // Check plugin is enabled.
 $plugin = core_plugin_manager::instance()->get_plugin_info($contenttypename);
-if (!$plugin || !$plugin->is_enabled()) {
+if (!$plugin) {
     print_error('unsupported', 'core_contentbank', $returnurl);
+} else if ((!$plugin->is_enabled()) &&
+    (!has_capability('moodle/contentbank:viewdisabledtypes', $context))) {
+    print_error('disablederror', 'core_contentbank', $returnurl);
 }
 
 // Create content type instance.

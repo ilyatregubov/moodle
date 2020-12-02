@@ -124,9 +124,10 @@ class contenttype extends base {
 
     /**
      * Finds all enabled plugins, the result may include missing plugins.
+     * @param bool $enabledonly get all plugins.
      * @return array|null of enabled plugins $pluginname=>$pluginname, null means unknown
      */
-    public static function get_enabled_plugins() {
+    public static function get_enabled_plugins($enabledonly = true) {
         global $CFG;
 
         $plugins = \core_plugin_manager::instance()->get_installed_plugins('contenttype');
@@ -149,7 +150,7 @@ class contenttype extends base {
         $enabled = array();
         foreach ($order as $plugin) {
             $disabled = get_config('contentbank_' . $plugin, 'disabled');
-            if (empty($disabled)) {
+            if (empty($disabled) || !$enabledonly) {
                 $enabled[$plugin] = $plugin;
             }
         }

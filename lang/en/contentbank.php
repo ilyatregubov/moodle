@@ -74,5 +74,7 @@ $string['size'] = 'Size';
 $string['timecreated'] = 'Time created';
 $string['type'] = 'Type';
 $string['unsupported'] = 'This content type is not supported.';
+$string['disabled'] = '{$a} (Disabled)';
+$string['disablederror'] = 'This content type is disabled.';
 $string['upload'] = 'Upload';
 $string['uses'] = 'Places linked';

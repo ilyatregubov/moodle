@@ -155,7 +155,7 @@ data-region="contentbank">
                         </div>
                     </div>
                 {{#contents}}
-                    <div class="cb-listitem"
+                    <div class="cb-listitem {{#disabled}}cb-disabled{{/disabled}}"
                         data-file="{{ title }}"
                         data-name="{{ name }}"
                         data-bytes="{{ bytes }}"

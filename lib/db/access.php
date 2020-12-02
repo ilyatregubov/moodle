@@ -2577,6 +2577,14 @@ $capabilities = array(
         ]
     ],
 
+    // Allow users to access disabled content types.
+    'moodle/contentbank:viewdisabledtypes' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+        ]
+    ],
+
     // Allow users to download course content.
     'moodle/course:downloadcoursecontent' => [
         'captype' => 'read',

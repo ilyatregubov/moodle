@@ -18,6 +18,10 @@
             margin-bottom: 0.5rem;
         }
 
+        .cb-listitem.cb-disabled {
+            position: relative;
+        }
+
         @include media-breakpoint-down(sm) {
             .cb-listitem {
                 flex-basis: 50%;
@@ -44,6 +48,23 @@
             margin-right: auto;
             margin-bottom: 0.5rem;
         }
+        .cb-disabled .cb-thumbnail {
+            opacity: .3;
+        }
+
+        /* Display a centered times circle on top of disabled content icons. */
+        .cb-disabled::after {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            content: "\f05c";
+            font-family: FontAwesome;
+            font-size: 26px;
+            text-align: center;
+            opacity: 0.8;
+        }
+
         .cb-heading,
         .cb-uses,
         .cb-date,
@@ -80,6 +101,15 @@
 
         .cb-column {
             border-right: $border-width solid $border-color;
+        }
+
+        .cb-listitem.cb-disabled .cb-thumbnail {
+            opacity: .3;
+        }
+
+        .cb-listitem.cb-disabled .cb-column,
+        .cb-listitem.cb-disabled .cb-column a {
+            color: $text-muted;
         }
 
         @include media-breakpoint-down(sm) {
