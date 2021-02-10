@@ -593,4 +593,27 @@ class api {
 
         return null;
     }
+
+    /**
+     * Delete H5P cachedassets files.
+     *
+     */
+    public static function delete_cachedassets() {
+        global $DB;
+
+        $sql = "SELECT f.id, f.pathnamehash
+                  FROM {files} f
+                 WHERE f.filearea = 'cachedassets'
+                   AND f.component = 'core_h5p'";
+        $cachedassetsrecords = $DB->get_recordset_sql($sql);
+
+        foreach ($cachedassetsrecords as $cachedassetsrecord) {
+            $fs = get_file_storage();
+            $file = $fs->get_file_by_hash($cachedassetsrecord->pathnamehash);
+            if ($file) {
+                $file->delete();
+            }
+        }
+    }
+
 }

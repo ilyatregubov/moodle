@@ -70,5 +70,6 @@ class h5p_clean_orphaned_records_task extends scheduled_task {
             $DB->delete_records('h5p_contents_libraries', ['h5pid' => $orphanedrecord->id]);
         }
 
+        \core_h5p\api::delete_cachedassets();
     }
 }
