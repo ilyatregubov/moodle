@@ -72,6 +72,12 @@ class h5p_clean_orphaned_records_task_test extends advanced_testcase {
         $orphanedfiles = $DB->get_records_sql($orphanedfilessql, ['h5pid' => $h5pid]);
         $this->assertEquals(3, count($orphanedfiles));
 
+        $cachedassestssql = "SELECT f.id, f.pathnamehash
+                               FROM {files} f
+                              WHERE f.filearea = 'cachedassets'";
+        $cachedassetsfiles = $DB->get_records_sql($cachedassestssql);
+        $this->assertEquals(3, count($cachedassetsfiles));
+
         // Execute task.
         $task = new \core\task\h5p_clean_orphaned_records_task();
         $task->execute();
@@ -81,5 +87,8 @@ class h5p_clean_orphaned_records_task_test extends advanced_testcase {
 
         $orphanedfiles = $DB->get_record_sql($orphanedfilessql, ['h5pid' => $h5pid]);
         $this->assertFalse($orphanedfiles);
+
+        $cachedassetsfiles = $DB->get_record_sql($cachedassestssql);
+        $this->assertFalse($cachedassetsfiles);
     }
 }

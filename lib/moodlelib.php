@@ -1704,6 +1704,9 @@ function purge_other_caches() {
 
     $DB->reset_caches();
 
+    // MDL-70756: Delete h5p cachedassets, they will be regenerated next time user access h5p content.
+    \core_h5p\api::delete_cachedassets();
+
     // Purge all other caches: rss, simplepie, etc.
     clearstatcache();
     remove_dir($CFG->cachedir.'', true);
