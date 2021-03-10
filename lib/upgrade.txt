@@ -22,6 +22,16 @@ information provided here is intended especially for developers.
 * The core/event::getLegacyEvents() function has been deprecated and should no longer be used.
 * Typo3 has now been removed. Use native mbstring or iconv functions.
 * A new index has been added on mdl_user_preferences.name. This upgrade step might take some time on big sites.
+* Completion/grade modification functions grade_category::update(), grade_category::insert(), grade_grade::update(),
+  grade_grade::insert(), grade_grade::notify_changes(), completion_info::inform_grade_changed(), grade_item::update(),
+  grade_item::insert(), grade_item::update_final_grade(), grade_item::update_raw_grade(), grade_object::update(),
+  grade_object::insert(), grade_outcome::update(), grade_outcome::insert(), grade_scale::update(),
+  grade_scale::insert(), grade_update(), completion_info::internal_set_data(), completion_info::update_state(),
+  completion_completion::_save(), completion_completion::mark_enrolled(), completion_completion::mark_inprogress()
+  and completion_completion::mark_complete() have different signature to allow instant course completion (we need to
+  store completion record for later reaggregation).
+* New method mark_course_completions_activity_criteria() has been added to mark course completions instantly. It is
+  based on cron for completion_criteria_activity.php which is refactored to use it as well.
 
 === 3.11 ===
 * PHPUnit has been upgraded to 9.5 (see MDL-71036 for details).
