@@ -206,42 +206,28 @@ class completion_criteria_activity extends completion_criteria {
         global $DB;
 
         // Get all users who meet this criteria
-        $sql = '
+        $sql = "
             SELECT DISTINCT
                 c.id AS course,
                 cr.id AS criteriaid,
                 ra.userid AS userid,
                 mc.timemodified AS timecompleted
-            FROM
-                {course_completion_criteria} cr
-            INNER JOIN
-                {course} c
-             ON cr.course = c.id
-            INNER JOIN
-                {context} con
-             ON con.instanceid = c.id
-            INNER JOIN
-                {role_assignments} ra
-              ON ra.contextid = con.id
-            INNER JOIN
-                {course_modules_completion} mc
-             ON mc.coursemoduleid = cr.moduleinstance
-            AND mc.userid = ra.userid
-            LEFT JOIN
-                {course_completion_crit_compl} cc
-             ON cc.criteriaid = cr.id
-            AND cc.userid = ra.userid
-            WHERE
-                cr.criteriatype = '.COMPLETION_CRITERIA_TYPE_ACTIVITY.'
-            AND con.contextlevel = '.CONTEXT_COURSE.'
-            AND c.enablecompletion = 1
-            AND cc.id IS NULL
-            AND (
-                mc.completionstate = '.COMPLETION_COMPLETE.'
-             OR mc.completionstate = '.COMPLETION_COMPLETE_PASS.'
-             OR mc.completionstate = '.COMPLETION_COMPLETE_FAIL.'
-                )
-        ';
+              FROM {course_completion_criteria} cr
+        INNER JOIN {course} c ON cr.course = c.id
+        INNER JOIN {context} con ON con.instanceid = c.id
+        INNER JOIN {role_assignments} ra ON ra.contextid = con.id
+        INNER JOIN {course_modules_completion} mc ON mc.coursemoduleid = cr.moduleinstance AND mc.userid = ra.userid
+         LEFT JOIN {course_completion_crit_compl} cc ON cc.criteriaid = cr.id AND cc.userid = ra.userid
+             WHERE cr.criteriatype = ".COMPLETION_CRITERIA_TYPE_ACTIVITY."
+               AND con.contextlevel = ".CONTEXT_COURSE."
+               AND c.enablecompletion = 1
+               AND cc.id IS NULL
+               AND (
+                   mc.completionstate = ".COMPLETION_COMPLETE."
+                OR mc.completionstate = ".COMPLETION_COMPLETE_PASS."
+                OR mc.completionstate = ".COMPLETION_COMPLETE_FAIL."
+                   )
+        ";
 
         // Loop through completions, and mark as complete
         $rs = $DB->get_recordset_sql($sql);
@@ -250,6 +236,55 @@ class completion_criteria_activity extends completion_criteria {
             $completion->mark_complete($record->timecompleted);
         }
         $rs->close();
+    }
+
+    /**
+     * Evaluates course completion criteria for given user in given course.
+     * If completion conditions are met - marks user as completed a criteria.
+     * @param int $userid User ID
+     * @param int $courseid Course ID
+     * @return int ID of changed course completion record.
+     */
+    public static function completion_user(int $userid, int $courseid) : int {
+        global $DB;
+
+        // Check if user meets this criteria.
+        $sql = "
+            SELECT DISTINCT
+                c.id AS course,
+                cr.id AS criteriaid,
+                ra.userid AS userid,
+                mc.timemodified AS timecompleted
+              FROM {course_completion_criteria} cr
+        INNER JOIN {course} c ON cr.course = c.id
+        INNER JOIN {context} con ON con.instanceid = c.id
+        INNER JOIN {role_assignments} ra ON ra.contextid = con.id
+        INNER JOIN {course_modules_completion} mc ON mc.coursemoduleid = cr.moduleinstance AND mc.userid = ra.userid
+         LEFT JOIN {course_completion_crit_compl} cc ON cc.criteriaid = cr.id AND cc.userid = ra.userid
+             WHERE cr.criteriatype = :criteriatype
+               AND con.contextlevel = :contextlevel
+               AND c.enablecompletion = 1
+               AND c.id = :courseid
+               AND ra.userid = :userid
+               AND cc.id IS NULL
+               AND (
+                   mc.completionstate = :completionstate
+                OR mc.completionstate = :completionstatepass
+                OR mc.completionstate = :completionstatefail
+                   )
+        ";
+
+        // Mark as complete.
+        $record = $DB->get_record_sql($sql, array('courseid' => $courseid,
+            'userid' => $userid, 'criteriatype' => COMPLETION_CRITERIA_TYPE_ACTIVITY,
+            'contextlevel' => CONTEXT_COURSE, 'completionstate' => COMPLETION_COMPLETE,
+            'completionstatepass' => COMPLETION_COMPLETE_PASS, 'completionstatefail' => COMPLETION_COMPLETE_FAIL));
+        $result = 0;
+        if ($record) {
+            $completion = new completion_criteria_completion((array) $record, DATA_OBJECT_FETCH_BY_KEY);
+            $result = $completion->mark_complete($record->timecompleted);
+        }
+        return $result;
     }
 
     /**

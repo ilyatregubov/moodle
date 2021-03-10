@@ -166,7 +166,6 @@ class completion_completion extends data_object {
 
         // Set time complete.
         $this->timecompleted = $timecomplete;
-
         // Save record.
         if ($result = $this->_save()) {
             $data = $this->get_record_data();
@@ -211,17 +210,16 @@ class completion_completion extends data_object {
      *
      * This method creates a course_completions record if none exists
      * @access  private
-     * @return  bool
+     * @return  int|null
      */
     private function _save() {
         if ($this->timeenrolled === null) {
             $this->timeenrolled = 0;
         }
 
-        $result = false;
         // Save record
         if ($this->id) {
-            $result = $this->update();
+            $success = $this->update();
         } else {
             // Make sure reaggregate field is not null
             if (!$this->reaggregate) {
@@ -233,10 +231,10 @@ class completion_completion extends data_object {
                 $this->timestarted = 0;
             }
 
-            $result = $this->insert();
+            $success = $this->insert();
         }
 
-        if ($result) {
+        if ($success) {
             // Update the cached record.
             $cache = cache::make('core', 'coursecompletion');
             $data = $this->get_record_data();
@@ -244,6 +242,9 @@ class completion_completion extends data_object {
             $cache->set($key, ['value' => $data]);
         }
 
-        return $result;
+        if ($success) {
+            return $this->id;
+        }
+        return null;
     }
 }

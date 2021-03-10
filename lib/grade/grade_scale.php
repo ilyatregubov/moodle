@@ -116,7 +116,7 @@ class grade_scale extends grade_object {
      * @param string $source from where was the object inserted (mod/forum, manual, etc.)
      * @return int PK ID if successful, false otherwise
      */
-    public function insert($source=null) {
+    public function insert($source = null, $isbulkupdate = false) {
         $this->timecreated = time();
         $this->timemodified = time();
 
@@ -147,7 +147,7 @@ class grade_scale extends grade_object {
      * @param string $source from where was the object inserted
      * @return bool success
      */
-    public function update($source=null) {
+    public function update($source = null, $isbulkupdate = false) {
         $this->timemodified = time();
 
         $result = parent::update($source);

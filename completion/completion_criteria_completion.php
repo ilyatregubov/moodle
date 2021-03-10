@@ -120,7 +120,8 @@ class completion_criteria_completion extends data_object {
             'userid'    => $this->userid
         );
         $ccompletion = new completion_completion($cc);
-        $ccompletion->mark_inprogress($this->timecompleted);
+        $result = $ccompletion->mark_inprogress($this->timecompleted);
+        return $result;
     }
 
     /**

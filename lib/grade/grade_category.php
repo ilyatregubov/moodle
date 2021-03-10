@@ -229,7 +229,7 @@ class grade_category extends grade_object {
      * @param string $source from where was the object updated (mod/forum, manual, etc.)
      * @return bool success
      */
-    public function update($source=null) {
+    public function update($source = null, $isbulkupdate = false) {
         // load the grade item or create a new one
         $this->load_grade_item();
 
@@ -354,7 +354,7 @@ class grade_category extends grade_object {
      * @param string $source from where was the object inserted (mod/forum, manual, etc.)
      * @return int PK ID if successful, false otherwise
      */
-    public function insert($source=null) {
+    public function insert($source = null, $isbulkupdate = false) {
 
         if (empty($this->courseid)) {
             print_error('cannotinsertgrade');
