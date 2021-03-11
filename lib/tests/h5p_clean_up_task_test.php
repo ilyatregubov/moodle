@@ -15,14 +15,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Class containing unit tests for the task to clean orphaned h5p records.
+ * Class containing unit tests for the task to clean up h5p records.
  *
  * @package   core
  * @copyright  2021 Ilya Tregubov <ilya@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  */
-class h5p_clean_orphaned_records_task_test extends advanced_testcase {
+class h5p_clean_up_task_test extends advanced_testcase {
 
     /**
      * Test task execution
@@ -79,7 +79,7 @@ class h5p_clean_orphaned_records_task_test extends advanced_testcase {
         $this->assertEquals(3, count($cachedassetsfiles));
 
         // Execute task.
-        $task = new \core\task\h5p_clean_orphaned_records_task();
+        $task = new \core\task\h5p_clean_up_task();
         $task->execute();
 
         $orphanedh5p = $DB->get_record_sql($orphanedh5psql);

@@ -402,7 +402,7 @@ $tasks = array(
         'month' => '*'
     ),
     array(
-        'classname' => 'core\task\h5p_clean_orphaned_records_task',
+        'classname' => 'core\task\h5p_clean_up_task',
         'blocking' => 0,
         'minute' => 'R',
         'hour' => '0',

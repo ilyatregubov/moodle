@@ -17,13 +17,13 @@
 namespace core\task;
 
 /**
- * A schedule task to clean orphaned h5p records (for example for deleted activity).
+ * A schedule task to clean up h5p records (cachedassets files, orphaned records etc).
  *
  * @package    core_h5p
  * @copyright  2021 Ilya Tregubov <ilya@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class h5p_clean_orphaned_records_task extends scheduled_task {
+class h5p_clean_up_task extends scheduled_task {
 
     /**
      * Get a descriptive name for this task (shown to admins).
