@@ -215,10 +215,12 @@ abstract class format_section_renderer_base extends plugin_renderer_base {
         $o.= html_writer::start_tag('div', array('class' => 'content'));
 
         // When not on a section page, we display the section titles except the general section if null
-        $hasnamenotsecpg = (!$onsectionpage && ($section->section != 0 || !is_null($section->name)));
+        $hasnamenotsecpg = (!$onsectionpage && ($section->section != 0 || (!is_null($section->name)
+                && !($section->name === ""))));
 
         // When on a section page, we only display the general section title, if title is not the default one
-        $hasnamesecpg = ($onsectionpage && ($section->section == 0 && !is_null($section->name)));
+        $hasnamesecpg = ($onsectionpage && ($section->section == 0 && !is_null($section->name)
+                && !($section->name === "")));
 
         $classes = ' accesshide';
         if ($hasnamenotsecpg || $hasnamesecpg) {

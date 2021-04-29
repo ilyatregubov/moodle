@@ -112,7 +112,7 @@ class format_weeks_testcase extends advanced_testcase {
         $courseformat = course_get_format($course);
         foreach ($coursesections as $section) {
             if ($section->section == 0) {
-                $sectionname = get_string('section0name', 'format_weeks');
+                $sectionname = '';
                 $this->assertEquals($sectionname, $courseformat->get_default_section_name($section));
             } else {
                 $dates = $courseformat->get_section_dates($section);
