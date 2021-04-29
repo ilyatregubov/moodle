@@ -64,7 +64,7 @@ class format_weeks extends format_base {
     /**
      * Returns the default section name for the weekly course format.
      *
-     * If the section number is 0, it will use the string with key = section0name from the course format's lang file.
+     * If the section number is 0, it will be empty string.
      * Otherwise, the default format of "[start date] - [end date]" will be returned.
      *
      * @param stdClass $section Section object from database or just field course_sections section
@@ -72,8 +72,7 @@ class format_weeks extends format_base {
      */
     public function get_default_section_name($section) {
         if ($section->section == 0) {
-            // Return the general section.
-            return get_string('section0name', 'format_weeks');
+            return '';
         } else {
             $dates = $this->get_section_dates($section);
 
