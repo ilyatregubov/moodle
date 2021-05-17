@@ -151,8 +151,14 @@ class section_format implements renderable, templatable {
                 $data->cmcontrols = $output->course_section_add_cm_control($course, $thissection->section, $singlesection);
             }
         }
+        $data->coursedisplay = $course->coursedisplay ?? COURSE_DISPLAY_SINGLEPAGE;
+        if ($course->id == 1) {
+            $data->sitehome = true;
+        }
 
         if ($thissection->section == 0) {
+            $data->isactive = true;
+
             // Section zero is always visible only as a cmlist.
             $cmlist = new $this->cmlistclass($format, $thissection);
             $data->cmlist = $cmlist->export_for_template($output);
@@ -166,6 +172,10 @@ class section_format implements renderable, templatable {
                 $data->header = $header->export_for_template($output);
             }
             return $data;
+        }
+
+        if (!isset($data->isactive) || !$data->isactive) {
+            $data->isactive = true;
         }
 
         // When a section is displayed alone the title goes over the section, not inside it.
