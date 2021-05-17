@@ -89,8 +89,13 @@
             {{> core_course/local/section_format/controlmenu }}
     {{/controlmenu}}
     </div>
+    {{#header}} {{> core_course/local/section_format/header }} {{/header}}
+    {{^coursedisplay}}
+        <div id="coursecontentcollapse{{num}}"
+             class="coursecontent-item-content collapse {{#isactive}}show{{/isactive}}"
+             aria-labelledby="coursecontentsection{{num}}">
+    {{/coursedisplay}}
     <div class="content">
-        {{#header}} {{> core_course/local/section_format/header }} {{/header}}
         {{{completioninfo}}}
         {{#availability}}
             {{> core_course/local/section_format/availability }}
@@ -104,4 +109,5 @@
         {{#cmlist}} {{> core_course/local/section_format/cmlist }} {{/cmlist}}
         {{{cmcontrols}}}
     </div>
+    {{^coursedisplay}}</div>{{/coursedisplay}}
 </li>

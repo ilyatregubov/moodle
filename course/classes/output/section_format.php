@@ -151,6 +151,7 @@ class section_format implements renderable, templatable {
                 $data->cmcontrols = $output->course_section_add_cm_control($course, $thissection->section, $singlesection);
             }
         }
+        $data->coursedisplay = $course->coursedisplay ?? COURSE_DISPLAY_SINGLEPAGE;
 
         if ($thissection->section == 0) {
             // Section zero is always visible only as a cmlist.
