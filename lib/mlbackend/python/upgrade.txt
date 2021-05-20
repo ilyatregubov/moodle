@@ -1,6 +1,10 @@
 This files describes API changes in the mlbackend_python code, the
 information provided here is intended especially for developers.
 
+=== 3.11 ===
+
+* Upgrade mlbackend_python to use tensorflow 1.15.5 which includes security fixes.
+
 === 3.8 ===
 
 * The phi coefficient (Matthews' correlation coefficient) has been replaced by
