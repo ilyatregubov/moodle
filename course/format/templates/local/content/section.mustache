@@ -70,7 +70,11 @@
             "menu": "<a href=\"#\" class=\"d-inline-block dropdown-toggle icon-no-margin\">Edit<b class=\"caret\"></b></a>",
             "hasmenu": true
         },
-        "cmcontrols": "[Add an activity or resource]"
+        "cmcontrols": "[Add an activity or resource]",
+        "iscoursedisplaymultipage": true,
+        "sectionreturnid": 0,
+        "isactive": true,
+        "sitehome": false
     }
 }}
 <li id="section-{{num}}"
@@ -92,8 +96,15 @@
             {{> core_courseformat/local/content/section/controlmenu }}
     {{/controlmenu}}
     </div>
+    {{#header}} {{> core_courseformat/local/content/section/header }} {{/header}}
+    {{^iscoursedisplaymultipage}}
+        {{^sitehome}}
+        <div id="coursecontentcollapse{{num}}"
+             class="course-content-item-content collapse {{#isactive}}show{{/isactive}}"
+             aria-labelledby="coursecontentsection{{num}}">
+        {{/sitehome}}
+    {{/iscoursedisplaymultipage}}
     <div class="content">
-        {{#header}} {{> core_courseformat/local/content/section/header }} {{/header}}
         {{#availability}}
             {{> core_courseformat/local/content/section/availability }}
         {{/availability}}
@@ -106,4 +117,5 @@
         {{#cmlist}} {{> core_courseformat/local/content/section/cmlist }} {{/cmlist}}
         {{{cmcontrols}}}
     </div>
+    {{^iscoursedisplaymultipage}}{{^sitehome}}</div>{{/sitehome}}{{/iscoursedisplaymultipage}}
 </li>
