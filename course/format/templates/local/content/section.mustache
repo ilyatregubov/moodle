@@ -74,17 +74,16 @@
     }
 }}
 <li id="section-{{num}}"
-    class="section main {{#onlysummary}} section-summary {{/onlysummary}} clearfix
-            {{#ishidden}} hidden {{/ishidden}} {{#iscurrent}} current {{/iscurrent}}
-            {{#isstealth}} orphaned {{/isstealth}}"
-    role="region"
-    aria-labelledby="sectionid-{{id}}-title"
-    data-sectionid="{{num}}"
-    data-sectionreturnid="{{sectionreturnid}}"
-    data-for="section"
-    data-id="{{id}}"
-    data-number="{{num}}"
->
+        class="section main {{#onlysummary}} section-summary {{/onlysummary}} clearfix
+              {{#ishidden}} hidden {{/ishidden}} {{#iscurrent}} current {{/iscurrent}}
+              {{#isstealth}} orphaned {{/isstealth}}"
+        role="region"
+        aria-labelledby="sectionid-{{id}}-title"
+        data-sectionid="{{num}}"
+        data-sectionreturnid="{{sectionreturnid}}"
+        data-for="section"
+        data-id="{{id}}"
+        data-number="{{num}}">
     {{#singleheader}} {{> core_courseformat/local/content/section/header }} {{/singleheader}}
     <div class="left side">{{#iscurrent}} {{{currentlink}}} {{/iscurrent}}</div>
     <div class="right side">
@@ -92,8 +91,15 @@
             {{> core_courseformat/local/content/section/controlmenu }}
     {{/controlmenu}}
     </div>
+    {{#header}} {{> core_courseformat/local/content/section/header }} {{/header}}
+    {{^coursedisplay}}
+        {{^sitehome}}
+        <div id="coursecontentcollapse{{num}}"
+             class="course-content-item-content collapse {{#isactive}}show{{/isactive}}"
+             aria-labelledby="coursecontentsection{{num}}">
+        {{/sitehome}}
+    {{/coursedisplay}}
     <div class="content">
-        {{#header}} {{> core_courseformat/local/content/section/header }} {{/header}}
         {{#availability}}
             {{> core_courseformat/local/content/section/availability }}
         {{/availability}}
@@ -111,4 +117,5 @@
             {{/numsections}}
         {{/insertafter}}
     </div>
+    {{^coursedisplay}}{{^sitehome}}</div>{{/sitehome}}{{/coursedisplay}}
 </li>
