@@ -92,8 +92,15 @@
             {{> core_courseformat/local/content/section/controlmenu }}
     {{/controlmenu}}
     </div>
+    {{#header}} {{> core_courseformat/local/content/section/header }} {{/header}}
+    {{^coursedisplay}}
+        {{^sitehome}}
+        <div id="coursecontentcollapse{{num}}"
+             class="course-content-item-content collapse {{#isactive}}show{{/isactive}}"
+             aria-labelledby="coursecontentsection{{num}}">
+        {{/sitehome}}
+    {{/coursedisplay}}
     <div class="content">
-        {{#header}} {{> core_courseformat/local/content/section/header }} {{/header}}
         {{#availability}}
             {{> core_courseformat/local/content/section/availability }}
         {{/availability}}
@@ -111,4 +118,5 @@
             {{/numsections}}
         {{/insertafter}}
     </div>
+    {{^coursedisplay}}{{^sitehome}}</div>{{/sitehome}}{{/coursedisplay}}
 </li>
