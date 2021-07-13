@@ -79,14 +79,4 @@ Feature: Sections can be edited and deleted in topics format
   @javascript
   Scenario: Adding sections in topics format
     When I follow "Add topics"
-    Then the field "Number of sections" matches value "1"
-    And I press "Add topics"
-    And I should see "Topic 6" in the "li#section-6" "css_element"
-    And "li#section-7" "css_element" should not exist
-    And I follow "Add topics"
-    And I set the field "Number of sections" to "3"
-    And I press "Add topics"
-    And I should see "Topic 7" in the "li#section-7" "css_element"
-    And I should see "Topic 8" in the "li#section-8" "css_element"
-    And I should see "Topic 9" in the "li#section-9" "css_element"
-    And "li#section-10" "css_element" should not exist
+    Then I should see "Topic 6" in the "li#section-6" "css_element"

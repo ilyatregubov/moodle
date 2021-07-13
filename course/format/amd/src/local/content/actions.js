@@ -29,7 +29,7 @@ import {BaseComponent} from 'core/reactive';
 import ModalFactory from 'core/modal_factory';
 import ModalEvents from 'core/modal_events';
 import Templates from 'core/templates';
-import {get_strings as getStrings} from 'core/str';
+import {get_strings as getStrings, get_string as getString} from 'core/str';
 
 // Load global strings.
 const strings = {};
@@ -37,6 +37,8 @@ const strings = {};
 const requiredStrings = [
     {key: 'movecoursesection'},
     {key: 'movecoursemodule'},
+    {key: 'confirm'},
+    {key: 'delete'},
 ];
 
 getStrings(requiredStrings).then((importedStrings) => {
@@ -61,6 +63,11 @@ export default class extends BaseComponent {
             CMLINK: `[data-for='cm']`,
             SECTIONNODE: `[data-for='sectionnode']`,
             TOGGLER: `[data-toggle='collapse']`,
+            ADDSECTION: `[data-action='addSection']`,
+        };
+        // Default classes.
+        this.classes = {
+            LOCKED: 'dimmed',
         };
     }
 
@@ -75,6 +82,18 @@ export default class extends BaseComponent {
             'click',
             this._dispatchClick
         );
+    }
+
+    /**
+     * Return the component watchers.
+     *
+     * @returns {Array} of watchers
+     */
+    getWatchers() {
+        return [
+            // Check section limit.
+            {watch: `course.sectionlist:updated`, handler: this._checkSectionlist},
+        ];
     }
 
     _dispatchClick(event) {
@@ -95,6 +114,17 @@ export default class extends BaseComponent {
     _actionMethodName(name) {
         const requestName = name.charAt(0).toUpperCase() + name.slice(1);
         return `_request${requestName}`;
+    }
+
+    /**
+     * Check the section list and disable some options if needed.
+     *
+     * @param {Object} detail the update details.
+     * @property {Object} element the course state object.
+     */
+    _checkSectionlist({element}) {
+        // Disable "add section" actions if the course max sections has been exceeded.
+        this._setAddSectionLocked(element.sectionlist.length > element.maxsections);
     }
 
     /**
@@ -227,6 +257,75 @@ export default class extends BaseComponent {
     }
 
     /**
+     * Handle a move cm request.
+     *
+     * @param {Element} target the dispatch action element
+     * @param {Event} event the triggered event
+     */
+    async _requestAddSection(target, event) {
+        event.preventDefault();
+        this.reactive.dispatch('addSection', target.dataset.id ?? 0);
+    }
+
+    /**
+     * Handle a move section request.
+     *
+     * @param {Element} target the dispatch action element
+     * @param {Event} event the triggered event
+     */
+    async _requestDeleteSection(target, event) {
+        // Check we have an id.
+        const sectionId = target.dataset.id;
+
+        if (!sectionId) {
+            return;
+        }
+        const sectionInfo = this.reactive.get('section', sectionId);
+
+        event.preventDefault();
+
+        const cmList = sectionInfo.cmlist ?? [];
+        if (cmList.length || sectionInfo.hassummary || sectionInfo.rawtitle) {
+            // We need confirmation if the section has something.
+            const modalParams = {
+                title: strings.confirm,
+                body: getString('confirmdeletesection', 'moodle', sectionInfo.title),
+                saveButtonText: strings.delete,
+                type: ModalFactory.types.SAVE_CANCEL,
+            };
+
+            const modal = await this._showModal(modalParams);
+
+            modal.getRoot().on(
+                ModalEvents.save,
+                e => {
+                    // Stop the default save button behaviour which is to close the modal.
+                    e.preventDefault();
+                    modal.destroy();
+                    this.reactive.dispatch('sectionDelete', [sectionId]);
+                }
+            );
+            return;
+        } else {
+            // We don't need confirmation to delete empty sections.
+            this.reactive.dispatch('sectionDelete', [sectionId]);
+        }
+    }
+
+    /**
+     * Disable all add sections actions.
+     *
+     * @param {boolean} locked the new locked value.
+     */
+    _setAddSectionLocked(locked) {
+        const targets = this.getElements(this.selectors.ADDSECTION);
+        targets.forEach(element => {
+            element.classList.toggle(this.classes.LOCKED, locked);
+            this.setElementLocked(element, locked);
+        });
+    }
+
+    /**
      * Extract the DOM element from the param.
      *
      * Modals uses jQuery instead of vnailla JS. To prevent future problems, we use this method to
@@ -275,6 +374,10 @@ export default class extends BaseComponent {
                 modal.getRoot().on(ModalEvents.bodyRendered, () => {
                     resolve(modal);
                 });
+                // Configure some extra modal params.
+                if (modalParams.saveButtonText !== undefined) {
+                    modal.setSaveButtonText(modalParams.saveButtonText);
+                }
                 modal.show();
                 return;
             }).catch(() => {
