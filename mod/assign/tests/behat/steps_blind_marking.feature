@@ -101,7 +101,7 @@ Feature: Assignments correctly add feedback to the grade report when workflow an
 
   @javascript
   Scenario: Submissions table visible with overrides and blind marking
-    When I follow "Test assignment name"
+    When I am on the "Test assignment name" "assign activity" page
     And I navigate to "User overrides" in current page administration
     And I press "Add user override"
     And I set the following fields to these values:

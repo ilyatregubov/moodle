@@ -37,9 +37,16 @@
     data-id="{{id}}"
 >
     {{#url}}
-    <a class="courseindex-link text-truncate" href="{{{url}}}" data-for="cm_name">
-        {{{name}}}
-    </a>
+        {{#uservisible}}
+            <a class="courseindex-link text-truncate" href="{{{url}}}" data-for="cm_name">
+                {{{name}}}
+            </a>
+        {{/uservisible}}
+        {{^uservisible}}
+            <span class="courseindex-name text-truncate" data-for="cm_name">
+                {{{name}}}
+            </span>
+        {{/uservisible}}
     {{/url}}
     {{^url}}
     <span class="courseindex-name text-truncate" data-for="cm_name">

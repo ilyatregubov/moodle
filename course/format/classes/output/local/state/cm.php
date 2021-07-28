@@ -76,6 +76,7 @@ class cm implements renderable {
             'visible' => !empty($cm->visible),
             'sectionid' => $section->id,
             'sectionnumber' => $section->section,
+            'uservisible' => $cm->uservisible,
         ];
 
         // Check the user access type to this cm.
