@@ -145,4 +145,15 @@ export default class extends Reactive {
             notification.exception(error);
         }
     }
+
+    setCoursePreference(key, value) {
+        const prefKey = `${key}_${this.courseId}`;
+        try {
+            M.util.set_user_preference(prefKey, value);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
 }

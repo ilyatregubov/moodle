@@ -119,6 +119,7 @@ class section implements renderable, templatable {
      * @return stdClass data context for a mustache template
      */
     public function export_for_template(\renderer_base $output): stdClass {
+        global $USER;
 
         $format = $this->format;
         $course = $format->get_course();
@@ -161,8 +162,27 @@ class section implements renderable, templatable {
             $data->sitehome = true;
         }
 
-        // For now sections are always expanded. User preferences will be done in MDL-71211.
-        $data->isactive = true;
+        $data->contentexpanded = true;
+
+        $coursesectionscache = \cache::make('core', 'coursesectionspreferences');
+        $coursesections = $coursesectionscache->get($course->id);
+        if ($coursesections === false) {
+            $sectionpreferences = json_decode(get_user_preferences('collapsedsections_' . $course->id, null, $USER->id));
+            $coursesectionscache->set($course->id, $sectionpreferences);
+        } else {
+            $sectionpreferences = $coursesections;
+        }
+
+        if (isset($sectionpreferences)) {
+            foreach ($sectionpreferences as $key => $value) {
+                $tmp = explode("_", $key);
+                $sectionid = $tmp[1];
+
+                if (($tmp[0] == 'coursecontentcollapse') && $sectionid == $thissection->id) {
+                    $data->contentexpanded = false;
+                }
+            }
+        }
 
         if ($thissection->section == 0) {
             // Section zero is always visible only as a cmlist.

@@ -54,10 +54,39 @@ class section implements renderable {
      * @return array data context for a mustache template
      */
     public function export_for_template(\renderer_base $output): stdClass {
+        global $USER;
+
         $format = $this->format;
         $course = $format->get_course();
         $section = $this->section;
         $modinfo = $format->get_modinfo();
+
+        $isactive = true;
+        $contentexpanded = true;
+
+        $coursesectionscache = \cache::make('core', 'coursesectionspreferences');
+        $coursesections = $coursesectionscache->get($course->id);
+        if ($coursesections === false) {
+            $sectionpreferences = json_decode(get_user_preferences('collapsedsections_' . $course->id, null, $USER->id));
+            $coursesectionscache->set($course->id, $sectionpreferences);
+        } else {
+            $sectionpreferences = $coursesections;
+        }
+
+        if (isset($sectionpreferences)) {
+            foreach ($sectionpreferences as $key => $value) {
+                $tmp = explode("_", $key);
+                $sectionid = $tmp[1];
+
+                if ($sectionid == $section->id) {
+                    if ($tmp[0] == 'courseindexcollapse') {
+                        $isactive = false;
+                    } else if ($tmp[0] == 'coursecontentcollapse') {
+                        $contentexpanded = false;
+                    }
+                }
+            }
+        }
 
         $data = (object)[
             'id' => $section->id,
@@ -69,6 +98,8 @@ class section implements renderable {
             'visible' => !empty($section->visible),
             'sectionurl' => course_get_url($course, $section->section)->out(),
             'current' => $format->is_section_current($section),
+            'isactive' => $isactive,
+            'contentexpanded' => $contentexpanded
         ];
 
         if (empty($modinfo->sections[$section->section])) {

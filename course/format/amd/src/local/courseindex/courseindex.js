@@ -111,12 +111,56 @@ export default class Component extends BaseComponent {
      */
     _setupSectionTogglers(event) {
         const sectionlink = event.target.closest(this.selectors.TOGGLER);
+        const chevron = event.target.className.includes('fa-caret');
+
+        const sectionId = event.target.closest(this.selectors.SECTION).getAttribute('data-id');
+
+        const exporter = this.reactive.getExporter();
+        const states = exporter.getstates(this.reactive.state);
+
         if (sectionlink) {
             const toggler = sectionlink.parentNode.querySelector(this.selectors.COLLAPSE);
             if (toggler?.classList.contains(this.classes.COLLAPSED)) {
+                // Expand if not already expanded when clicking on section name.
+                states[sectionId].fields.isactive = true;
+                this.reactive.dispatch('sectionStateUpdate', states);
+                this._updatePreferences(states);
                 toggler.click();
             }
+        } else if (chevron) {
+            const toggler = event.target.closest(this.selectors.COLLAPSE);
+            if (toggler?.classList.contains(this.classes.COLLAPSED)) {
+                // Expand section.
+                states[sectionId].fields.isactive = true;
+            } else {
+                // Collapse section.
+                states[sectionId].fields.isactive = false;
+            }
+
+            this.reactive.dispatch('sectionStateUpdate', states);
+            this._updatePreferences(states);
         }
+    }
+
+    /**
+     * Update section preferences.
+     *
+     * @param {array} states Section states
+     */
+    _updatePreferences(states) {
+        const preferences = {};
+
+        states.forEach(section => {
+            if (!states[section.fields.id].fields.contentexpanded) {
+                preferences['coursecontentcollapse_' + section.fields.id] = `true`;
+            }
+            if (!states[section.fields.id].fields.isactive) {
+                preferences['courseindexcollapse_' + section.fields.id] = `true`;
+            }
+        });
+
+        const jsonString = JSON.stringify(preferences);
+        this.reactive.setCoursePreference('collapsedsections', jsonString);
     }
 
     /**

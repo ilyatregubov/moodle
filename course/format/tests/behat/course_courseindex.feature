@@ -14,12 +14,14 @@ Feature: Course index depending on role
       | shortname        | C1       |
       | category         | 0        |
       | enablecompletion | 1        |
-      | numsections      | 4        |
+      | numsections      | 5        |
     And the following "activities" exist:
       | activity | name              | intro                       | course | idnumber | section |
       | assign   | Activity sample 1 | Test assignment description | C1     | sample1  | 1       |
       | book     | Activity sample 2 | Test book description       | C1     | sample2  | 2       |
       | choice   | Activity sample 3 | Test choice description     | C1     | sample3  | 3       |
+      | assign   | Activity sample 4 | Test assignment description | C1     | sample1  | 4       |
+      | assign   | Activity sample 5 | Test assignment description | C1     | sample1  | 5       |
     And the following "course enrolments" exist:
       | user     | course | role           |
       | student1 | C1     | student        |
@@ -156,3 +158,164 @@ Feature: Course index depending on role
     And I should see "Activity sample 2" in the "courseindex-content" "region"
     And I should see "Topic 3" in the "courseindex-content" "region"
     And I should see "Activity sample 3" in the "courseindex-content" "region"
+
+  @javascript
+  Scenario: Course index preferences
+    Given I am on the "C1" "Course" page logged in as "teacher1"
+    And I click on "Side panel" "button"
+    When I click on "Open course index drawer" "button"
+    Then I should see "Topic 1" in the "courseindex-content" "region"
+    And I should see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "courseindex-content" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='1']" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "courseindex-content" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='2']" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should not see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "courseindex-content" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='3']" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should not see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should not see "Activity sample 3" in the "courseindex-content" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='2']" "css_element"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='3']" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='4']" "css_element"
+    And I turn editing mode on
+    And I delete section "1"
+    And I press "Delete"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "courseindex-content" "region"
+    And I should not see "Activity sample 4" in the "courseindex-content" "region"
+    And I should see "Activity sample 5" in the "courseindex-content" "region"
+
+  @javascript
+  Scenario: Course content preferences
+    Given I am on the "C1" "Course" page logged in as "teacher1"
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I click on "#collapssesection1" "css_element"
+    When I reload the page
+    Then I should see "Topic 1" in the "region-main" "region"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I click on "#collapssesection2" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should not see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I click on "#collapssesection3" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should not see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should not see "Activity sample 3" in the "region-main" "region"
+    And I click on "#collapssesection2" "css_element"
+    And I click on "#collapssesection3" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I click on "#collapssesection4" "css_element"
+    And I turn editing mode on
+    And I delete section "1"
+    And I press "Delete"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "region-main" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I should not see "Activity sample 4" in the "region-main" "region"
+    And I should see "Activity sample 5" in the "region-main" "region"
+
+  @javascript
+  Scenario: Course index and content preferences
+    Given I am on the "C1" "Course" page logged in as "teacher1"
+    And I click on "Side panel" "button"
+    When I click on "Open course index drawer" "button"
+    Then I should see "Topic 1" in the "courseindex-content" "region"
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should see "Activity sample 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='1']" "css_element"
+    And I click on "#collapssesection2" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I should see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should not see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should see "Activity sample 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='3']" "css_element"
+    And I click on "#collapssesection1" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should not see "Activity sample 1" in the "courseindex-content" "region"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should not see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should not see "Activity sample 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"
+    And I click on "Collapse" "link" in the ".courseindex-section[data-number='1']" "css_element"
+    And I click on "#collapssesection2" "css_element"
+    And I reload the page
+    And I should see "Topic 1" in the "courseindex-content" "region"
+    And I should see "Topic 1" in the "region-main" "region"
+    And I should see "Activity sample 1" in the "courseindex-content" "region"
+    And I should not see "Activity sample 1" in the "region-main" "region"
+    And I should see "Topic 2" in the "courseindex-content" "region"
+    And I should see "Topic 2" in the "region-main" "region"
+    And I should see "Activity sample 2" in the "courseindex-content" "region"
+    And I should see "Activity sample 2" in the "region-main" "region"
+    And I should see "Topic 3" in the "courseindex-content" "region"
+    And I should see "Topic 3" in the "region-main" "region"
+    And I should not see "Activity sample 3" in the "courseindex-content" "region"
+    And I should see "Activity sample 3" in the "region-main" "region"

@@ -56,6 +56,25 @@ export default class {
         return data;
     }
 
+    getstates(state) {
+        // Collect section information from the state.
+        const data = [];
+
+        const sectionlist = state.course.sectionlist ?? [];
+        sectionlist.forEach(sectionid => {
+            const sectioninfo = state.section.get(sectionid) ?? {};
+            const section = this.section(state, sectioninfo);
+            const sectionExpanded = {
+                fields: section,
+                name: `section`,
+                action: `put`,
+            };
+            data[sectionid] = sectionExpanded;
+        });
+
+        return data;
+    }
+
     /**
      * Generate a section export data from the state.
      *
@@ -67,7 +86,6 @@ export default class {
         const section = {
             ...sectioninfo,
             cms: [],
-            isactive: true,
         };
         const cmlist = sectioninfo.cmlist ?? [];
         cmlist.forEach(cmid => {

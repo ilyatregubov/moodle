@@ -76,12 +76,17 @@ class content implements renderable, templatable {
      * @return stdClass data context for a mustache template
      */
     public function export_for_template(\renderer_base $output) {
+        global $USER;
+
         $format = $this->format;
 
         $addsection = new $this->addsectionclass($format);
 
         // Most formats uses section 0 as a separate section so we remove from the list.
         $sections = $this->export_sections($output);
+
+        $courseid = $format->get_courseid();
+        $this->clean_preferences($sections, $courseid, $USER->id);
         $initialsection = '';
         if (!empty($sections)) {
             $initialsection = array_shift($sections);
@@ -181,5 +186,33 @@ class content implements renderable, templatable {
         }
 
         return $modinfo->get_section_info_all();
+    }
+
+    /**
+     * Clean up preferences for deleted sections.
+     *
+     * @param array $sections course sections
+     * @param int $courseid Course ID
+     * @param int $userid User ID
+     */
+    private function clean_preferences(array $sections, int $courseid, int $userid): void {
+        $coursesectionscache = \cache::make('core', 'coursesectionspreferences');
+        $sectionprefences = $coursesectionscache->get($courseid);
+
+        $sectionids = [];
+        foreach ($sections as $section) {
+            $sectionids[$section->id] = $section->id;
+        }
+
+        if ($sectionprefences) {
+            foreach ($sectionprefences as $key => $value) {
+                $section = explode("_", $key);
+                if (!array_key_exists($section[1], $sectionids)) {
+                    unset($sectionprefences->$key);
+                }
+            }
+            $sectionprefences = json_encode($sectionprefences);
+            set_user_preference('collapsedsections_' . $courseid, $sectionprefences, $userid);
+        }
     }
 }

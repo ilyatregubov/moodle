@@ -97,6 +97,16 @@ export default class {
     }
 
     /**
+     * Updates section state.
+     *
+     * @param {StateManager} stateManager the current state manager
+     * @param {array} states the list of sections with collapsed state
+     */
+    async sectionStateUpdate(stateManager, states) {
+        stateManager.processUpdates(states);
+    }
+
+    /**
      * Get updated state data related to some cm ids.
      *
      * @method cmState
