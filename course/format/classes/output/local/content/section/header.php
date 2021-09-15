@@ -91,7 +91,7 @@ class header implements renderable, templatable {
 
         $coursedisplay = $course->coursedisplay ?? COURSE_DISPLAY_SINGLEPAGE;
 
-        if ($course->id == 1) {
+        if ($course->id == SITEID) {
             $data->sitehome = true;
         }
 

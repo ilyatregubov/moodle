@@ -206,7 +206,7 @@ XPATH
 .//*[self::div | self::section | self::aside | self::header | self::footer][./@id = %locator%]
 XPATH
         , 'section' => <<<XPATH
-.//*[@data-for='section' and contains(., %locator%)]
+.//*[@data-for='coursecontentsection' and contains(., %locator%)]
 XPATH
         , 'table' => <<<XPATH
 .//table[(./@id = %locator% or contains(.//caption, %locator%) or contains(.//th, %locator%) or contains(concat(' ', normalize-space(@class), ' '), %locator% ))]

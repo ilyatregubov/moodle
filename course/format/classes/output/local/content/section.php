@@ -157,7 +157,7 @@ class section implements renderable, templatable {
             $data->iscoursedisplaymultipage = true;
         }
 
-        if ($course->id == 1) {
+        if ($course->id == SITEID) {
             $data->sitehome = true;
         }
 
