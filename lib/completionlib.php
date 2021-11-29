@@ -1172,37 +1172,51 @@ class completion_info {
      *
      * @param cm_info $cm The course module information.
      * @param int $userid The user ID.
+     * @param bool $resetcache force reset of internal static cache
      * @return array The additional completion data.
      */
-    protected function get_other_cm_completion_data(cm_info $cm, int $userid): array {
-        $data = $this->get_core_completion_state($cm, $userid);
+    protected function get_other_cm_completion_data(cm_info $cm, int $userid, bool $resetcache = false): array {
 
-        // Custom activity module completion data.
+        $customdatacache = cache::make('core', 'othercmcompletiondata');
+        $cachekey = $cm->id . '_' . $userid;
+        $data = $customdatacache->get($cachekey);
+        if (!$data || $resetcache) {
 
-        // Cast custom data to array before checking for custom completion rules.
-        // We call ->get_custom_data() instead of ->customdata here because there is the chance of recursive calling,
-        // and we cannot call a getter from a getter in PHP.
-        $customdata = (array) $cm->get_custom_data();
-        // Return early if the plugin does not define custom completion rules.
-        if (empty($customdata['customcompletionrules'])) {
-            return $data;
-        }
+            $customdatacache->set($cachekey, []);
 
-        // Return early if the activity modules doe not implement the activity_custom_completion class.
-        $cmcompletionclass = activity_custom_completion::get_cm_completion_class($cm->modname);
-        if (!$cmcompletionclass) {
-            return $data;
-        }
+            $data = $this->get_core_completion_state($cm, $userid);
 
-        /** @var activity_custom_completion $customcmcompletion */
-        $customcmcompletion = new $cmcompletionclass($cm, $userid, $data);
-        foreach ($customdata['customcompletionrules'] as $rule => $enabled) {
-            if (!$enabled) {
-                // Skip inactive completion rules.
-                continue;
+            // Custom activity module completion data.
+            // Cast custom data to array before checking for custom completion rules.
+            // We call ->get_custom_data() instead of ->customdata here because there is the chance of recursive calling,
+            // and we cannot call a getter from a getter in PHP.
+            $customdata = (array)$cm->get_custom_data();
+
+            // Return early if the plugin does not define custom completion rules.
+            if (empty($customdata['customcompletionrules'])) {
+                $customdatacache->set($cachekey, $data);
+                return $data;
             }
-            // Get this custom completion rule's completion state.
-            $data['customcompletion'][$rule] = $customcmcompletion->get_state($rule);
+
+            // Return early if the activity modules doe not implement the activity_custom_completion class.
+            $cmcompletionclass = activity_custom_completion::get_cm_completion_class($cm->modname);
+            if (!$cmcompletionclass) {
+                $customdatacache->set($cachekey, $data);
+                return $data;
+            }
+
+            /** @var activity_custom_completion $customcmcompletion */
+            $customcmcompletion = new $cmcompletionclass($cm, $userid, $data);
+            foreach ($customdata['customcompletionrules'] as $rule => $enabled) {
+                if (!$enabled) {
+                    // Skip inactive completion rules.
+                    continue;
+                }
+                // Get this custom completion rule's completion state.
+                $data['customcompletion'][$rule] = $customcmcompletion->get_state($rule);
+            }
+
+            $customdatacache->set($cachekey, $data);
         }
 
         return $data;
@@ -1243,7 +1257,7 @@ class completion_info {
         if ($data->userid == $USER->id) {
             // Fetch other completion data to cache (e.g. require grade completion status, custom completion rule statues).
             $cminfo = cm_info::create($cm, $data->userid); // Make sure we're working on a cm_info object.
-            $otherdata = $this->get_other_cm_completion_data($cminfo, $data->userid);
+            $otherdata = $this->get_other_cm_completion_data($cminfo, $data->userid, true);
             foreach ($otherdata as $key => $value) {
                 $data->$key = $value;
             }

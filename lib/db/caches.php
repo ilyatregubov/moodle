@@ -532,4 +532,12 @@ $definitions = array(
         'staticacceleration' => true,
         'ttl' => 1800,
     ],
+
+    // Used to store other cm completion data.
+    'othercmcompletiondata' => [
+        'mode' => cache_store::MODE_REQUEST,
+        'simplekeys' => true,
+        'simpledata' => false,
+        'staticacceleration' => true,
+    ],
 );
