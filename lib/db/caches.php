@@ -493,4 +493,12 @@ $definitions = array(
         'staticacceleration' => true,
         'datasource' => '\core_course\cache\course_image',
     ],
+
+    // Used to store other cm completion data.
+    'othercmcompletiondata' => [
+        'mode' => cache_store::MODE_REQUEST,
+        'simplekeys' => true,
+        'simpledata' => false,
+        'staticacceleration' => true,
+    ],
 );

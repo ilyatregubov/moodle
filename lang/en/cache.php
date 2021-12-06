@@ -82,6 +82,7 @@ $string['cachedef_repositories'] = 'Repositories instances data';
 $string['cachedef_roledefs'] = 'Role definitions';
 $string['cachedef_grade_categories'] = 'Grade category queries';
 $string['cachedef_grade_letters'] = 'Grade letter queries';
+$string['cachedef_othercmcompletiondata'] = 'Activity custom completion rules';
 $string['cachedef_string'] = 'Language string cache';
 $string['cachedef_tags'] = 'Tags collections and areas';
 $string['cachedef_temp_tables'] = 'Temporary tables cache';
