@@ -1135,7 +1135,13 @@ class completion_info {
         $data = [];
         // Include in the completion info the grade completion, if necessary.
         if (!is_null($cm->completiongradeitemnumber)) {
-            $newstate = $this->get_grade_completion($cm, $userid);
+            $completiongradecache = cache::make('core', 'completiongrade');
+            $cachekey = $cm->id . '_' . $userid;
+            $newstate = $completiongradecache->get($cachekey);
+            if ($newstate === false) {
+                $newstate = $this->get_grade_completion($cm, $userid);
+                $completiongradecache->set($cachekey, $newstate);
+            }
             $data['completiongrade'] = $newstate;
 
             if ($cm->completionpassgrade) {
