@@ -179,58 +179,70 @@ abstract class grade_object {
     public static function fetch_all_helper($table, $classname, $params) {
         global $DB; // Need to introspect DB here.
 
-        $instance = new $classname();
-
-        $classvars = (array)$instance;
-        $params    = (array)$params;
-
-        $wheresql = array();
-        $newparams = array();
-
-        $columns = $DB->get_columns($table); // Cached, no worries.
-
-        foreach ($params as $var=>$value) {
-            if (!in_array($var, $instance->required_fields) and !array_key_exists($var, $instance->optional_fields)) {
-                continue;
-            }
-            if (!array_key_exists($var, $columns)) {
-                continue;
-            }
-            if (is_null($value)) {
-                $wheresql[] = " $var IS NULL ";
-            } else {
-                if ($columns[$var]->meta_type === 'X') {
-                    // We have a text/clob column, use the cross-db method for its comparison.
-                    $wheresql[] = ' ' . $DB->sql_compare_text($var) . ' = ' . $DB->sql_compare_text('?') . ' ';
-                } else {
-                    // Other columns (varchar, integers...).
-                    $wheresql[] = " $var = ? ";
-                }
-                $newparams[] = $value;
-            }
+        $result = false;
+        if (isset($params['itemtype'])) {
+            $completiongradecache = cache::make('core', 'completiongrade');
+            $cachekey = $params['itemtype'] . '_' . $params['courseid'];
+            $result = $completiongradecache->get($cachekey);
         }
+        if ($result === false) {
 
-        if (empty($wheresql)) {
-            $wheresql = '';
-        } else {
-            $wheresql = implode("AND", $wheresql);
-        }
-
-        global $DB;
-        $rs = $DB->get_recordset_select($table, $wheresql, $newparams);
-        //returning false rather than empty array if nothing found
-        if (!$rs->valid()) {
-            $rs->close();
-            return false;
-        }
-
-        $result = array();
-        foreach($rs as $data) {
             $instance = new $classname();
-            grade_object::set_properties($instance, $data);
-            $result[$instance->id] = $instance;
+
+            $classvars = (array)$instance;
+            $params = (array)$params;
+
+            $wheresql = array();
+            $newparams = array();
+
+            $columns = $DB->get_columns($table); // Cached, no worries.
+
+            foreach ($params as $var => $value) {
+                if (!in_array($var, $instance->required_fields) and !array_key_exists($var, $instance->optional_fields)) {
+                    continue;
+                }
+                if (!array_key_exists($var, $columns)) {
+                    continue;
+                }
+                if (is_null($value)) {
+                    $wheresql[] = " $var IS NULL ";
+                } else {
+                    if ($columns[$var]->meta_type === 'X') {
+                        // We have a text/clob column, use the cross-db method for its comparison.
+                        $wheresql[] = ' ' . $DB->sql_compare_text($var) . ' = ' . $DB->sql_compare_text('?') . ' ';
+                    } else {
+                        // Other columns (varchar, integers...).
+                        $wheresql[] = " $var = ? ";
+                    }
+                    $newparams[] = $value;
+                }
+            }
+
+            if (empty($wheresql)) {
+                $wheresql = '';
+            } else {
+                $wheresql = implode("AND", $wheresql);
+            }
+
+            global $DB;
+            $rs = $DB->get_recordset_select($table, $wheresql, $newparams);
+            //returning false rather than empty array if nothing found
+            if (!$rs->valid()) {
+                $rs->close();
+                return false;
+            }
+
+            $result = array();
+            foreach ($rs as $data) {
+                $instance = new $classname();
+                grade_object::set_properties($instance, $data);
+                $result[$instance->id] = $instance;
+            }
+            $rs->close();
+            if (isset($completiongradecache)) {
+                $completiongradecache->set($cachekey, $result);
+            }
         }
-        $rs->close();
         return $result;
     }
 
@@ -268,6 +280,7 @@ abstract class grade_object {
 
         $this->update_feedback_files($historyid);
 
+        $this->invalidate_cache();
         return true;
     }
 
@@ -302,6 +315,8 @@ abstract class grade_object {
             $this->notify_changed(true);
 
             $this->delete_feedback_files();
+
+            $this->invalidate_cache();
 
             return true;
         } else {
@@ -369,6 +384,8 @@ abstract class grade_object {
         $this->notify_changed(false, $isbulkupdate);
 
         $this->add_feedback_files($historyid);
+
+        $this->invalidate_cache();
 
         return $this->id;
     }
@@ -493,5 +510,15 @@ abstract class grade_object {
      */
     public function can_control_visibility() {
         return true;
+    }
+
+    /**
+     * Invalidates cache
+     */
+    protected function invalidate_cache() {
+        if (isset($this->itemtype) && isset($this->courseid)) {
+            $cachekey = $this->itemtype . '_' . $this->courseid;
+            \cache_helper::invalidate_by_definition('core', 'completiongrade', [], [$cachekey]);
+        }
     }
 }
