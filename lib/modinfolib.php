@@ -1424,11 +1424,13 @@ class cm_info implements IteratorAggregate {
      *
      * This method is normally called by the property ->customdata, but can be called directly if there
      * is a case when it might be called recursively (you can't call property values recursively).
-     *
+     * @param bool $grabthelot Performance hint: if true, caches information
+     *   required for all course-modules, to make the front page and similar
+     *   pages work more quickly (works only for current user)
      * @return mixed Optional custom data stored in modinfo cache for this activity, or null if none
      */
-    public function get_custom_data() {
-        $this->obtain_dynamic_data();
+    public function get_custom_data(bool $grabthelot = true) {
+        $this->obtain_dynamic_data($grabthelot);
         return $this->customdata;
     }
 
@@ -1903,9 +1905,12 @@ class cm_info implements IteratorAggregate {
      * As part of this function, the module's _cm_info_dynamic function from its lib.php will
      * be called (if it exists). Make sure that the functions that are called here do not use
      * any getter magic method from cm_info.
+     * @param bool $grabthelot Performance hint: if true, caches information
+     *   required for all course-modules, to make the front page and similar
+     *   pages work more quickly (works only for current user)
      * @return void
      */
-    private function obtain_dynamic_data() {
+    private function obtain_dynamic_data(bool $grabthelot = true) {
         global $CFG;
         $userid = $this->modinfo->get_user_id();
         if ($this->state >= self::STATE_BUILDING_DYNAMIC || $userid == -1) {
@@ -1919,7 +1924,7 @@ class cm_info implements IteratorAggregate {
 
             // Note that the modinfo currently available only includes minimal details (basic data)
             // but we know that this function does not need anything more than basic data.
-            $this->available = $ci->is_available($this->availableinfo, true,
+            $this->available = $ci->is_available($this->availableinfo, $grabthelot,
                     $userid, $this->modinfo);
         } else {
             $this->available = true;

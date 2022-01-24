@@ -1082,7 +1082,7 @@ class completion_info {
 
                 // Add the other completion data for this user in this module instance.
                 $othercminfo = $cminfos[$data->cmid];
-                $cacheddata[$othercminfo->id] += $this->get_other_cm_completion_data($othercminfo, $userid);
+                $cacheddata[$othercminfo->id] += $this->get_other_cm_completion_data($othercminfo, $userid, false);
             }
 
             if (!isset($cacheddata[$cminfo->id])) {
@@ -1100,7 +1100,7 @@ class completion_info {
                 $data = $defaultdata;
             }
             // Fill the other completion data for this user in this module instance.
-            $data += $this->get_other_cm_completion_data($cminfo, $userid);
+            $data += $this->get_other_cm_completion_data($cminfo, $userid, false);
 
             // Put in cache
             $cacheddata[$cminfo->id] = $data;
@@ -1118,9 +1118,12 @@ class completion_info {
      *
      * @param cm_info $cm The course module information.
      * @param int $userid The user ID.
+     * @param bool $grabthelot Performance hint: if true, caches information
+     *   required for all course-modules, to make the front page and similar
+     *   pages work more quickly (works only for current user)
      * @return array The additional completion data.
      */
-    protected function get_other_cm_completion_data(cm_info $cm, int $userid): array {
+    protected function get_other_cm_completion_data(cm_info $cm, int $userid, bool $grabthelot = true): array {
         $data = [];
 
         // Include in the completion info the grade completion, if necessary.
@@ -1133,7 +1136,7 @@ class completion_info {
         // Cast custom data to array before checking for custom completion rules.
         // We call ->get_custom_data() instead of ->customdata here because there is the chance of recursive calling,
         // and we cannot call a getter from a getter in PHP.
-        $customdata = (array) $cm->get_custom_data();
+        $customdata = (array) $cm->get_custom_data($grabthelot);
         // Return early if the plugin does not define custom completion rules.
         if (empty($customdata['customcompletionrules'])) {
             return $data;
