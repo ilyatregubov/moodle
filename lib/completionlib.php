@@ -1091,8 +1091,8 @@ class completion_info {
 
                 // Add the other completion data for this user in this module instance.
                 $othercminfo = $cminfos[$data->cmid];
-                $cacheddata[$othercminfo->id] += $this->get_other_cm_completion_data($othercminfo, $userid);
             }
+            $cacheddata[$othercminfo->id] += $this->get_other_cm_completion_data($othercminfo, $userid);
 
             if (!isset($cacheddata[$cminfo->id])) {
                 $errormessage = "Unexpected error: course-module {$cminfo->id} could not be found on course {$this->course->id}";
