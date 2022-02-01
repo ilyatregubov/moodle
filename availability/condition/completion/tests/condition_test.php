@@ -188,6 +188,8 @@ class availability_completion_condition_testcase extends advanced_testcase {
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
         $this->resetAfterTest();
 
+        completion_info::wipe_static_cache();
+
         // Create course with completion turned on.
         $CFG->enablecompletion = true;
         $CFG->enableavailability = true;
@@ -222,6 +224,8 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$pagecm->id, 'e' => COMPLETION_COMPLETE
         ]);
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -232,6 +236,8 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$pagecm->id, 'e' => COMPLETION_INCOMPLETE
         ]);
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
@@ -246,6 +252,8 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$pagecm->id, 'e' => COMPLETION_COMPLETE
         ]);
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
@@ -256,6 +264,8 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$pagecm->id, 'e' => COMPLETION_INCOMPLETE
         ]);
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -273,12 +283,18 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_INCOMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
 
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $this->assertTrue($cond->is_available(true, $info, true, $user->id));
 
@@ -286,6 +302,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE_PASS
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -295,6 +314,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE_FAIL
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -307,18 +329,26 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_INCOMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $this->assertTrue($cond->is_available(true, $info, true, $user->id));
 
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
 
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE_PASS
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -328,6 +358,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE_FAIL
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
@@ -340,18 +373,26 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_INCOMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $this->assertTrue($cond->is_available(true, $info, true, $user->id));
 
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
 
         $cond = new condition((object)[
                         'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE_PASS
                     ]);
+        completion_info::wipe_static_cache();
+
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
@@ -361,6 +402,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$assigncm->id, 'e' => COMPLETION_COMPLETE_FAIL
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -372,6 +416,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => ($assigncm->id + 100), 'e' => COMPLETION_COMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
         $information = \core_availability\info::format_info($information, $course);
@@ -380,6 +427,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => ($assigncm->id + 100), 'e' => COMPLETION_INCOMPLETE
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
     }
 
@@ -466,6 +516,8 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$prevvalue, 'e' => $condition
         ]);
+
+        completion_info::wipe_static_cache();
 
         // Do the checks.
         $this->assertEquals($result, $cond->is_available(false, $info, true, $user->id));
@@ -632,6 +684,9 @@ class availability_completion_condition_testcase extends advanced_testcase {
         $cond = new condition((object)[
             'cm' => (int)$prevvalue, 'e' => $condition
         ]);
+
+        completion_info::wipe_static_cache();
+
         $this->assertEquals($result, $cond->is_available(false, $info, true, $user->id));
         $this->assertEquals($resultnot, $cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
