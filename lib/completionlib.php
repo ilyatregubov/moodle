@@ -957,6 +957,13 @@ class completion_info {
     }
 
     /**
+     * Wipes the static cache used to store grouping names.
+     */
+    public static function wipe_static_cache() {
+        self::$wholecourse = null;
+    }
+
+    /**
      * Recalculates completion state related to an activity for all users.
      *
      * Intended for use if completion conditions change. (This should be avoided
@@ -1065,7 +1072,7 @@ class completion_info {
         // If cached completion data is not found, fetch via SQL. When we are likely to fetch the
         // data for the whole course at once, do it with a single SQL query and use static cache
         // so it isn't re-queried when there are multiple repeated requests.
-        if ($wholecourse) {
+        if ($usecache && $wholecourse) {
             if (self::$wholecourse === null ||
                     self::$wholecourse->courseid !== $this->course->id ||
                     self::$wholecourse->userid !== $userid) {
