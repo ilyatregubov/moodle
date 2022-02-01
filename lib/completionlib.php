@@ -1090,7 +1090,7 @@ class completion_info {
             $data = $DB->get_record('course_modules_completion', array('coursemoduleid' => $cminfo->id, 'userid' => $userid));
         }
 
-        if ($data) {
+        if ($data && isset($data->id)) {
             $data = (array)$data;
         } else {
             // Row not present counts as 'not complete'.
