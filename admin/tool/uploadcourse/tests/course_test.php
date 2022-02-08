@@ -33,7 +33,7 @@ global $CFG;
  * @copyright  2013 Frédéric Massart
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or late
  */
-class tool_uploadcourse_course_testcase extends advanced_testcase {
+class course_test extends advanced_testcase {
 
     public function test_proceed_without_prepare() {
         $this->resetAfterTest(true);
@@ -76,6 +76,264 @@ class tool_uploadcourse_course_testcase extends advanced_testcase {
         $co = new tool_uploadcourse_course($mode, $updatemode, $data);
         $this->assertFalse($co->prepare());
         $this->assertArrayHasKey('invalidshortname', $co->get_errors());
+    }
+
+    public function test_cohort_enrol_not_enabled() {
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'cohort',
+            ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->disable_plugin();
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('plugindisabled', $co->get_errors());
+    }
+
+    public function test_cohort_enrol_missing_mandatory_fields() {
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => 1,
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('missingmandatoryfields', $co->get_errors());
+
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_roleid' => 1,
+        ];
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('missingmandatoryfields', $co->get_errors());
+
+    }
+
+    public function test_cohort_enrol_non_exist_cohort_role() {
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => 123,
+            'enrolment_1_roleid' => 1,
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('unknowncohort', $co->get_errors());
+
+        $cohort = $this->getDataGenerator()->create_cohort();
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort->id,
+            'enrolment_1_roleid' => 123,
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('errorbadroleid', $co->get_errors());
+
+    }
+
+    public function test_cohort_enrol_wrong_context_cohort_role() {
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $cat1 = $this->getDataGenerator()->create_category(['parent' => $cat->id]);
+        $cat2 = $this->getDataGenerator()->create_category(['parent' => $cat->id]);
+
+        $course = $this->getDataGenerator()->create_course(['category' => $cat1->id, 'shortname' => 'ANON']);
+
+        $cohort1 = $this->getDataGenerator()->create_cohort(['contextid' => context_coursecat::instance($cat1->id)->id]);
+        $cohort2 = $this->getDataGenerator()->create_cohort(['contextid' => context_coursecat::instance($cat2->id)->id]);
+
+        $data = ['shortname' => $course->shortname,
+            'fullname' => 'New course',
+            'category' => $cat1->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort2->id,
+            'enrolment_1_roleid' => 123,
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('contextcohortnotallowed', $co->get_errors());
+
+        $roleid = create_role('New student role', 'student2', 'New student description', 'student');
+        set_role_contextlevels($roleid, [CONTEXT_MODULE]);
+        $data = ['shortname' => $course->shortname,
+            'fullname' => 'New course',
+            'category' => $cat1->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort1->id,
+            'enrolment_1_roleid' => $roleid,
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('contextrolenotallowed', $co->get_errors());
+    }
+
+    public function test_cohort_enrol_invalid_group() {
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+
+        $cohort = $this->getDataGenerator()->create_cohort(['contextid' => context_coursecat::instance($cat->id)->id]);
+        $roleid = create_role('New student role', 'student2', 'New student description', 'student');
+        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
+
+        $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+
+        $data = ['shortname' => $course->shortname,
+            'fullname' => 'New course',
+            'category' => $cat->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort->id,
+            'enrolment_1_roleid' => $roleid,
+            'enrolment_1_groupid' => 123
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('errorinvalidgroup', $co->get_errors());
+    }
+
+    public function test_cohort_enrol_valid_data() {
+        global $PAGE;
+
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $cohort = $this->getDataGenerator()->create_cohort(['contextid' => context_coursecat::instance($cat->id)->id]);
+        $roleid = create_role('New student role', 'student2', 'New student description', 'student');
+        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
+
+        // Create new instance and new group.
+        $data = ['shortname' => 'Course shortname',
+            'fullname' => 'New course',
+            'category' => $cat->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort->id,
+            'enrolment_1_roleid' => $roleid,
+            'enrolment_1_groupid' => -1
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+        $course = get_course($co->get_id());
+        $this->assertEquals('Course shortname', $course->shortname);
+        $this->assertEquals($cat->id, $course->category);
+
+        $manager = new course_enrolment_manager($PAGE, $course);
+        $cohortinstance = $this->get_cohort_instance($manager);
+
+        $this->assertNotNull($cohortinstance);
+        $this->assertEquals($cohort->id, $cohortinstance->customint1);
+        $this->assertEquals($roleid, $cohortinstance->roleid);
+
+        $groups = groups_get_all_groups($course->id);
+        $this->assertEquals(1, count($groups));
+
+        // Update role and group in existing instance.
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $group2 = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $roleid2 = $this->getDataGenerator()->create_role();
+
+        $data = ['shortname' => 'Course shortname',
+            'fullname' => 'New course',
+            'category' => $cat->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort->id,
+            'enrolment_1_roleid' => $roleid2,
+            'enrolment_1_groupid' => $group2->id
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+
+        $this->assertEquals($course->id, $co->get_id());
+
+        $manager = new course_enrolment_manager($PAGE, $course);
+        $cohortinstance = $this->get_cohort_instance($manager);
+        $this->assertNotNull($cohortinstance);
+        $this->assertEquals($cohort->id, $cohortinstance->customint1);
+        $this->assertEquals($roleid2, $cohortinstance->roleid);
+        $this->assertEquals($group2->id, $cohortinstance->customint2);
+
+        // Update role mode.
+        $data = ['shortname' => 'Course shortname',
+            'fullname' => 'New course',
+            'category' => $cat->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort->id,
+            'enrolment_1_roleid' => $roleid2,
+            'enrolment_1_groupid' => 0
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+
+        $manager = new course_enrolment_manager($PAGE, $course);
+        $cohortinstance = $this->get_cohort_instance($manager);
+        $this->assertEquals(0, $cohortinstance->customint2);
+
+        // Disable enrolment method for a course.
+        $data = ['shortname' => 'Course shortname',
+            'fullname' => 'New course',
+            'category' => $cat->id,
+            'enrolment_1' => 'cohort',
+            'enrolment_1_cohortid' => $cohort->id,
+            'enrolment_1_roleid' => $roleid2,
+            'enrolment_1_disable' => 1
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+
+        $manager = new course_enrolment_manager($PAGE, $course);
+        $cohortinstance = $this->get_cohort_instance($manager, true);
+        $this->assertNull($cohortinstance);
+
     }
 
     public function test_invalid_shortname_too_long() {
@@ -1596,4 +1854,24 @@ class tool_uploadcourse_course_testcase extends advanced_testcase {
             'configdata' => $configdata,
         ]);
     }
+
+    protected function disable_plugin() {
+        $enabled = enrol_get_plugins(true);
+        unset($enabled['cohort']);
+        $enabled = array_keys($enabled);
+        set_config('enrol_plugins_enabled', implode(',', $enabled));
+    }
+
+    protected function get_cohort_instance($manager, $onlyenabled = false) {
+        $cohortinstance = null;
+        $enrollmentinstances = $manager->get_enrolment_instances($onlyenabled);
+        foreach ($enrollmentinstances as $enrollmentinstance) {
+            if ($enrollmentinstance->enrol == 'cohort') {
+                $cohortinstance = $enrollmentinstance;
+                break;
+            }
+        }
+        return $cohortinstance;
+    }
+
 }

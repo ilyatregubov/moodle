@@ -794,16 +794,22 @@ class tool_uploadcourse_course {
 
         // Get enrolment data. Where the course already exists, we can also perform validation.
         $this->enrolmentdata = tool_uploadcourse_helper::get_enrolment_data($this->rawdata);
+
+        if (array_key_exists('cohort', $this->enrolmentdata)) {
+            $courseid = $coursedata['id'] ?? 0;
+            $errors = $this->validate_cohort_enrolment_data($courseid, $this->enrolmentdata);
+        }
+
         if ($exists) {
-            $errors = $this->validate_enrolment_data($coursedata['id'], $this->enrolmentdata);
+            $errors += $this->validate_enrolment_data($coursedata['id'], $this->enrolmentdata);
+        }
 
-            if (!empty($errors)) {
-                foreach ($errors as $key => $message) {
-                    $this->error($key, $message);
-                }
-
-                return false;
+        if (!empty($errors)) {
+            foreach ($errors as $key => $message) {
+                $this->error($key, $message);
             }
+
+            return false;
         }
 
         if (isset($this->rawdata['tags']) && strval($this->rawdata['tags']) !== '') {
@@ -971,6 +977,86 @@ class tool_uploadcourse_course {
     }
 
     /**
+     * Validate passed enrolment data against for cohort enrolment
+     *
+     * @param int $courseid If 0 then course doesn't exist
+     * @param array[] $enrolmentdata
+     * @return lang_string[] Errors keyed on error code
+     */
+    protected function validate_cohort_enrolment_data(int $courseid, array $enrolmentdata): array {
+        global $CFG;
+        require_once($CFG->dirroot.'/cohort/lib.php');
+
+        // Nothing to validate.
+        if (empty($enrolmentdata)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($enrolmentdata as $method => $options) {
+
+            if ($method == 'cohort') {
+
+                if (!enrol_is_enabled('cohort')) {
+                    $errors['plugindisabled'] =
+                        new lang_string('plugindisabled', 'plugin');
+                }
+
+                if (!isset($enrolmentdata['cohort']['cohortid'])) {
+                    $errors['missingmandatoryfields'] =
+                        new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                            'cohortid');
+                } elseif (!isset($enrolmentdata['cohort']['roleid'])) {
+                    $errors['missingmandatoryfields'] =
+                        new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                            'roleid');
+                } else {
+                    $cohortid = $enrolmentdata['cohort']['cohortid'];
+                    $roleid = $enrolmentdata['cohort']['roleid'];
+
+                    if ($courseid) {
+                        $context = \context_course::instance($courseid);
+                        if (!cohort_get_cohort($cohortid, $context)) {
+                            $errors['contextcohortnotallowed'] =
+                                new lang_string('contextcohortnotallowed', 'cohort', $cohortid);
+                        }
+
+                        $roles = get_assignable_roles($context, ROLENAME_BOTH);
+                        if (!array_key_exists($roleid, $roles)) {
+                            $errors['contextrolenotallowed'] =
+                                new lang_string('contextrolenotallowed', 'core_role', $roleid);
+                        }
+
+                        $groups = groups_get_all_groups($courseid);
+                        if (isset($enrolmentdata['cohort']['groupid']) && $enrolmentdata['cohort']['groupid']) {
+                            $groupid = $enrolmentdata['cohort']['groupid'];
+                            if (!array_key_exists($groupid, $groups) && intval($groupid) !== COHORT_CREATE_GROUP) {
+                                $errors['errorinvalidgroup'] =
+                                    new lang_string('errorinvalidgroup', 'group', $groupid);
+                            }
+                        }
+                    } else {
+                        $cohorts = cohort_get_all_cohorts(); // Not sure if that is needed.
+                        if (!array_key_exists($cohortid, $cohorts['cohorts'])) {
+                            $errors['unknowncohort'] =
+                                new lang_string('unknowncohort', 'cohort', $cohortid);
+                        }
+
+                        $roles = get_all_roles(); // Not sure if that is needed.
+                        if (!array_key_exists($roleid, $roles)) {
+                            $errors['errorbadroleid'] =
+                                new lang_string('errorbadroleid', 'core_role', $roleid);
+                        }
+                    }
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
      * Add the enrolment data for the course.
      *
      * @param object $course course record.
@@ -1023,7 +1109,20 @@ class tool_uploadcourse_course {
 
                 // Create a new instance if necessary.
                 if (empty($instance) && $plugin->can_add_instance($course->id)) {
-                    $instanceid = $plugin->add_default_instance($course);
+                    if ($enrolmethod == 'cohort') {
+                        $fields = [];
+                        $fields['roleid'] = $enrolmentdata['cohort']['roleid'];
+                        $fields['customint1'] = $enrolmentdata['cohort']['cohortid'];
+                        if (!isset($enrolmentdata['cohort']['groupid'])) {
+                            $fields['customint2'] = 0;
+                        } else {
+                            $groupid = $enrolmentdata['cohort']['groupid'];
+                            $fields['customint2'] = $groupid;
+                        }
+                        $instanceid = $plugin->add_instance($course, $fields);
+                    } else {
+                        $instanceid = $plugin->add_default_instance($course);
+                    }
                     $instance = $DB->get_record('enrol', ['id' => $instanceid]);
                     $instance->roleid = $plugin->get_config('roleid');
                     // On creation the user can decide the status.
@@ -1051,6 +1150,26 @@ class tool_uploadcourse_course {
                 }
 
                 // Now update values.
+                if ($enrolmethod == 'cohort') {
+                    $methodtmp = [];
+                    $methodtmp['roleid'] = $method['roleid'];
+                    $methodtmp['customint1'] = $method['cohortid'];
+                    if (!isset($method['groupid'])) {
+                        $methodtmp['customint2'] = 0;
+                    } else if (intval($method['groupid']) == COHORT_CREATE_GROUP) {
+                        if (!isset($groupid)) {
+                            // Create a new group for the cohort if requested.
+                            $context = context_course::instance($course->id);
+                            require_capability('moodle/course:managegroups', $context);
+                            $groupid = enrol_cohort_create_new_group($course->id, $methodtmp['customint1']);
+                        }
+                        $methodtmp['customint2'] = $groupid;
+                    } else {
+                        $methodtmp['customint2'] = $method['groupid'];
+                    }
+                    $method = $methodtmp;
+                }
+
                 foreach ($method as $k => $v) {
                     $instance->{$k} = $v;
                 }
