@@ -1024,6 +1024,9 @@ class tool_uploadcourse_course {
                 // Create a new instance if necessary.
                 if (empty($instance) && $plugin->can_add_instance($course->id)) {
                     $instanceid = $plugin->add_default_instance($course);
+                    if (!$instanceid) {
+                        $instanceid = $plugin->add_instance($course);
+                    }
                     $instance = $DB->get_record('enrol', ['id' => $instanceid]);
                     $instance->roleid = $plugin->get_config('roleid');
                     // On creation the user can decide the status.
