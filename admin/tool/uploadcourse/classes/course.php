@@ -797,6 +797,18 @@ class tool_uploadcourse_course {
         if ($exists) {
             $errors = $this->validate_enrolment_data($coursedata['id'], $this->enrolmentdata);
 
+            foreach ($this->enrolmentdata as  $method) {
+                if (isset($method['role'])) {
+                    $role = $method['role'];
+                    $context = \context_course::instance($existingdata->id);
+                    $roles = get_assignable_roles($context, ROLENAME_SHORT);
+
+                    if (!in_array($role, $roles)) {
+                        $errors['contextrolenotallowed'] = new lang_string('contextrolenotallowed', 'core_role', $role);
+                    }
+                }
+            }
+
             if (!empty($errors)) {
                 foreach ($errors as $key => $message) {
                     $this->error($key, $message);
@@ -1079,8 +1091,17 @@ class tool_uploadcourse_course {
                     $instance->enrolenddate = $instance->enrolstartdate;
                 }
 
-                // Sort out the given role. This does not filter the roles allowed in the course.
+                // Sort out the given role.
                 if (isset($method['role'])) {
+                    $context = \context_course::instance($course->id);
+                    $role = $method['role'];
+                    $error = $this->validate_role_context($context, $role);
+
+                    if ($error) {
+                        $this->error('contextrolenotallowed',$error);
+                        break;
+                    }
+
                     $roleids = tool_uploadcourse_helper::get_role_ids();
                     if (isset($roleids[$method['role']])) {
                         $instance->roleid = $roleids[$method['role']];
@@ -1091,6 +1112,23 @@ class tool_uploadcourse_course {
                 $DB->update_record('enrol', $instance);
             }
         }
+    }
+
+    /**
+     * Check if role is allowed in course context
+     *
+     * @param context_course $coursecontext course context.
+     * @param string $role Role.
+     * @return lang_string|null Error
+     */
+    protected function validate_role_context(context_course $coursecontext, string $role) : ?lang_string {
+
+        $error = null;
+        $roles = get_assignable_roles($coursecontext, ROLENAME_SHORT);
+        if (!in_array($role, $roles)) {
+            $error = new lang_string('contextrolenotallowed', 'core_role', $role);
+        }
+        return $error;
     }
 
     /**
