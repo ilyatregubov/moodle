@@ -26,6 +26,7 @@
 
 use mod_bigbluebuttonbn\plugin;
 use mod_bigbluebuttonbn\local\config;
+use mod_bigbluebuttonbn\task\upgrade_recordings_task;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -398,25 +399,8 @@ function xmldb_bigbluebuttonbn_upgrade($oldversion = 0) {
 
     if ($oldversion < 2021083101) {
         // Create adhoc task for upgrading of existing bigbluebuttonbn_logs related to recordings.
-        $task = new \stdClass();
-        $task->classname = '\mod_bigbluebuttonbn\task\upgrade_recordings';
-        $task->component = 'mod_bigbluebuttonbn';
-
-        // Next run time based from nextruntime computation in \core\task\manager::queue_adhoc_task().
-        $nextruntime = time() - 1;
-        $task->nextruntime = $nextruntime;
-        $DB->insert_record('task_adhoc', $task);
-
-        // Create adhoc task for upgrading of existing bigbluebuttonbn_logs related to imported recordings.
-        $task = new \stdClass();
-        $task->classname = '\mod_bigbluebuttonbn\task\upgrade_imported_recordings';
-        $task->component = 'mod_bigbluebuttonbn';
-
-        // Next run time based from nextruntime computation in \core\task\manager::queue_adhoc_task().
-        $nextruntime = time() - 1;
-        $task->nextruntime = $nextruntime;
-        $DB->insert_record('task_adhoc', $task);
-
+        upgrade_recordings_task::schedule_upgrade_per_meeting();
+        upgrade_recordings_task::schedule_upgrade_per_meeting(true);
         // Bigbluebuttonbn savepoint reached.
         upgrade_mod_savepoint(true, 2021083101, 'bigbluebuttonbn');
     }
