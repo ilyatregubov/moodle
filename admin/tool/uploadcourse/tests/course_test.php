@@ -16,6 +16,8 @@
 
 namespace tool_uploadcourse;
 
+use core\plugininfo\enrol;
+use course_enrolment_manager;
 use tool_uploadcourse_processor;
 use tool_uploadcourse_course;
 
@@ -1650,6 +1652,395 @@ class course_test extends \advanced_testcase {
     }
 
     /**
+     * Tests prepare behavior when plugin is disabled.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     */
+    public function test_cohort_enrol_not_enabled() {
+        $this->resetAfterTest(true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'cohort',
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        enrol::enable_plugin('cohort', false);
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('plugindisabled', $co->get_errors());
+    }
+
+    /**
+     * Tests prepare behavior when required data are missing in csv for plugin enrolment.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @dataProvider enrol_missing_mandatory_fields_provider
+     * @param array $data Plugin enrolment data
+     * @param string $plugin Enrolment plugin name
+     */
+    public function test_enrol_missing_mandatory_fields(array $data, string $plugin): void {
+        $this->setRunTestInSeparateProcess(true);
+        $this->resetAfterTest();
+
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('missingmandatoryfields', $co->get_errors());
+    }
+
+    /**
+     * Data provider for test_enrol_missing_mandatory_fields().
+     *
+     * @return array
+     */
+    public function enrol_missing_mandatory_fields_provider(): array {
+        return [
+            'Cohort enrolment, missing cohort name' => [
+                ['shortname' => 'shortname',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_role' => 'student',
+                ],
+                'cohort',
+            ],
+        ];
+    }
+
+    /**
+     * Tests prepare behavior when data from csv do not exist in system.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @dataProvider enrol_non_exist_enrol_data_provider
+     * @param array $data Plugin enrolment data
+     * @param string $plugin Enrolment plugin name
+     */
+    public function test_enrol_non_exist_enrol_data(array $data, string $plugin): void {
+        $this->setRunTestInSeparateProcess(true);
+        $this->resetAfterTest();
+
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        if ($plugin == 'cohort') {
+            $this->assertArrayHasKey('unknowncohort', $co->get_errors());
+        }
+    }
+
+    /**
+     * Data provider for test_enrol_non_exist_enrol_data().
+     *
+     * @return array
+     */
+    public function enrol_non_exist_enrol_data_provider(): array {
+        return [
+            'Cohort enrolment, cohort doesnt exist' => [
+                ['shortname' => 'shortname',
+                    'fullname' => 'New course',
+                    'category' => 1,
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'I dont exist',
+                    'enrolment_1_role' => 'student',
+                ],
+                'cohort',
+            ],
+        ];
+    }
+
+    /**
+     * Tests prepare behavior when data from csv not allowed in a relevant context.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @dataProvider enrol_wrong_context_provider
+     * @param array $data Plugin enrolment data
+     * @param string $plugin Enrolment plugin name
+     */
+    public function test_enrol_wrong_context(array $data, string $plugin): void {
+        $this->setRunTestInSeparateProcess(true);
+        $this->resetAfterTest();
+
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $cat1 = $this->getDataGenerator()->create_category(['parent' => $cat->id]);
+        $cat2 = $this->getDataGenerator()->create_category(['parent' => $cat->id]);
+        $data['category'] = $cat1->id;
+
+        $this->getDataGenerator()->create_course(['category' => $cat1->id, 'shortname' => 'ANON']);
+
+        $this->getDataGenerator()->create_cohort(['contextid' => \context_coursecat::instance($cat1->id)->id]);
+        $this->getDataGenerator()->create_cohort(['contextid' => \context_coursecat::instance($cat2->id)->id]);
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('contextnotallowed', $co->get_errors());
+    }
+
+    /**
+     * Data provider for test_enrol_wrong_context().
+     *
+     * @return array
+     */
+    public function enrol_wrong_context_provider(): array {
+        return [
+            'Cohort enrolment, cohort not allowed' => [
+                ['shortname' => 'ANON',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 2',
+                    'enrolment_1_role' => 'student',
+                ],
+                'cohort',
+            ],
+        ];
+    }
+
+    /**
+     * Tests prepare behavior when group from csv data doesnt not exist in system.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @dataProvider enrol_group_not_exist_provider
+     * @param array $data Plugin enrolment data
+     * @param string $plugin Enrolment plugin name
+     */
+    public function test_enrol_group_not_exist(array $data, string $plugin): void {
+        $this->setRunTestInSeparateProcess(true);
+        $this->resetAfterTest();
+
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+        $data['category'] = $cat->id;
+
+        $this->getDataGenerator()->create_cohort(['contextid' => \context_coursecat::instance($cat->id)->id]);
+        $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('errorinvalidgroup', $co->get_errors());
+    }
+
+    /**
+     * Data provider for test_enrol_group_not_exist().
+     *
+     * @return array
+     */
+    public function enrol_group_not_exist_provider(): array {
+        return [
+            'Cohort enrolment, group doesnt exist' => [
+                ['shortname' => 'ANON',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_role' => 'student',
+                    'enrolment_1_groupname' => 'I dont exist'
+                ],
+                'cohort',
+            ],
+        ];
+    }
+
+    /**
+     * Tests prepare behavior when addtogroup option is invalid.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @dataProvider enrol_invalid_addtogroup_provider
+     * @param array $data Plugin enrolment data
+     * @param string $plugin Enrolment plugin name
+     */
+    public function test_enrol_invalid_addtogroup(array $data, string $plugin): void {
+        $this->setRunTestInSeparateProcess(true);
+        $this->resetAfterTest();
+
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+        $data['category'] = $cat->id;
+
+        $this->getDataGenerator()->create_cohort(['contextid' => \context_coursecat::instance($cat->id)->id]);
+        $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        if (isset($data['enrolment_1_groupname'])) {
+            $this->assertArrayHasKey('erroraddtogroupgroupname', $co->get_errors());
+        } else {
+            $this->assertArrayHasKey('erroraddtogroup', $co->get_errors());
+        }
+    }
+
+    /**
+     * Data provider for test_enrol_invalid_addtogroup().
+     *
+     * @return array
+     */
+    public function enrol_invalid_addtogroup_provider(): array {
+        return [
+            'Cohort enrolment, invalid addtogroup' => [
+                ['shortname' => 'ANON',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_role' => 'student',
+                    'enrolment_1_addtogroup' => 2
+                ],
+                'cohort',
+            ],
+            'Cohort enrolment, both addtogroup and groupname are set' => [
+                ['shortname' => 'ANON',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_groupname' => 'I dont exist',
+                    'enrolment_1_addtogroup' => 0
+                ],
+                'cohort',
+            ],
+        ];
+    }
+
+    /**
+     * Tests prepare and proceed behavior for valid data.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @covers \tool_uploadcourse_course::proceed
+     * @dataProvider enrol_valid_data_provider
+     * @param array $data Plugin enrolment data
+     * @param string $coursemode Update mode
+     */
+    public function test_enrol_valid_data(array $data, string $coursemode): void {
+        global $PAGE, $DB;
+
+        $this->setRunTestInSeparateProcess(true);
+        $this->resetAfterTest();
+
+        $this->setAdminUser();
+
+        $cat = $this->getDataGenerator()->create_category();
+        $cohort = $this->getDataGenerator()->create_cohort(['contextid' => \context_coursecat::instance($cat->id)->id]);
+        $data['category'] = $cat->id;
+
+        if ($coursemode == 'createnew') {
+            $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+            $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+        } else {
+            $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'Course shortname']);
+            $this->getDataGenerator()->create_cohort(['contextid' => \context_coursecat::instance($cat->id)->id]);
+            $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+            $group2 = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+            if ($coursemode == 'updaterolegroup') {
+                $data['enrolment_1_groupname'] = $group2->name;
+            }
+
+            $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+            $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+        }
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+        $course = get_course($co->get_id());
+
+        $this->assertEquals($course->id, $co->get_id());
+        $manager = new course_enrolment_manager($PAGE, $course);
+
+        if ($coursemode == 'disable') {
+            $cohortinstance = $this->get_cohort_instance($manager, true);
+            $this->assertNull($cohortinstance);
+        } else {
+            $cohortinstance = $this->get_cohort_instance($manager);
+            $roleid = $DB->get_field('role', 'id', ['shortname' => $data['enrolment_1_role']], MUST_EXIST);
+
+            $this->assertNotNull($cohortinstance);
+            $this->assertEquals($cohort->id, $cohortinstance->customint1);
+            $this->assertEquals($roleid, $cohortinstance->roleid);
+            $this->assertEquals('Course shortname', $course->shortname);
+            $this->assertEquals($cat->id, $course->category);
+            $groups = groups_get_all_groups($course->id);
+
+            if ($coursemode == 'createnew') {
+                $this->assertEquals(1, count($groups));
+            } else if ($coursemode == 'updaterolegroup') {
+                $this->assertEquals($group2->id, $cohortinstance->customint2);
+                $this->assertEquals(2, count($groups));
+            } else if ($coursemode == 'updategroupmode') {
+                $this->assertEquals(0, $cohortinstance->customint2);
+            }
+        }
+    }
+
+    /**
+     * Data provider for test_enrol_valid_data().
+     *
+     * @return array
+     */
+    public function enrol_valid_data_provider(): array {
+        return [
+            'Cohort enrolment, create new course and new group' => [
+                ['shortname' => 'Course shortname',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_role' => 'student',
+                    'enrolment_1_addtogroup' => 1
+                ],
+                'createnew',
+            ],
+            'Cohort enrolment, update role and group' => [
+                ['shortname' => 'Course shortname',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_role' => 'teacher',
+                ],
+                'updaterolegroup',
+            ],
+            'Cohort enrolment, update group mode' => [
+                ['shortname' => 'Course shortname',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_role' => 'teacher',
+                    'enrolment_1_addtogroup' => 0
+                ],
+                'updategroupmode',
+            ],
+            'Cohort enrolment, disable enrolment' => [
+                ['shortname' => 'Course shortname',
+                    'fullname' => 'New course',
+                    'enrolment_1' => 'cohort',
+                    'enrolment_1_cohortname' => 'Cohort 1',
+                    'enrolment_1_role' => 'teacher',
+                    'enrolment_1_disable' => 1
+                ],
+                'disable',
+            ],
+        ];
+    }
+
+    /**
      * Get custom field plugin generator
      *
      * @return core_customfield_generator
@@ -1677,4 +2068,23 @@ class course_test extends \advanced_testcase {
             'configdata' => $configdata,
         ]);
     }
+
+    /**
+     * Finds cohort enrolment instance in a course.
+     *
+     * @param course_enrolment_manager $manager Enrolment manager
+     * @param bool $onlyenabled Get only enabled instance
+     */
+    protected function get_cohort_instance(course_enrolment_manager $manager, bool $onlyenabled = false) {
+        $cohortinstance = null;
+        $enrollmentinstances = $manager->get_enrolment_instances($onlyenabled);
+        foreach ($enrollmentinstances as $enrollmentinstance) {
+            if ($enrollmentinstance->enrol == 'cohort') {
+                $cohortinstance = $enrollmentinstance;
+                break;
+            }
+        }
+        return $cohortinstance;
+    }
+
 }
