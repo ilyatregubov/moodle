@@ -23,6 +23,7 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/enrol/locallib.php');
 
 /**
  * COHORT_CREATEGROUP constant for automatically creating a group for a cohort.
