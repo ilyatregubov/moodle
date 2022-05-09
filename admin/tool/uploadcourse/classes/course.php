@@ -50,6 +50,9 @@ class tool_uploadcourse_course {
     /** @var array Roles context levels. */
     protected $contextlevels = [];
 
+    /** @var mixed Course groups. */
+    protected $groups = null;
+
     /** @var array final import data. */
     protected $data = array();
 
@@ -918,7 +921,8 @@ class tool_uploadcourse_course {
      * @return lang_string[] Errors keyed on error code
      */
     protected function validate_enrolment_data(int $courseid, array $enrolmentdata): array {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->dirroot.'/cohort/lib.php');
 
         // Nothing to validate.
         if (empty($enrolmentdata)) {
@@ -947,6 +951,62 @@ class tool_uploadcourse_course {
                         $errors['contextrolenotallowed'] = new lang_string('contextrolenotallowed', 'core_role', $role);
 
                         break;
+                    }
+                }
+            }
+
+            if ($method == 'cohort') {
+                if (!enrol_is_enabled('cohort')) {
+                    $errors['plugindisabled'] =
+                        new lang_string('plugindisabled', 'plugin');
+                    break;
+                }
+
+                if (!isset($options['cohortname'])) {
+                    $errors['missingmandatoryfields'] =
+                        new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                            'cohortname');
+                    break;
+                } else {
+                    $cohortname = $options['cohortname'];
+                    $cohortid = $DB->get_field('cohort', 'MIN(id)', ['name' => $cohortname]);
+
+                    if (!$cohortid) {
+                        $errors['unknowncohort'] =
+                            new lang_string('unknowncohort', 'cohort', $cohortname);
+                        break;
+                    }
+
+                    if ($courseid) {
+                        if (!$this->validate_cohort_context($courseid, $cohortid)) {
+                            $errors['contextcohortnotallowed'] =
+                                new lang_string('contextcohortnotallowed', 'cohort', $cohortname);
+                            break;
+                        }
+
+                        if (isset($options['addtogroup'])) {
+                            $addtogroup = $options['addtogroup'];
+                            if ($addtogroup == COHORT_CREATE_GROUP || $addtogroup == 0) {
+                                if (isset($options['groupname'])) {
+                                    $errors['erroraddtogroupgroupname'] =
+                                        new lang_string('erroraddtogroupgroupname', 'group');
+                                    break;
+                                }
+                            } else {
+                                $errors['erroraddtogroup'] =
+                                    new lang_string('erroraddtogroup', 'group');
+                                break;
+                            }
+                        } else {
+                            if (isset($options['groupname']) && $options['groupname']) {
+                                $groupname = $options['groupname'];
+                                if (!$this->validate_group($courseid, $groupname)) {
+                                    $errors['errorinvalidgroup'] =
+                                        new lang_string('errorinvalidgroup', 'group', $groupname);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1066,11 +1126,50 @@ class tool_uploadcourse_course {
                     }
                 }
 
+                if ($enrolmethod == 'cohort') {
+                    $fields = [];
+                    $cohortname = $method['cohortname'];
+                    $fields['customint1'] = $DB->get_field('cohort', 'id', ['name' => $cohortname]);
+                    if (isset($method['addtogroup'])) {
+                        if ($method['addtogroup'] == 0) {
+                            $fields['customint2'] = 0;
+                        }
+                    } else {
+                        if (isset($method['groupname'])) {
+                            $groupname = $method['groupname'];
+                            $fields['customint2'] = groups_get_group_by_name($course->id, $groupname);
+                        }
+                    }
+                }
+
                 // Create a new instance if necessary.
                 if (empty($instance) && $plugin->can_add_instance($course->id)) {
-                    $instanceid = $plugin->add_default_instance($course);
+                    if ($enrolmethod == 'cohort') {
+                        $cohortname = $method['cohortname'];
+                        // Cohort name is not unique.
+                        $cohortid = $DB->get_field('cohort', 'MIN(id)', ['name' => $cohortname]);
+                        if (!$this->validate_cohort_context($course->id, $cohortid)) {
+                            $error = new lang_string('contextcohortnotallowed', 'cohort', $cohortname);
+                            $this->error('contextcohortnotallowed', $error);
+                            break;
+                        }
+
+                        if (isset($method['groupname']) && $method['groupname']) {
+                            $groupname = $method['groupname'];
+                            if (!$this->validate_group($course->id, $groupname)) {
+                                $error = new lang_string('errorinvalidgroup', 'group', $groupname);
+                                $this->error('errorinvalidgroup', $error);
+                                break;
+                            }
+                        }
+
+                        $instanceid = $plugin->add_instance($course, $fields);
+                    } else {
+                        $instanceid = $plugin->add_default_instance($course);
+                    }
                     $instance = $DB->get_record('enrol', ['id' => $instanceid]);
                     $instance->roleid = $plugin->get_config('roleid');
+                    $groupid = $instance->customint2;
                     // On creation the user can decide the status.
                     $plugin->update_status($instance, $status);
                 }
@@ -1096,6 +1195,22 @@ class tool_uploadcourse_course {
                 }
 
                 // Now update values.
+
+                // All data is validated, so we can create a group now.
+                if ($enrolmethod == 'cohort') {
+                    $fields['role'] = $method['role'];
+                    if (isset($method['addtogroup']) && intval($method['addtogroup']) == COHORT_CREATE_GROUP) {
+                        if (!isset($groupid) || !$groupid) {
+                            // Create a new group for the cohort if requested.
+                            $context = context_course::instance($course->id);
+                            require_capability('moodle/course:managegroups', $context);
+                            $groupid = enrol_cohort_create_new_group($course->id, $fields['customint1']);
+                        }
+                        $fields['customint2'] = $groupid;
+                    }
+                    $method = $fields;
+                }
+
                 foreach ($method as $k => $v) {
                     $instance->{$k} = $v;
                 }
@@ -1160,6 +1275,40 @@ class tool_uploadcourse_course {
         }
 
         if (!in_array(CONTEXT_COURSE, $this->contextlevels[$roleid])) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Check if cohort is allowed in course context
+     *
+     * @param int $courseid course context.
+     * @param int $cohortid Cohort ID.
+     * @return bool
+     */
+    protected function validate_cohort_context(int $courseid, int $cohortid) : bool {
+        $coursecontext = \context_course::instance($courseid);
+        if (!cohort_get_cohort($cohortid, $coursecontext)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Check if group exist in course
+     *
+     * @param int $courseid course context.
+     * @param string $groupname group name.
+     * @return bool
+     */
+    protected function validate_group(int $courseid, string $groupname) : bool {
+        if (!isset($this->groups[$courseid])) {
+            $this->groups[$courseid] = groups_get_all_groups($courseid);
+        }
+
+        $groupid = groups_get_group_by_name($courseid, $groupname);
+        if (!$groupid) {
             return false;
         }
         return true;
