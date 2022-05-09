@@ -1049,6 +1049,23 @@ class tool_uploadcourse_course {
 
                 $status = ($todisable) ? ENROL_INSTANCE_DISABLED : ENROL_INSTANCE_ENABLED;
 
+                // Sort out the given role.
+                if (isset($method['role'])) {
+                    $role = $method['role'];
+                    if (!$this->validate_role_context($course->id, $role)) {
+                        $this->error('contextrolenotallowed',
+                            new lang_string('contextrolenotallowed', 'core_role', $role));
+                        break;
+                    }
+
+                    $roleids = tool_uploadcourse_helper::get_role_ids();
+                    if (isset($roleids[$method['role']])) {
+                        if ($instance) {
+                            $instance->roleid = $roleids[$role];
+                        }
+                    }
+                }
+
                 // Create a new instance if necessary.
                 if (empty($instance) && $plugin->can_add_instance($course->id)) {
                     $instanceid = $plugin->add_default_instance($course);
@@ -1105,21 +1122,6 @@ class tool_uploadcourse_course {
                 }
                 if ($instance->enrolenddate < $instance->enrolstartdate) {
                     $instance->enrolenddate = $instance->enrolstartdate;
-                }
-
-                // Sort out the given role.
-                if (isset($method['role'])) {
-                    $role = $method['role'];
-                    if (!$this->validate_role_context($course->id, $role)) {
-                        $this->error('contextrolenotallowed',
-                            new lang_string('contextrolenotallowed', 'core_role', $role));
-                        break;
-                    }
-
-                    $roleids = tool_uploadcourse_helper::get_role_ids();
-                    if (isset($roleids[$method['role']])) {
-                        $instance->roleid = $roleids[$method['role']];
-                    }
                 }
 
                 $instance->timemodified = time();
