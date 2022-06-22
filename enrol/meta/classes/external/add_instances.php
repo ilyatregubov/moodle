@@ -132,7 +132,7 @@ class add_instances extends external_api {
             $enrolplugin = enrol_get_plugin('meta');
             $fields = [
                 'customint1' => $instance['courseid'],
-                'customint2' => $instance['creategroup'] ? ENROL_META_CREATE_GROUP : 0,
+                'customint2' => $instance['creategroup'] ? ENROL_CREATE_GROUP : ENROL_NO_GROUP,
             ];
             $addresult = $enrolplugin->add_instance($metacourserecord, $fields);
             $result[] = [

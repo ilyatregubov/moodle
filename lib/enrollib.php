@@ -55,6 +55,17 @@ define('ENROL_EXT_REMOVED_KEEP', 1);
 define('ENROL_RESTORE_TYPE', 'enrolrestore');
 
 /**
+ * ENROL_CREATE_GROUP constant for automatically creating a group for an enrolment plugin supporting it
+ * for example meta or cohort enrolments.
+ */
+define('ENROL_CREATE_GROUP', -1);
+
+/**
+ * ENROL_NO_GROUP constant for using no group mode for an enrolment plugin.
+ */
+define('ENROL_NO_GROUP', 0);
+
+/**
  * When user disappears from external source, user enrolment is suspended, roles are kept as is.
  * In some cases user needs a role with some capability to be visible in UI - suc has in gradebook,
  * assignments, etc.

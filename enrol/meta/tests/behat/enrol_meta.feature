@@ -63,7 +63,7 @@ Feature: Enrolments are synchronised with meta courses
   Scenario: Add meta enrolment instance with auto-created groups
     When I add "Course meta link" enrolment method in "Course 3" with:
       | Link course  | C1C1      |
-      | Add to group | Create new group |
+      | Add to group | Create a new group |
     And I am on the "Course 3" "enrolled users" page
     Then I should see "Course 1 course" in the "Student 1" "table_row"
     And I should see "Course 1 course" in the "Student 2" "table_row"

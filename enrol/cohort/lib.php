@@ -26,6 +26,9 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * COHORT_CREATEGROUP constant for automatically creating a group for a cohort.
+ *
+ * @deprecated since Moodle 4.1 MDL-75045 - please use ENROL_CREATE_GROUP instead
+ * @todo MDL-75056 This will be deleted in Moodle 4.5
  */
 define('COHORT_CREATE_GROUP', -1);
 
@@ -113,7 +116,7 @@ class enrol_cohort_plugin extends enrol_plugin {
             }
             foreach ($fields['customint1'] as $cid) {
                 $fields2['customint1'] = $cid;
-                if (!empty($fields['customint2']) && $fields['customint2'] == COHORT_CREATE_GROUP) {
+                if (!empty($fields['customint2']) && $fields['customint2'] == ENROL_CREATE_GROUP) {
                     // Create a new group for the cohort if requested.
                     $context = context_course::instance($course->id);
                     require_capability('moodle/course:managegroups', $context);
@@ -154,7 +157,7 @@ class enrol_cohort_plugin extends enrol_plugin {
             role_unassign_all($params);
         }
         // Create a new group for the cohort if requested.
-        if ($data->customint2 == COHORT_CREATE_GROUP) {
+        if ($data->customint2 == ENROL_CREATE_GROUP) {
             require_capability('moodle/course:managegroups', $context);
             $groupid = enrol_cohort_create_new_group($instance->courseid, $data->customint1);
             $data->customint2 = $groupid;
@@ -396,9 +399,9 @@ class enrol_cohort_plugin extends enrol_plugin {
      * @return array
      */
     protected function get_group_options($coursecontext) {
-        $groups = array(0 => get_string('none'));
+        $groups = array(ENROL_NO_GROUP => get_string('none'));
         if (has_capability('moodle/course:managegroups', $coursecontext)) {
-            $groups[COHORT_CREATE_GROUP] = get_string('creategroup', 'enrol_cohort');
+            $groups[ENROL_CREATE_GROUP] = get_string('createnewgroup', 'group');
         }
 
         foreach (groups_get_all_groups($coursecontext->instanceid) as $group) {

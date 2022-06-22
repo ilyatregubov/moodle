@@ -25,7 +25,6 @@
 $string['addgroup'] = 'Add to group';
 $string['coursesort'] = 'Sort course list';
 $string['coursesort_help'] = 'This determines whether the list of courses that can be linked are sorted by sort order (i.e. the order set in Site administration > Courses > Manage courses and categories) or alphabetically by course setting.';
-$string['creategroup'] = 'Create new group';
 $string['defaultgroupnametext'] = '{$a->name} course {$a->increment}';
 $string['enrolmetasynctask'] = 'Meta enrolment sync task';
 $string['linkedcourse'] = 'Link course';
@@ -43,3 +42,6 @@ $string['wscannotcreategroup'] = 'No permission to create group in linked course
 $string['wsinvalidcourse'] = 'Course id = {$a} does not exist or no permission to link in meta enrolment.';
 $string['wsinvalidmetacourse'] = 'Meta course id = {$a} does not exist or no permission to add enrolment instance.';
 $string['wsnoinstancesspecified'] = 'No instances specified';
+
+// Deprecated since Moodle 4.1.
+$string['creategroup'] = 'Create new group';
