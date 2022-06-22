@@ -26,6 +26,9 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * ENROL_META_CREATE_GROUP constant for automatically creating a group for a meta course.
+ *
+ * @deprecated since Moodle 4.1 MDL-75045 - please use ENROL_CREATE_GROUP instead
+ * @todo MDL-75056 This will be deleted in Moodle 4.5
  */
 define('ENROL_META_CREATE_GROUP', -1);
 
@@ -128,7 +131,7 @@ class enrol_meta_plugin extends enrol_plugin {
             $courses = array(null); // Strange? Yes, but that's how it's working or instance is not created ever.
         }
         foreach ($courses as $courseid) {
-            if (!empty($fields['customint2']) && $fields['customint2'] == ENROL_META_CREATE_GROUP) {
+            if (!empty($fields['customint2']) && $fields['customint2'] == ENROL_CREATE_GROUP) {
                 $context = context_course::instance($course->id);
                 require_capability('moodle/course:managegroups', $context);
                 $groupid = enrol_meta_create_new_group($course->id, $courseid);
@@ -155,7 +158,7 @@ class enrol_meta_plugin extends enrol_plugin {
 
         require_once("$CFG->dirroot/enrol/meta/locallib.php");
 
-        if (!empty($data->customint2) && $data->customint2 == ENROL_META_CREATE_GROUP) {
+        if (!empty($data->customint2) && $data->customint2 == ENROL_CREATE_GROUP) {
             $context = context_course::instance($instance->courseid);
             require_capability('moodle/course:managegroups', $context);
             $groupid = enrol_meta_create_new_group($instance->courseid, $data->customint1);
@@ -271,10 +274,10 @@ class enrol_meta_plugin extends enrol_plugin {
      * @return array
      */
     protected function get_group_options($coursecontext) {
-        $groups = array(0 => get_string('none'));
+        $groups = array(ENROL_NO_GROUP => get_string('none'));
         $courseid = $coursecontext->instanceid;
         if (has_capability('moodle/course:managegroups', $coursecontext)) {
-            $groups[ENROL_META_CREATE_GROUP] = get_string('creategroup', 'enrol_meta');
+            $groups[ENROL_CREATE_GROUP] = get_string('createnewgroup', 'group');
         }
         foreach (groups_get_all_groups($courseid) as $group) {
             $groups[$group->id] = format_string($group->name, true, array('context' => $coursecontext));

@@ -28,6 +28,17 @@ use core_user\fields;
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * ENROL_CREATE_GROUP constant for automatically creating a group for an enrolment plugin supporting it
+ * for example meta or cohort enrolments.
+ */
+define('ENROL_CREATE_GROUP', -1);
+
+/**
+ * ENROL_NO_GROUP constant for using no group mode for an enrolment plugin.
+ */
+define('ENROL_NO_GROUP', 0);
+
+/**
  * This class provides a targeted tied together means of interfacing the enrolment
  * tasks together with a course.
  *

@@ -39,6 +39,7 @@ $string['byidnumber'] = 'Alphabetically by ID number';
 $string['bylastname'] = 'Alphabetically by last name, first name';
 $string['createautomaticgrouping'] = 'Create automatic grouping';
 $string['creategroup'] = 'Create group';
+$string['createnewgroup'] = 'Create a new group';
 $string['creategrouping'] = 'Create grouping';
 $string['creategroupinselectedgrouping'] = 'Create group in grouping';
 $string['createingrouping'] = 'Grouping of auto-created groups';
