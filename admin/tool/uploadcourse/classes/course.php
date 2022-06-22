@@ -1207,7 +1207,51 @@ class tool_uploadcourse_course {
                     }
                 }
             }
+        } else if ($plugin == 'meta') {
+            if (!isset($enrolmentdata['metacoursename'])) {
+                $errors['missingmandatoryfields'] =
+                    new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                        'metacoursename');
+            } else {
+                $metacoursename = $enrolmentdata['metacoursename'];
+                $metacourseid = $DB->get_field('course', 'id', ['shortname' => $metacoursename]);
+
+                if (!$metacourseid) {
+                    $errors['unknownmetacourse'] =
+                        new lang_string('unknownmetacourse', 'enrol_meta', $metacoursename);
+                }
+
+                if ($courseid) {
+                    if ($courseid == $metacourseid) {
+                        $errors['samemetacourse'] =
+                            new lang_string('samemetacourse', 'enrol_meta', $metacoursename);
+                    }
+
+                    // This is duplicated fragment.
+                    if (isset($enrolmentdata['addtogroup'])) {
+                        $addtogroup = $enrolmentdata['addtogroup'];
+                        if ($addtogroup == ENROL_META_CREATE_GROUP || $addtogroup == 0) {
+                            if (isset($enrolmentdata['groupname'])) {
+                                $errors['erroraddtogroupgroupname'] =
+                                    new lang_string('erroraddtogroupgroupname', 'group');
+                            }
+                        } else {
+                            $errors['erroraddtogroup'] =
+                                new lang_string('erroraddtogroup', 'group');
+                        }
+                    } else {
+                        if (isset($enrolmentdata['groupname']) && $enrolmentdata['groupname']) {
+                            $groupname = $enrolmentdata['groupname'];
+                            if (!$this->group_exist($courseid, $groupname)) {
+                                $errors['errorinvalidgroup'] =
+                                    new lang_string('errorinvalidgroup', 'group', $groupname);
+                            }
+                        }
+                    }
+                }
+            }
         }
+
         return $errors;
     }
 
@@ -1227,6 +1271,16 @@ class tool_uploadcourse_course {
                 $context = context_course::instance($courseid);
                 require_capability('moodle/course:managegroups', $context);
                 $groupid = enrol_cohort_create_new_group($courseid, $fields['customint1']);
+                $fields['customint2'] = $groupid;
+            }
+            return $fields;
+        } else if ($plugin == 'meta') {
+            // This is duplicated fragment.
+            if (isset($enrolmentdata['addtogroup']) && intval($enrolmentdata['addtogroup']) == ENROL_META_CREATE_GROUP) {
+                // Create a new group for the meta enrolment if requested.
+                $context = context_course::instance($courseid);
+                require_capability('moodle/course:managegroups', $context);
+                $groupid = enrol_meta_create_new_group($courseid, $fields['customint1']);
                 $fields['customint2'] = $groupid;
             }
             return $fields;
@@ -1257,7 +1311,18 @@ class tool_uploadcourse_course {
             } else if (isset($enrolmentdata['groupname'])) {
                 $customfields['customint2'] = groups_get_group_by_name($courseid, $enrolmentdata['groupname']);
             }
+        } else if ($plugin == 'meta') {
+            $metacoursename = $enrolmentdata['metacoursename'];
+            $customfields['customint1'] = $DB->get_field('course', 'id', ['shortname' => $metacoursename]);
+
+            // This is duplicated fragment.
+            if (isset($enrolmentdata['addtogroup']) && ($enrolmentdata['addtogroup'] == 0)) {
+                $customfields['customint2'] = 0;
+            } else if (isset($enrolmentdata['groupname'])) {
+                $customfields['customint2'] = groups_get_group_by_name($courseid, $enrolmentdata['groupname']);
+            }
         }
+
         return $customfields;
     }
 

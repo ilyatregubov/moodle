@@ -1946,6 +1946,235 @@ class course_test extends \advanced_testcase {
     }
 
     /**
+     * Tests prepare behavior when meta course shortname is missing in csv for meta enrolment.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     */
+    public function test_meta_enrol_missing_mandatory_fields() {
+        $this->resetAfterTest(true);
+        enrol::enable_plugin('meta', true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'meta',
+        ];
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('missingmandatoryfields', $co->get_errors());
+    }
+
+    /**
+     * Tests prepare behavior when meta link course from csv do not exist in system for meta enrolment.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     */
+    public function test_meta_enrol_non_exist_meta_shortname() {
+        $this->resetAfterTest(true);
+        enrol::enable_plugin('meta', true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+        $data = ['shortname' => 'shortname',
+            'fullname' => 'New course',
+            'category' => 1,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => 'I dont exist',
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('unknownmetacourse', $co->get_errors());
+    }
+
+    /**
+     * Tests prepare behavior when group from csv do not exist in system for meta enrolment.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     */
+    public function test_meta_enrol_invalid_group() {
+        $this->resetAfterTest(true);
+        enrol::enable_plugin('meta', true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_OR_UPDATE;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+        $course1 = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON1']);
+
+        $data = ['shortname' => $course1->shortname,
+            'fullname' => $course1->fullname,
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_groupname' => 'I dont exist'
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('errorinvalidgroup', $co->get_errors());
+    }
+
+    /**
+     * Tests prepare behavior when addtogroup option is invalid.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     */
+    public function test_meta_enrol_invalid_addgroup() {
+        $this->resetAfterTest(true);
+        enrol::enable_plugin('meta', true);
+        $this->setAdminUser();
+        $mode = tool_uploadcourse_processor::MODE_CREATE_OR_UPDATE;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+        $course1 = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON1']);
+
+        $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+
+        $data = ['shortname' => $course1->shortname,
+            'fullname' => $course1->fullname,
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_groupname' => 'I dont exist',
+            'enrolment_1_addtogroup' => 0
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('erroraddtogroupgroupname', $co->get_errors());
+
+        $data = ['shortname' => $course1->shortname,
+            'fullname' => $course1->fullname,
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_addtogroup' => 2
+        ];
+
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertFalse($co->prepare());
+        $this->assertArrayHasKey('erroraddtogroup', $co->get_errors());
+
+    }
+
+    /**
+     * Tests prepare and proceed behavior for valid data.
+     *
+     * @covers \tool_uploadcourse_course::prepare
+     * @covers \tool_uploadcourse_course::proceed
+     */
+    public function test_meta_enrol_valid_data() {
+        global $PAGE;
+
+        $this->resetAfterTest(true);
+        enrol::enable_plugin('meta', true);
+        $this->setAdminUser();
+
+        $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
+        $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+
+        // Create new instance and new group.
+        $data = ['shortname' => 'Test',
+            'fullname' => 'test course',
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_addtogroup' => '-1'
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+        $course2 = get_course($co->get_id());
+        $this->assertEquals('Test', $course2->shortname);
+        $this->assertEquals($cat->id, $course2->category);
+
+        $manager = new course_enrolment_manager($PAGE, $course2);
+        $metainstance = $this->get_meta_instance($manager);
+
+        $this->assertNotNull($metainstance);
+        $this->assertEquals($course->id, $metainstance->customint1);
+        $this->assertEquals(0, $metainstance->roleid);
+
+        $groups = groups_get_all_groups($course2->id);
+        $this->assertEquals(1, count($groups));
+
+        // Update role and group in existing instance.
+        $mode = tool_uploadcourse_processor::MODE_UPDATE_ONLY;
+        $updatemode = tool_uploadcourse_processor::UPDATE_ALL_WITH_DATA_OR_DEFAUTLS;
+
+        $group2 = $this->getDataGenerator()->create_group(['courseid' => $course2->id]);
+
+        $data = ['shortname' => 'Test',
+            'fullname' => 'test course',
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_groupname' => $group2->name
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+
+        $this->assertEquals($course2->id, $co->get_id());
+
+        $manager = new course_enrolment_manager($PAGE, $course2);
+        $metainstance = $this->get_meta_instance($manager);
+        $this->assertNotNull($metainstance);
+        $this->assertEquals($course->id, $metainstance->customint1);
+        $this->assertEquals(0, $metainstance->roleid);
+        $this->assertEquals($group2->id, $metainstance->customint2);
+
+        // Update group mode.
+        $data = ['shortname' => 'Test',
+            'fullname' => 'test course',
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_addtogroup' => 0
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+
+        $manager = new course_enrolment_manager($PAGE, $course2);
+        $metainstance = $this->get_meta_instance($manager);
+        $this->assertEquals(0, $metainstance->customint2);
+
+        // Disable enrolment method for a course.
+        $data = ['shortname' => 'Test',
+            'fullname' => 'test course',
+            'category' => $cat->id,
+            'enrolment_1' => 'meta',
+            'enrolment_1_metacoursename' => $course->shortname,
+            'enrolment_1_disable' => 1
+        ];
+        $co = new tool_uploadcourse_course($mode, $updatemode, $data);
+
+        $this->assertTrue($co->prepare());
+        $co->proceed();
+
+        $manager = new course_enrolment_manager($PAGE, $course2);
+        $metainstance = $this->get_meta_instance($manager, true);
+        $this->assertNull($metainstance);
+    }
+
+    /**
      * Get custom field plugin generator
      *
      * @return core_customfield_generator
@@ -1992,4 +2221,21 @@ class course_test extends \advanced_testcase {
         return $cohortinstance;
     }
 
+    /**
+     * Finds meta enrolment instance in a course.
+     *
+     * @param course_enrolment_manager $manager Enrolment manager
+     * @param bool $onlyenabled Get only enabled instance
+     */
+    protected function get_meta_instance(course_enrolment_manager $manager, bool $onlyenabled = false) {
+        $metainstance = null;
+        $enrollmentinstances = $manager->get_enrolment_instances($onlyenabled);
+        foreach ($enrollmentinstances as $enrollmentinstance) {
+            if ($enrollmentinstance->enrol == 'meta') {
+                $metainstance = $enrollmentinstance;
+                break;
+            }
+        }
+        return $metainstance;
+    }
 }
