@@ -383,6 +383,93 @@ class enrol_meta_plugin extends enrol_plugin {
         return $errors;
     }
 
+    /**
+     * Check if data is valid for a given enrolment plugin
+     *
+     * @param array $enrolmentdata enrolment data to validate.
+     * @param int|null $courseid Course ID.
+     * @return array Errors
+     */
+    public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null): array {
+        global $DB;
+
+        $errors = [];
+        if (!enrol_is_enabled('meta')) {
+            $errors['plugindisabled'] =
+                new lang_string('plugindisabled', 'plugin');
+        }
+
+        if (isset($enrolmentdata['addtogroup'])) {
+            $addtogroup = $enrolmentdata['addtogroup'];
+            if (($addtogroup == 1) || ($addtogroup == 0)) {
+                if (isset($enrolmentdata['groupname'])) {
+                    $errors['erroraddtogroupgroupname'] =
+                        new lang_string('erroraddtogroupgroupname', 'group');
+                }
+            } else {
+                $errors['erroraddtogroup'] =
+                    new lang_string('erroraddtogroup', 'group');
+            }
+        }
+
+        if ($courseid) {
+            $enrolmentdata = $this->fill_enrol_custom_fields($enrolmentdata, $courseid);
+
+            if (isset($enrolmentdata['groupname']) && $enrolmentdata['groupname']) {
+                $groupname = $enrolmentdata['groupname'];
+                if (!groups_get_group_by_name($courseid, $groupname)) {
+                    $errors['errorinvalidgroup'] =
+                        new lang_string('errorinvalidgroup', 'group', $groupname);
+                }
+            }
+        }
+
+        if (!isset($enrolmentdata['metacoursename'])) {
+            $errors['missingmandatoryfields'] =
+                new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                    'metacoursename');
+        } else {
+            $metacoursename = $enrolmentdata['metacoursename'];
+            $metacourseid = $DB->get_field('course', 'id', ['shortname' => $metacoursename]);
+
+            if (!$metacourseid) {
+                $errors['unknownmetacourse'] =
+                    new lang_string('unknownmetacourse', 'enrol_meta', $metacoursename);
+            }
+
+            if ($courseid && ($courseid == $metacourseid)) {
+                $errors['samemetacourse'] =
+                    new lang_string('samemetacourse', 'enrol_meta', $metacoursename);
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * Fill custom fields data for a given enrolment plugin.
+     *
+     * @param array $enrolmentdata enrolment data.
+     * @param int $courseid Course ID.
+     * @return array Updated enrolment data with custom fields info.
+     */
+    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid): array {
+        global $DB;
+
+        $metacoursename = $enrolmentdata['metacoursename'];
+        $enrolmentdata['customint1'] =
+            $DB->get_field('course', 'id', ['shortname' => $metacoursename]);
+
+        if (isset($enrolmentdata['addtogroup'])) {
+            if ($enrolmentdata['addtogroup'] == 0) {
+                $enrolmentdata['customint2'] = 0;
+            } else if ($enrolmentdata['addtogroup'] == 1) {
+                $enrolmentdata['customint2'] = ENROL_META_CREATE_GROUP;
+            }
+        } else if (isset($enrolmentdata['groupname'])) {
+            $enrolmentdata['customint2'] = groups_get_group_by_name($courseid, $enrolmentdata['groupname']);
+        }
+        return $enrolmentdata;
+    }
 
     /**
      * Restore instance and map settings.
