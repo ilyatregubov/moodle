@@ -1,0 +1,7 @@
+shortname,fullname,category_idnumber,enrolment_1,enrolment_1_role,enrolment_1_paymentaccount,enrolment_1_currency,enrolment_1_cost,enrolment_1_startdate,enrolment_1_enddate,enrolment_1_enrolperiod
+C1,Course 1,CAT1,fee,student,Not exist,AUD,15,test,test,test
+C2,Course 2,CAT2,fee,student,Account1,AUD,15,,,
+C3,Course 3,CAT1,fee,student,Account1,AUD,ABC,,,
+C4,Course 4,CAT1,fee,student,Account1,AAA,15,,,
+C5,Course 5,CAT1,fee,student,Account1,AUD,15,2023-07-27,2023-07-26,2
+C6,Course 6,CAT1,fee,student,Account1,AUD,15,2023-07-27,2023-07-29,5 days

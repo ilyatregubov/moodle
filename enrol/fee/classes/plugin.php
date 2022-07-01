@@ -444,4 +444,121 @@ class enrol_fee_plugin extends enrol_plugin {
         $context = context_course::instance($instance->courseid);
         return has_capability('enrol/fee:config', $context);
     }
+
+    /**
+     * Check if data is valid for a given enrolment plugin
+     *
+     * @param array $enrolmentdata enrolment data to validate.
+     * @param int|null $courseid Course ID.
+     * @return array Errors
+     */
+    public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null): array {
+
+        $errors = [];
+        if (!enrol_is_enabled('fee')) {
+            $errors['plugindisabled'] =
+                new lang_string('plugindisabled', 'plugin');
+        }
+
+        if (!isset($enrolmentdata['paymentaccount'])) {
+            $errors['missingmandatoryfields'] =
+                new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                    'paymentaccount');
+        }
+
+        if ($courseid) {
+            $enrolmentdata = $this->fill_enrol_custom_fields($enrolmentdata, $courseid);
+            if (!isset($enrolmentdata['customint1'])) {
+                $errors['errorpaymentaccount'] =
+                    new lang_string('errorpaymentaccount', 'enrol_fee', $enrolmentdata['paymentaccount']);
+            }
+        } else if (isset($enrolmentdata['paymentaccount'])) {
+            // Check at least payment with this name exist in system.
+            $sitecontext = \context_system::instance();
+            $accounts = \core_payment\helper::get_payment_accounts_menu($sitecontext); // This can be cached.
+            // Multiple accounts with same name can exist. First matching will be used.
+            $key = array_search($enrolmentdata['paymentaccount'], $accounts);
+            if ($key === false) {
+                $errors['errorpaymentaccount'] =
+                    new lang_string('errorpaymentaccount', 'enrol_fee', $enrolmentdata['paymentaccount']);
+            }
+        }
+
+        if (!isset($enrolmentdata['cost'])) {
+            $errors['missingmandatoryfields'] =
+                new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                    'cost');
+        } else {
+            $cost = str_replace(get_string('decsep', 'langconfig'), '.', $enrolmentdata['cost']);
+            if (!is_numeric($cost)) {
+                $errors['costerror'] = new lang_string('costerror', 'enrol_fee', $cost);
+            }
+        }
+
+        if (!isset($enrolmentdata['currency'])) {
+            $errors['missingmandatoryfields'] =
+                new lang_string('missingmandatoryfields', 'tool_uploadcourse',
+                    'currency');
+        } else {
+            $currencies = enrol_get_plugin('fee')->get_possible_currencies();
+            $currency = $enrolmentdata['currency'];
+            if (!array_key_exists($currency, $currencies)) {
+                $errors['errorcurrency'] =
+                    new lang_string('errorcurrency', 'enrol_fee', $currency);
+            }
+        }
+
+        if (!empty($enrolmentdata['startdate'])) {
+            $enrolmentdata['startdate'] = strtotime($enrolmentdata['startdate']);
+            if ($enrolmentdata['startdate'] === false) {
+                $errors['errorenrolstartdateformat'] = new lang_string('enrolstartdateformaterror', 'enrol_fee');
+            }
+        }
+
+        if (!empty($enrolmentdata['enddate'])) {
+            $enrolmentdata['enddate'] = strtotime($enrolmentdata['enddate']);
+            if ($enrolmentdata['enddate'] === false) {
+                $errors['errorenrolenddateformat'] = new lang_string('enrolenddateformaterror', 'enrol_fee');
+            }
+        }
+
+        if (!empty($enrolmentdata['startdate']) && !empty($enrolmentdata['enddate']) &&
+                ($enrolmentdata['enddate'] < $enrolmentdata['startdate'])) {
+            $errors['errorenrolenddate'] = new lang_string('enrolenddaterror', 'enrol_fee');
+        }
+
+        if (!empty($enrolmentdata['enrolperiod'])) {
+            if (preg_match('/^\d+$/', $enrolmentdata['enrolperiod'])) {
+                $enrolmentdata['enrolperiod'] = (int) $enrolmentdata['enrolperiod'];
+            } else {
+                // Try and convert period to seconds.
+                $enrolmentdata['enrolperiod'] = strtotime('1970-01-01 GMT + ' . $enrolmentdata['enrolperiod']);
+            }
+            if ($enrolmentdata['enrolperiod'] === false) {
+                $errors['errorenrolperiodformat'] = new lang_string('enrolperiodformaterror', 'enrol_fee');
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Fill custom fields data for a given enrolment plugin.
+     *
+     * @param array $enrolmentdata enrolment data.
+     * @param int $courseid Course ID.
+     * @return array Updated enrolment data with custom fields info.
+     */
+    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid): array {
+        $coursecontext = \context_course::instance($courseid);
+        $accounts = \core_payment\helper::get_payment_accounts_menu($coursecontext);
+
+        // Multiple accounts with same name can exist. First matching will be used.
+        $key = array_search($enrolmentdata['paymentaccount'], $accounts);
+        if ($key !== false) {
+            $enrolmentdata['customint1'] = $key;
+        }
+
+        return $enrolmentdata;
+    }
 }

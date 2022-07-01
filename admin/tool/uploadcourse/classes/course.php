@@ -1059,6 +1059,16 @@ class tool_uploadcourse_course {
                 $status = ($todisable) ? ENROL_INSTANCE_DISABLED : ENROL_INSTANCE_ENABLED;
                 $method = $plugin->fill_enrol_custom_fields($method, $course->id);
 
+                // Is the enrolment period set?
+                if (!empty($method['enrolperiod'])) {
+                    if (preg_match('/^\d+$/', $method['enrolperiod'])) {
+                        $method['enrolperiod'] = (int) $method['enrolperiod'];
+                    } else {
+                        // Try and convert period to seconds.
+                        $method['enrolperiod'] = strtotime('1970-01-01 GMT + ' . $method['enrolperiod']);
+                    }
+                }
+
                 // Create a new instance if necessary.
                 if (empty($instance) && $plugin->can_add_instance($course->id)) {
                     $error = $plugin->validate_plugin_data_context($method, $course->id);
@@ -1099,17 +1109,10 @@ class tool_uploadcourse_course {
                 // Sort out the start, end and date.
                 $modifiedinstance->enrolstartdate = (isset($method['startdate']) ? strtotime($method['startdate']) : 0);
                 $modifiedinstance->enrolenddate = (isset($method['enddate']) ? strtotime($method['enddate']) : 0);
-
-                // Is the enrolment period set?
-                if (isset($method['enrolperiod']) && ! empty($method['enrolperiod'])) {
-                    if (preg_match('/^\d+$/', $method['enrolperiod'])) {
-                        $method['enrolperiod'] = (int) $method['enrolperiod'];
-                    } else {
-                        // Try and convert period to seconds.
-                        $method['enrolperiod'] = strtotime('1970-01-01 GMT + ' . $method['enrolperiod']);
-                    }
+                if (!empty($method['enrolperiod'])) {
                     $modifiedinstance->enrolperiod = $method['enrolperiod'];
                 }
+
                 if ($instance->enrolstartdate > 0 && isset($method['enrolperiod'])) {
                     $modifiedinstance->enrolenddate = $instance->enrolstartdate + $method['enrolperiod'];
                 }
