@@ -23,11 +23,21 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['columnwidth'] = 'Column width (pixels)';
+$string['hidecolumn'] = 'Hide column';
+$string['movecolumn'] = 'Move column {$a}';
 $string['pluginname'] = 'Column sort order';
-$string['privacy:metadata'] = 'The Column sort order question bank plugin does not store any personal data.';
+$string['pincolumn'] = 'Column {$a} not pinned. Click to pin.';
+$string['privacy:metadata:preference:enabledcol'] = 'The plugin saves user preference of column orders.';
+$string['privacy:metadata:preference:pinnedcols'] = 'The plugin saves user preference of stikcy columns.';
+$string['privacy:metadata:preference:hiddencols'] = 'The plugin saves user preference of hidden columns.';
+$string['privacy:metadata:preference:colsize'] = 'The plugin saves user preference of column sizes.';
 $string['qbankcolumnsortorder'] = 'Column sort order';
 $string['qbankgotocolumnsort'] = 'You can change the order of the columns in the question bank on the page {$a}.';
 $string['qbankcolumnsdisabled'] = 'Currently disabled question bank plugins:';
 $string['qbankgotomanageqbanks'] = 'You can remove a column by disabling the plugin in <a href=\'{$a}\'>Manage question bank plugins</a>.';
-$string['qbankcolumnname'] = '({$a})';
+$string['qbankcolumnname'] = '{$a}';
 $string['qbanksortdescription'] = 'The order in which plugins are listed below determines the order of the columns in the question bank.';
+$string['resizecolumn'] = 'Resize column {$a}';
+$string['showhidecolumn'] = 'Show/Hide column';
+$string['unpincolumn'] = 'Column {$a} pinned. Click to unpin.';
