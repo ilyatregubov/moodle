@@ -260,4 +260,35 @@ class average extends grade_report_grader {
         return $DB->get_records_sql($sql, $params);
     }
 
+    /**
+     * Get grade item types in a course.
+     *
+     * @param int $courseid Course ID
+     * @return array Item types.
+     */
+    public static function item_types(int $courseid): array {
+        global $DB, $CFG;
+
+        $sql = "(SELECT gi.itemmodule
+                   FROM {grade_items} gi
+                   WHERE gi.courseid = :courseid1
+                   AND gi.itemmodule IS NOT NULL)
+                   UNION
+                (SELECT gi1.itemtype
+                   FROM {grade_items} gi1
+                  WHERE gi1.courseid = :courseid2
+                    AND gi1.itemtype = 'manual')";
+
+        $itemtypes = $DB->get_records_sql($sql, ['courseid1' => $courseid, 'courseid2' => $courseid]);
+        foreach ($itemtypes as $itemtype => $value) {
+            if (file_exists("$CFG->dirroot/mod/$itemtype/lib.php")) {
+                $modnames[$itemtype] = get_string("modulename", "$itemtype", null, true);
+            } else if ($itemtype == 'manual') {
+                $modnames[$itemtype] = get_string('manualitem', 'grades', null, true);
+            }
+        }
+
+        return $modnames;
+    }
+
 }

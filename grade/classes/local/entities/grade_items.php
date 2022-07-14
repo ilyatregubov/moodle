@@ -101,38 +101,47 @@ class grade_items extends base {
         ))
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_TEXT)
-            ->add_fields("$tablealias.itemname, $tablealias.iteminstance, $tablealias.itemmodule, $tablealias.courseid")
+            ->add_fields("$tablealias.itemname, $tablealias.iteminstance, $tablealias.itemnumber, $tablealias.itemmodule, $tablealias.courseid")
             ->add_callback(static function($value, $row): string {
-                global $PAGE;
+                global $PAGE, $CFG;
 
-                $modinfo = get_fast_modinfo($row->courseid);
-                $instances = $modinfo->get_instances();
-                $cm = $instances[$row->itemmodule][$row->iteminstance];
-                $url = new \moodle_url('/mod/' . $row->itemmodule . '/view.php', array('id' => $cm->id)); //Not for manual grade items!!!!!
-
-                $renderer =  new \core_renderer($PAGE, RENDERER_TARGET_GENERAL);
-
-                $imagedata = '';
                 if ($row->itemmodule) {
-                    $imagedata = $renderer->pix_icon('monologo', '', $row->itemmodule, ['class' => 'activityicon']);
-                    $purposeclass = plugin_supports('mod', $row->itemmodule, FEATURE_MOD_PURPOSE);
-                    $purposeclass .= ' activityiconcontainer';
-                    $purposeclass .= ' modicon_' . $row->itemmodule;
-                    $imagedata = \html_writer::tag('div', $imagedata, ['class' => $purposeclass]);
-                }
+                    $modinfo = get_fast_modinfo($row->courseid);
+                    $instances = $modinfo->get_instances();
+                    $cm = $instances[$row->itemmodule][$row->iteminstance];
 
-                // All the html stuff goes here.
-                $html = \html_writer::start_div('page-context-header');
+                    if (file_exists($CFG->dirroot . '/mod/' . $row->itemmodule . '/grade.php')) {
+                        $args = ['id' => $cm->id, 'itemnumber' => $row->itemnumber];
+                        $url = new \moodle_url('/mod/' . $row->itemmodule . '/grade.php', $args);
+                    } else {
+                        $url = new \moodle_url('/mod/' . $row->itemmodule . '/view.php', array('id' => $cm->id));
+                    }
 
-                // Image data.
-                $html .= \html_writer::div($imagedata, 'page-header-image mr-2');
-                if (isset($row->itemmodule)) {
-                    $prefix = \html_writer::div($row->itemmodule, 'text-muted text-uppercase small line-height-3');
-                    $name = $prefix . \html_writer::link($url, format_string($cm->name, true));
+                    $renderer = new \core_renderer($PAGE, RENDERER_TARGET_GENERAL);
+
+                    $imagedata = '';
+                    if ($row->itemmodule) {
+                        $imagedata = $renderer->pix_icon('monologo', '', $row->itemmodule, ['class' => 'activityicon']);
+                        $purposeclass = plugin_supports('mod', $row->itemmodule, FEATURE_MOD_PURPOSE);
+                        $purposeclass .= ' activityiconcontainer';
+                        $purposeclass .= ' modicon_' . $row->itemmodule;
+                        $imagedata = \html_writer::tag('div', $imagedata, ['class' => $purposeclass]);
+                    }
+
+                    $html = \html_writer::start_div('page-context-header');
+                    // Image data.
+                    $html .= \html_writer::div($imagedata, 'page-header-image mr-2');
+                    if (isset($row->itemmodule)) {
+                        $prefix = \html_writer::div($row->itemmodule, 'text-muted text-uppercase small line-height-3');
+                        $name = $prefix . \html_writer::link($url, format_string($cm->name, true));
+                    } else {
+                        $name = $row->itemname;
+                    }
+                    $html .= \html_writer::tag('div', $name, array('class' => 'page-header-headings'));
                 } else {
-                    $name = $row->itemname;
+                    // Manual grade item.
+                    $html = $row->itemname;
                 }
-                $html .= \html_writer::tag('div', $name, array('class' => 'page-header-headings'));
                 return $html;
 
             });
@@ -161,9 +170,11 @@ class grade_items extends base {
      * @return filter[]
      */
     protected function get_all_filters(): array {
+        global $COURSE;
+
         $filters = [];
 
-        $modnames = get_module_types_names();
+        $itemtypes = average::item_types($COURSE->id);
         $tablealias = $this->get_table_alias('grade_items');
 
         // Activity type filter.
@@ -175,7 +186,7 @@ class grade_items extends base {
             "{$tablealias}.itemmodule"
         ))
             ->add_joins($this->get_joins())
-            ->set_options($modnames); // Hmm doesn't make sense to list all activity types if they are not in course
+            ->set_options($itemtypes); //Doesn't work for manual since its itemtype not itemmodule.
 
         return $filters;
     }

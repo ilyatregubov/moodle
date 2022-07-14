@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Task log.
+ * Grade summary.
  *
- * @package    admin
- * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
+ * @package    core_grades
+ * @copyright  2022 Ilya Tregubov <ilya@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -29,7 +29,7 @@ require_once($CFG->dirroot.'/grade/lib.php');
 use core_grades\local\systemreports\summary;
 use core_reportbuilder\system_report_factory;
 
-$courseid      = required_param('id', PARAM_INT);        // course id
+$courseid = required_param('id', PARAM_INT);
 
 if (!$course = $DB->get_record('course', ['id' => $courseid])) {
     print_error('invalidcourseid');
@@ -38,31 +38,14 @@ require_login($course);
 $context = context_course::instance($course->id);
 
 $PAGE->set_url('/grade/report/summary.php', ['id' => $courseid]);
-
 $PAGE->set_context($context);
-
 $PAGE->set_pagelayout('report');
-//$PAGE->set_title($course->fullname);
-//$PAGE->set_heading($course->fullname);
 
-//admin_externalpage_setup('tasklogs');
+print_grade_page_head($courseid, 'report', false, false,
+    false, false, true, null, null,
+    null, null, false);
 
-print_grade_page_head($courseid, 'report', false, 'test', false, false);
-
-$logid = optional_param('logid', null, PARAM_INT);
-$download = optional_param('download', false, PARAM_BOOL);
-$filter = optional_param('filter', null, PARAM_TEXT);
-
-//echo $OUTPUT->header();
-//$report = system_report_factory::create(summary::class, context_system::instance());
 $report = system_report_factory::create(summary::class, context_course::instance($courseid));
-
-if (!empty($filter)) {
-    $report->set_filter_values([
-        'task_log:name_operator' => \core_reportbuilder\local\filters\text::IS_EQUAL_TO,
-        'task_log:name_value' => $filter,
-    ]);
-}
 
 echo $report->output();
 echo $OUTPUT->footer();
