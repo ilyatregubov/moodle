@@ -518,7 +518,7 @@ class enrol_cohort_plugin extends enrol_plugin {
         $errors = [];
         if (!enrol_is_enabled('cohort')) {
             $errors['plugindisabled'] =
-                new lang_string('plugindisabled', 'plugin');
+                new lang_string('plugindisabled', 'enrol_cohort');
         }
 
         if (isset($enrolmentdata['addtogroup'])) {

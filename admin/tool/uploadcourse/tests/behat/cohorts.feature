@@ -31,7 +31,7 @@ Feature: An admin can create courses with cohort enrolments using a CSV file
       | enrol_plugins_enabled | manual,guest,self |
     And I upload "admin/tool/uploadcourse/tests/fixtures/enrolment_cohort.csv" file to "File" filemanager
     When I click on "Preview" "button"
-    Then I should see "Disabled"
+    Then I should see "Cohort sync plugin is disabled"
 
   @javascript
   Scenario: Validation of cohorts for uploaded courses
@@ -60,10 +60,12 @@ Feature: An admin can create courses with cohort enrolments using a CSV file
     Given the following "groups" exist:
       | name    | course | idnumber |
       | group1  | C1     | G1       |
+    # Test that groupname can't be set when addtogroup is used.
     And I upload "admin/tool/uploadcourse/tests/fixtures/enrolment_cohort_addtogroup_groupname.csv" file to "File" filemanager
     And I click on "Preview" "button"
     And I should see "You cannot specify groupname when addtogroup is 0 or 1."
 
+    # Test creating a new group when uploading a course.
     And I navigate to "Courses > Upload courses" in site administration
     And I set the field "Upload mode" to "Create new courses, or update existing ones"
     And I set the field "Update mode" to "Update with CSV data only"
@@ -85,6 +87,7 @@ Feature: An admin can create courses with cohort enrolments using a CSV file
     And I am on the "Course 3" "groups" page
     And I should not see "Cohort 1 cohort"
 
+    # Test assigning to an existing group when uploading a course.
     And I navigate to "Courses > Upload courses" in site administration
     And I set the field "Upload mode" to "Create new courses, or update existing ones"
     And I set the field "Update mode" to "Update with CSV data only"

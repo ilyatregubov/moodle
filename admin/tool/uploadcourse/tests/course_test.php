@@ -1661,11 +1661,12 @@ class course_test extends \advanced_testcase {
         $this->setAdminUser();
         $mode = tool_uploadcourse_processor::MODE_CREATE_NEW;
         $updatemode = tool_uploadcourse_processor::UPDATE_NOTHING;
-        $data = ['shortname' => 'shortname',
-            'fullname' => 'New course',
-            'category' => 1,
-            'enrolment_1' => 'cohort',
-        ];
+        $data = [
+                    'shortname' => 'shortname',
+                    'fullname' => 'New course',
+                    'category' => 1,
+                    'enrolment_1' => 'cohort',
+                ];
         $co = new tool_uploadcourse_course($mode, $updatemode, $data);
 
         enrol::enable_plugin('cohort', false);
@@ -1682,7 +1683,6 @@ class course_test extends \advanced_testcase {
      * @param string $plugin Enrolment plugin name
      */
     public function test_enrol_missing_mandatory_fields(array $data, string $plugin): void {
-        $this->setRunTestInSeparateProcess(true);
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -1703,7 +1703,8 @@ class course_test extends \advanced_testcase {
     public function enrol_missing_mandatory_fields_provider(): array {
         return [
             'Cohort enrolment, missing cohort name' => [
-                ['shortname' => 'shortname',
+                [
+                    'shortname' => 'shortname',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_role' => 'student',
@@ -1722,7 +1723,6 @@ class course_test extends \advanced_testcase {
      * @param string $plugin Enrolment plugin name
      */
     public function test_enrol_non_exist_enrol_data(array $data, string $plugin): void {
-        $this->setRunTestInSeparateProcess(true);
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -1745,7 +1745,8 @@ class course_test extends \advanced_testcase {
     public function enrol_non_exist_enrol_data_provider(): array {
         return [
             'Cohort enrolment, cohort doesnt exist' => [
-                ['shortname' => 'shortname',
+                [
+                    'shortname' => 'shortname',
                     'fullname' => 'New course',
                     'category' => 1,
                     'enrolment_1' => 'cohort',
@@ -1766,7 +1767,6 @@ class course_test extends \advanced_testcase {
      * @param string $plugin Enrolment plugin name
      */
     public function test_enrol_wrong_context(array $data, string $plugin): void {
-        $this->setRunTestInSeparateProcess(true);
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -1797,7 +1797,8 @@ class course_test extends \advanced_testcase {
     public function enrol_wrong_context_provider(): array {
         return [
             'Cohort enrolment, cohort not allowed' => [
-                ['shortname' => 'ANON',
+                [
+                    'shortname' => 'ANON',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 2',
@@ -1809,7 +1810,7 @@ class course_test extends \advanced_testcase {
     }
 
     /**
-     * Tests prepare behavior when group from csv data doesnt not exist in system.
+     * Tests prepare behavior when group from csv data does not exist in system.
      *
      * @covers \tool_uploadcourse_course::prepare
      * @dataProvider enrol_group_not_exist_provider
@@ -1817,7 +1818,6 @@ class course_test extends \advanced_testcase {
      * @param string $plugin Enrolment plugin name
      */
     public function test_enrol_group_not_exist(array $data, string $plugin): void {
-        $this->setRunTestInSeparateProcess(true);
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -1845,7 +1845,8 @@ class course_test extends \advanced_testcase {
     public function enrol_group_not_exist_provider(): array {
         return [
             'Cohort enrolment, group doesnt exist' => [
-                ['shortname' => 'ANON',
+                [
+                    'shortname' => 'ANON',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
@@ -1866,7 +1867,6 @@ class course_test extends \advanced_testcase {
      * @param string $plugin Enrolment plugin name
      */
     public function test_enrol_invalid_addtogroup(array $data, string $plugin): void {
-        $this->setRunTestInSeparateProcess(true);
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -1898,7 +1898,8 @@ class course_test extends \advanced_testcase {
     public function enrol_invalid_addtogroup_provider(): array {
         return [
             'Cohort enrolment, invalid addtogroup' => [
-                ['shortname' => 'ANON',
+                [
+                    'shortname' => 'ANON',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
@@ -1908,7 +1909,8 @@ class course_test extends \advanced_testcase {
                 'cohort',
             ],
             'Cohort enrolment, both addtogroup and groupname are set' => [
-                ['shortname' => 'ANON',
+                [
+                    'shortname' => 'ANON',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
@@ -1931,8 +1933,6 @@ class course_test extends \advanced_testcase {
      */
     public function test_enrol_valid_data(array $data, string $coursemode): void {
         global $PAGE, $DB;
-
-        $this->setRunTestInSeparateProcess(true);
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -1999,7 +1999,8 @@ class course_test extends \advanced_testcase {
     public function enrol_valid_data_provider(): array {
         return [
             'Cohort enrolment, create new course and new group' => [
-                ['shortname' => 'Course shortname',
+                [
+                    'shortname' => 'Course shortname',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
@@ -2009,7 +2010,8 @@ class course_test extends \advanced_testcase {
                 'createnew',
             ],
             'Cohort enrolment, update role and group' => [
-                ['shortname' => 'Course shortname',
+                [
+                    'shortname' => 'Course shortname',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
@@ -2018,7 +2020,8 @@ class course_test extends \advanced_testcase {
                 'updaterolegroup',
             ],
             'Cohort enrolment, update group mode' => [
-                ['shortname' => 'Course shortname',
+                [
+                    'shortname' => 'Course shortname',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
@@ -2028,7 +2031,8 @@ class course_test extends \advanced_testcase {
                 'updategroupmode',
             ],
             'Cohort enrolment, disable enrolment' => [
-                ['shortname' => 'Course shortname',
+                [
+                    'shortname' => 'Course shortname',
                     'fullname' => 'New course',
                     'enrolment_1' => 'cohort',
                     'enrolment_1_cohortname' => 'Cohort 1',
