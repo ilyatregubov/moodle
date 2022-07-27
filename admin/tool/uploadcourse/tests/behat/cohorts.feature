@@ -63,8 +63,7 @@ Feature: An admin can create courses with cohort enrolments using a CSV file
     # Test that groupname can't be set when addtogroup is used.
     And I upload "admin/tool/uploadcourse/tests/fixtures/enrolment_cohort_addtogroup_groupname.csv" file to "File" filemanager
     And I click on "Preview" "button"
-    And I should see "You cannot specify groupname when addtogroup is 0 or 1."
-
+    And I should see "You cannot specify groupname when addtogroup is set."
     # Test creating a new group when uploading a course.
     And I navigate to "Courses > Upload courses" in site administration
     And I set the field "Upload mode" to "Create new courses, or update existing ones"
