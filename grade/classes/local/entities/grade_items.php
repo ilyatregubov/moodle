@@ -17,6 +17,7 @@
 namespace core_grades\local\entities;
 
 use core_reportbuilder\local\filters\select;
+use grade_item;
 use lang_string;
 use core_reportbuilder\local\entities\base;
 use core_reportbuilder\local\report\column;
@@ -93,8 +94,8 @@ class grade_items extends base {
     protected function get_all_columns(): array {
 
         $tablealias = $this->get_table_alias('grade_items');
-        $selectsql = "$tablealias.itemname, $tablealias.iteminstance,
-         $tablealias.itemnumber, $tablealias.itemmodule, $tablealias.courseid";
+        $selectsql = "$tablealias.itemname, $tablealias.iteminstance, $tablealias.calculation,
+         $tablealias.itemnumber, $tablealias.itemmodule, $tablealias.hidden, $tablealias.courseid";
 
         // Grade item name column.
         $columns[] = (new column(
@@ -108,6 +109,7 @@ class grade_items extends base {
             ->add_callback(static function($value, $row): string {
                 global $PAGE, $CFG;
 
+                $renderer = new \core_renderer($PAGE, RENDERER_TARGET_GENERAL);
                 if ($row->itemmodule) {
                     $modinfo = get_fast_modinfo($row->courseid);
                     $instances = $modinfo->get_instances();
@@ -117,10 +119,8 @@ class grade_items extends base {
                         $args = ['id' => $cm->id, 'itemnumber' => $row->itemnumber];
                         $url = new \moodle_url('/mod/' . $row->itemmodule . '/grade.php', $args);
                     } else {
-                        $url = new \moodle_url('/mod/' . $row->itemmodule . '/view.php', array('id' => $cm->id));
+                        $url = new \moodle_url('/mod/' . $row->itemmodule . '/view.php', ['id' => $cm->id]);
                     }
-
-                    $renderer = new \core_renderer($PAGE, RENDERER_TARGET_GENERAL);
 
                     $imagedata = $renderer->pix_icon('monologo', '', $row->itemmodule, ['class' => 'activityicon']);
                     $purposeclass = plugin_supports('mod', $row->itemmodule, FEATURE_MOD_PURPOSE);
@@ -128,15 +128,29 @@ class grade_items extends base {
                     $purposeclass .= ' modicon_' . $row->itemmodule;
                     $imagedata = \html_writer::tag('div', $imagedata, ['class' => $purposeclass]);
 
-                    $html = \html_writer::start_div('page-context-header');
+                    $dimmed = '';
+                    if ($row->hidden) {
+                        $dimmed = ' dimmed_text';
+                    }
+                    $html = \html_writer::start_div('page-context-header' . $dimmed);
                     // Image data.
                     $html .= \html_writer::div($imagedata, 'page-header-image mr-2');
                     $prefix = \html_writer::div($row->itemmodule, 'text-muted text-uppercase small line-height-3');
                     $name = $prefix . \html_writer::link($url, format_string($cm->name, true));
-                    $html .= \html_writer::tag('div', $name, array('class' => 'page-header-headings'));
+                    $html .= \html_writer::tag('div', $name, ['class' => 'page-header-headings']);
                 } else {
                     // Manual grade item.
-                    $html = $row->itemname;
+                    if ($row->calculation) {
+                        $imagedata = $renderer->pix_icon('i/agg_sum', '');
+                    } else {
+                        $imagedata = $renderer->pix_icon('i/manual_item', '');
+                    }
+                    $imagedata = \html_writer::tag('div', $imagedata);
+
+                    $html = \html_writer::start_div('page-context-header');
+                    // Image data.
+                    $html .= \html_writer::div($imagedata, 'page-header-image mr-2');
+                    $html .= \html_writer::tag('div', $row->itemname, ['class' => 'page-header-headings']);
                 }
                 return $html;
 
@@ -153,7 +167,53 @@ class grade_items extends base {
             ->set_type(column::TYPE_TEXT)
             ->add_field("$tablealias.id")
             ->add_callback(static function($value) use ($ungradedcounts): string {
-                return helpers::calculate_average($value, $ungradedcounts);
+
+                $gradeitem = grade_item::fetch(['id' => $value]);
+                if (!empty($gradeitem->avg)) {
+                    $averageformatted = '-';
+                }
+
+                if ($gradeitem->needsupdate) {
+                    $averageformatted = get_string('error');
+                }
+
+                if (empty($averageformatted)) {
+                    $aggr = helpers::calculate_average($gradeitem, $ungradedcounts);
+
+                    if (empty($aggr['average'])) {
+                        $averageformatted = '-';
+                    } else {
+                        $averagesdisplaytype = $ungradedcounts['report']['averagesdisplaytype'];
+                        $averagesdecimalpoints = $ungradedcounts['report']['averagesdecimalpoints'];
+                        $shownumberofgrades = $ungradedcounts['report']['shownumberofgrades'];
+
+                        // Determine which display type to use for this average.
+                        // No ==0 here, please resave the report and user preferences.
+                        if ($averagesdisplaytype == GRADE_REPORT_PREFERENCE_INHERIT) {
+                            $displaytype = $gradeitem->get_displaytype();
+                        } else {
+                            $displaytype = $averagesdisplaytype;
+                        }
+
+                        // Override grade_item setting if a display preference (not inherit) was set for the averages.
+                        if ($averagesdecimalpoints == GRADE_REPORT_PREFERENCE_INHERIT) {
+                            $decimalpoints = $gradeitem->get_decimals();
+                        } else {
+                            $decimalpoints = $averagesdecimalpoints;
+                        }
+
+                        $gradehtml = grade_format_gradevalue($aggr['average'],
+                            $gradeitem, true, $displaytype, $decimalpoints);
+
+                        $numberofgrades = '';
+                        if ($shownumberofgrades) {
+                            $numberofgrades = $aggr['meancount'];
+                        }
+
+                        $averageformatted = $gradehtml . " (" . $numberofgrades . ")";
+                    }
+                }
+                return $averageformatted;
             });
 
         return $columns;

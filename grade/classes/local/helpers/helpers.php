@@ -40,73 +40,25 @@ class helpers extends grade_report_grader {
      * Calculate average grade for a given grade item.
      * Based on calculate_averages function from grade/report/user/lib.php
      *
-     * @param int $gradeitemid
-     * @param array $info Ungraded grade items counts and cached sql parts for reuse.
-     * @return string Average grade.
+     * @param grade_item $gradeitem Grade item
+     * @param array $info Ungraded grade items counts and report preferences.
+     * @return array Average grade and meancount.
      */
-    public static function calculate_average(int $gradeitemid, array $info): string {
-        global $DB;
+    public static function calculate_average(grade_item $gradeitem, array $info): array {
 
-        $gradeitem = grade_item::fetch(['id' => $gradeitemid]);
-
-        $averagesdisplaytype = $info['report']['averagesdisplaytype'];
-        $averagesdecimalpoints = $info['report']['averagesdecimalpoints'];
         $meanselection = $info['report']['meanselection'];
-        $shownumberofgrades = $info['report']['shownumberofgrades'];
         $totalcount = $info['report']['totalcount'];
-
-        $enrolledsql = $info['sql']['enrolledsql'];
-        $gradebookrolessql = $info['sql']['gradebookrolessql'];
-        $relatedctxsql = $info['sql']['relatedctxsql'];
-        $groupsql = $info['sql']['groupsql'];
-        $groupwheresql = $info['sql']['groupwheresql'];
-        $params = $info['params'];
         $ungradedcounts = $info['ungradedcounts'];
+        $sumarray = $info['sumarray'];
 
-        // Find sums of all grade items in course.
-        $sql = "SELECT gg.itemid, SUM(gg.finalgrade) AS sum
-                      FROM {grade_items} gi
-                      JOIN {grade_grades} gg ON gg.itemid = gi.id
-                      JOIN {user} u ON u.id = gg.userid
-                      JOIN ($enrolledsql) je ON je.id = gg.userid
-                      JOIN (
-                                   SELECT DISTINCT ra.userid
-                                     FROM {role_assignments} ra
-                                    WHERE ra.roleid $gradebookrolessql
-                                      AND ra.contextid $relatedctxsql
-                           ) rainner ON rainner.userid = u.id
-                      $groupsql
-                     WHERE gi.courseid = :courseid
-                       AND u.deleted = 0
-                       AND gg.finalgrade IS NOT NULL
-                       AND gg.hidden = 0
-                       $groupwheresql
-                  GROUP BY gg.itemid";
-
-        $sumarray = [];
-        $sums = $DB->get_recordset_sql($sql, $params);
-        foreach ($sums as $itemid => $csum) {
-            $sumarray[$itemid] = $csum->sum;
-        }
-        $sums->close();
-
-        if (!empty($gradeitem->avg)) {
-            $average = '-';
-            return $average;
+        if (empty($sumarray[$gradeitem->id])) {
+            $sumarray[$gradeitem->id] = 0;
         }
 
-        if ($gradeitem->needsupdate) {
-            return get_string('error');
-        }
-
-        if (empty($sumarray[$gradeitemid])) {
-            $sumarray[$gradeitemid] = 0;
-        }
-
-        if (empty($ungradedcounts[$gradeitemid])) {
+        if (empty($ungradedcounts[$gradeitem->id])) {
             $ungradedcounts = 0;
         } else {
-            $ungradedcounts = $ungradedcounts[$gradeitemid]->count;
+            $ungradedcounts = $ungradedcounts[$gradeitem->id]->count;
         }
 
         // If they want the averages to include all grade items.
@@ -114,51 +66,30 @@ class helpers extends grade_report_grader {
             $meancount = $totalcount - $ungradedcounts;
         } else {
             // Bump up the sum by the number of ungraded items * grademin.
-            $sumarray[$gradeitemid] += ($ungradedcounts * $gradeitem->grademin);
+            $sumarray[$gradeitem->id] += ($ungradedcounts * $gradeitem->grademin);
             $meancount = $totalcount;
         }
 
-        // Determine which display type to use for this average.
-        // No ==0 here, please resave the report and user preferences.
-        if ($averagesdisplaytype == GRADE_REPORT_PREFERENCE_INHERIT) {
-            $displaytype = $gradeitem->get_displaytype();
+        $aggr['meancount'] = $meancount;
+
+        if (empty($sumarray[$gradeitem->id]) || $meancount == 0) {
+            $aggr['average'] = null;
         } else {
-            $displaytype = $averagesdisplaytype;
+            $sum = $sumarray[$gradeitem->id];
+            $aggr['average'] = $sum / $meancount;
         }
-
-        // Override grade_item setting if a display preference (not inherit) was set for the averages.
-        if ($averagesdecimalpoints == GRADE_REPORT_PREFERENCE_INHERIT) {
-            $decimalpoints = $gradeitem->get_decimals();
-        } else {
-            $decimalpoints = $averagesdecimalpoints;
-        }
-
-        if (empty($sumarray[$gradeitemid]) || $meancount == 0) {
-            $average = '-';
-        } else {
-            $sum = $sumarray[$gradeitemid];
-            $avgradeval = $sum / $meancount;
-            $gradehtml = grade_format_gradevalue($avgradeval, $gradeitem, true, $displaytype, $decimalpoints);
-
-            $numberofgrades = '';
-            if ($shownumberofgrades) {
-                $numberofgrades = " ($meancount)";
-            }
-
-            $average = $gradehtml . $numberofgrades;
-        }
-        return $average;
+        return $aggr;
     }
 
     /**
-     * Get ungraded grade items info for a course.
-     * Also caches sql parts to be used when calculating grade item average.
+     * Get ungraded grade items info and sum of al grade items in a course.
      * Based on calculate_averages function from grade/report/user/lib.php
      *
      * @param int $courseid Course ID
-     * @return array Ungraded grade items counts with sql info.
+     * @param int|null $groupid If we want to aggregate group averages
+     * @return array Ungraded grade items counts with report preferences.
      */
-    public static function ungraded_counts(int $courseid): array {
+    public static function ungraded_counts(int $courseid, ?int $groupid = null): array {
         global $DB;
 
         $info = [];
@@ -170,6 +101,7 @@ class helpers extends grade_report_grader {
                 'type' => 'report',
                 'plugin' => 'grader',
                 'course' => $course,
+                'groupid' => $groupid,
             ]
         );
 
@@ -180,7 +112,7 @@ class helpers extends grade_report_grader {
             'averagesdecimalpoints' => $report->get_pref('averagesdecimalpoints'),
             'meanselection' => $report->get_pref('meanselection'),
             'shownumberofgrades' => $report->get_pref('shownumberofgrades'),
-            'totalcount' => $report->get_numusers(false)
+            'totalcount' => $report->get_numusers(!is_null($groupid))
         ];
 
         // We want to query both the current context and parent contexts.
@@ -201,14 +133,11 @@ class helpers extends grade_report_grader {
         $params = array_merge($report->groupwheresql_params, $gradebookrolesparams, $enrolledparams, $relatedctxparams);
         $params['courseid'] = $course->id;
 
-        $info['sql'] = [
-            'enrolledsql' => $enrolledsql,
-            'gradebookrolessql' => $gradebookrolessql,
-            'relatedctxsql' => $relatedctxsql,
-            'groupsql' => $report->groupsql,
-            'groupwheresql' => $report->groupwheresql
-            ];
-        $info['params'] = $params;
+        // Aggregate on whole course only.
+        if (empty($groupid)) {
+            $report->groupsql = null;
+            $report->groupwheresql = null;
+        }
 
         // Empty grades must be evaluated as grademin, NOT always 0.
         // This query returns a count of ungraded grades (NULL finalgrade OR no matching record in grade_grades table).
@@ -233,6 +162,34 @@ class helpers extends grade_report_grader {
                            $report->groupwheresql
                   GROUP BY gi.id";
         $info['ungradedcounts'] = $DB->get_records_sql($sql, $params);
+
+        // Find sums of all grade items in course.
+        $sql = "SELECT gg.itemid, SUM(gg.finalgrade) AS sum
+                      FROM {grade_items} gi
+                      JOIN {grade_grades} gg ON gg.itemid = gi.id
+                      JOIN {user} u ON u.id = gg.userid
+                      JOIN ($enrolledsql) je ON je.id = gg.userid
+                      JOIN (
+                                   SELECT DISTINCT ra.userid
+                                     FROM {role_assignments} ra
+                                    WHERE ra.roleid $gradebookrolessql
+                                      AND ra.contextid $relatedctxsql
+                           ) rainner ON rainner.userid = u.id
+                      $report->groupsql
+                     WHERE gi.courseid = :courseid
+                       AND u.deleted = 0
+                       AND gg.finalgrade IS NOT NULL
+                       AND gg.hidden = 0
+                       $report->groupwheresql
+                  GROUP BY gg.itemid";
+
+        $sumarray = [];
+        $sums = $DB->get_recordset_sql($sql, $params);
+        foreach ($sums as $itemid => $csum) {
+            $sumarray[$itemid] = $csum->sum;
+        }
+        $sums->close();
+        $info['sumarray'] = $sumarray;
 
         return $info;
     }

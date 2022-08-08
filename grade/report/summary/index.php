@@ -17,12 +17,12 @@
 /**
  * Grade summary.
  *
- * @package    core_grades
+ * @package   gradereport_summary
  * @copyright  2022 Ilya Tregubov <ilya@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/../../../config.php');
 require_once("{$CFG->libdir}/adminlib.php");
 require_once($CFG->dirroot.'/grade/lib.php');
 
@@ -37,12 +37,15 @@ if (!$course = $DB->get_record('course', ['id' => $courseid])) {
 require_login($course);
 $context = context_course::instance($course->id);
 
-$PAGE->set_url('/grade/report/summary.php', ['id' => $courseid]);
+$PAGE->set_url('/grade/report/summary/index.php', ['id' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('report');
 $PAGE->add_body_class('limitedwidth');
 
-print_grade_page_head($courseid, 'report', false, false,
+require_capability('gradereport/summary:view', $context);
+require_capability('moodle/grade:viewall', $context);
+
+print_grade_page_head($courseid, 'report', 'summary', false,
     false, false, true, null, null,
     null, null, false);
 

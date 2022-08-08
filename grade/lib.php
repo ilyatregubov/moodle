@@ -919,6 +919,10 @@ function print_grade_page_head(int $courseid, string $active_type, ?string $acti
         $heading = $stractive_plugin;
     }
 
+    if (!$showtitle) {
+        $heading = '';
+    }
+
     if ($shownavigation) {
         $renderer = $PAGE->get_renderer('core_grades');
         // If the navigation action bar is not explicitly defined, use the general (default) action bar.

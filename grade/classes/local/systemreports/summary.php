@@ -70,8 +70,7 @@ class summary extends system_report {
      * @return bool
      */
     protected function can_view(): bool {
-        global $COURSE;
-        return has_capability('moodle/grade:viewall', \context_course::instance($COURSE->id));
+        return has_capability('gradereport/summary:view', $this->get_context());
     }
 
     /**
