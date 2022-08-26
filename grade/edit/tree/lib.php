@@ -515,9 +515,10 @@ class grade_edit_tree {
                 throw new \moodle_exception('invalidelementid', '', $returnurl);
             }
             $object = $element['object'];
+            $successorsortorder = $object->get_sortorder();
 
             $object->set_parent($parent->id);
-            $object->move_after_sortorder($sortorder);
+            $object->move_after_sortorder($sortorder, $successorsortorder);
             $sortorder++;
         }
 
@@ -571,6 +572,8 @@ class grade_edit_tree {
      * @return void
      */
     public static function update_gradecategory(grade_category $gradecategory, stdClass $data) {
+        global $DB;
+
         // If no fullname is entered for a course category, put ? in the DB.
         if (!isset($data->fullname) || $data->fullname == '') {
             $data->fullname = '?';
@@ -702,6 +705,21 @@ class grade_edit_tree {
         if (isset($data->parentcategory)) {
             $gradecategory->set_parent($data->parentcategory, 'gradebook');
         }
+
+        // Hmm. I don't want to traverse a tree every time in order to put item in the end.
+        // Can we just put an item on top of desired category?
+        $parentcategory = grade_category::fetch(array('id' => $data->parentcategory));
+        $children = $parentcategory->get_children(true);
+        $lastchildsortorder = max(array_keys($children));
+
+        $params = array($lastchildsortorder, $gradeitem->courseid);
+        $sql = "UPDATE {grade_items}
+                   SET sortorder = sortorder + 1
+                 WHERE sortorder > ? AND courseid = ?";
+        $DB->execute($sql, $params);
+
+        $gradeitem->set_sortorder($lastchildsortorder + 1);
+
     }
 }
 

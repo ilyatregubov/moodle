@@ -1870,3 +1870,41 @@ function upgrade_add_foreign_key_and_indexes() {
     // Launch add key contextid.
     $dbman->add_key($table, $key);
 }
+
+/**
+ * Fix sortorder of gradeitems so we can get a tree easily
+ */
+function upgrade_fix_gradeitems_sortorder() {
+
+    $courses = get_courses('all', 'c.fullname ASC', 'c.id');
+    foreach ($courses as $course) {
+        $top_element = grade_category::fetch_course_tree($course->id, true);
+        fix_sortorder($top_element);
+    }
+
+}
+
+/**
+ * Static recursive helper - fixes sortorder recursively.
+ *
+ * @param array &$element The seed of the recursion
+ *
+ * @return void
+ */
+function fix_sortorder(&$element) {
+
+    static $sortordernew;
+    if (($element['type'] == 'category') && $element['depth'] == 1) {
+        $sortordernew = 0;
+    }
+    if (!empty($element['children'])) {
+        foreach ($element['children'] as $sortorder => $child) {
+            if ($child['type'] !== 'category') {
+                $sortordernew++;
+                $child['object']->sortorder = $sortordernew;
+                $child['object']->update();
+            }
+            fix_sortorder($element['children'][$sortorder]);
+        }
+    }
+}

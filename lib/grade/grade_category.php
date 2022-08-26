@@ -2448,9 +2448,12 @@ class grade_category extends grade_object {
      * @param int $sortorder to place after.
      * @return void
      */
-    public function move_after_sortorder($sortorder) {
-        $this->load_grade_item();
-        $this->grade_item->move_after_sortorder($sortorder);
+    public function move_after_sortorder($sortorder, $successorsortorder, $children) {
+        foreach ($children as $child) {
+            $gradeitem = $child['object'];
+            $gradeitem->move_after_sortorder($sortorder, $successorsortorder);
+            $sortorder++;
+        }
     }
 
     /**

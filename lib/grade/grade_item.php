@@ -418,6 +418,17 @@ class grade_item extends grade_object {
         $transaction = $DB->start_delegated_transaction();
         $this->delete_all_grades($source);
         $success = parent::delete($source);
+
+        // Update sortorders for all items after deleted item.
+        $sql = "SELECT id, sortorder FROM {grade_items} WHERE courseid = :courseid AND sortorder > :sortorder";
+        $params = ['courseid' => $this->courseid, 'sortorder' => $this->sortorder];
+        $items = $DB->get_records_sql($sql, $params);
+        foreach ($items as $item) {
+            $gradeitem = grade_item::fetch(['id' => $item->id]);
+            $gradeitem->sortorder--;
+            $gradeitem->update();
+        }
+
         $transaction->allow_commit();
 
         if ($success) {
@@ -521,6 +532,7 @@ class grade_item extends grade_object {
         }
 
         // always place the new items at the end, move them after insert if needed
+        // THIS NEEDS TO BE CHANGED!!!!!!!!!!!
         $last_sortorder = $DB->get_field_select('grade_items', 'MAX(sortorder)', "courseid = ?", array($this->courseid));
         if (!empty($last_sortorder)) {
             $this->sortorder = $last_sortorder + 1;
@@ -1416,17 +1428,21 @@ class grade_item extends grade_object {
      *
      * @param int $sortorder The sort order to place this grade item after
      */
-    public function move_after_sortorder($sortorder) {
+    public function move_after_sortorder($sortorder, $successorsortorder = 0) {
         global $CFG, $DB;
 
         //make some room first
-        $params = array($sortorder, $this->courseid);
+        $params = array($sortorder, $this->courseid, $successorsortorder);
         $sql = "UPDATE {grade_items}
                    SET sortorder = sortorder + 1
                  WHERE sortorder > ? AND courseid = ?";
+        if ($successorsortorder) {
+            $sql .= " AND sortorder < ?";
+        }
         $DB->execute($sql, $params);
 
         $this->set_sortorder($sortorder + 1);
+
     }
 
     /**

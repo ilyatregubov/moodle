@@ -141,6 +141,12 @@ switch ($action) {
 
             $after = $after_el['object'];
             $sortorder = $after->get_sortorder();
+            if ($element['type'] == 'item') {
+                $successorsortorder = $object->sortorder;
+            } else if ($element['type'] == 'category') {
+                $lastchild = end($element['children']);
+                $successorsortorder = $lastchild['object']->sortorder;
+            }
 
             if (!$first) {
                 $parent = $after->get_parent_category();
@@ -149,7 +155,7 @@ switch ($action) {
                 $object->set_parent($after->id);
             }
 
-            $object->move_after_sortorder($sortorder);
+            $object->move_after_sortorder($sortorder, $successorsortorder, $element['children']);
 
             redirect($returnurl);
         }

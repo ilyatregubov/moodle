@@ -173,6 +173,20 @@ if ($mform->is_cancelled()) {
         $gradeitem->itemtype = 'manual'; // All new items to be manual only.
         $gradeitem->insert();
 
+        // Hmm. I don't want to traverse a tree every time in order to put item in the end.
+        // Can we just put an item on top of desired category?
+        $parentcategory = grade_category::fetch(array('id' => $data->parentcategory));
+        $children = $parentcategory->get_children(true);
+        $lastchildsortorder = max(array_keys($children));
+
+        $params = array($lastchildsortorder, $gradeitem->courseid);
+        $sql = "UPDATE {grade_items}
+                   SET sortorder = sortorder + 1
+                 WHERE sortorder > ? AND courseid = ?";
+        $DB->execute($sql, $params);
+
+        $gradeitem->set_sortorder($lastchildsortorder + 1);
+
         // set parent if needed
         if (isset($data->parentcategory)) {
             $gradeitem->set_parent($data->parentcategory, false);

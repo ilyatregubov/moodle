@@ -2903,5 +2903,13 @@ privatefiles,moodle|/user/files.php';
         upgrade_main_savepoint(true, 2022081200.01);
     }
 
+    if ($oldversion < 2022082600.02) {
+        // Call the helper function that updates the foreign keys and indexes in MDL-49795.
+        upgrade_fix_gradeitems_sortorder();
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2022082600.02);
+    }
+
     return true;
 }
