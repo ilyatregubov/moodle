@@ -93,18 +93,6 @@ $report = new gradereport_singleview($courseid, $gpr, $context, $itemtype, $item
 
 $reportname = $report->screen->heading();
 
-$pluginname = get_string('pluginname', 'gradereport_singleview');
-
-$pageparams = array(
-    'id' => $courseid,
-    'itemid' => $itemid,
-    'item' => $itemtype,
-    'userid' => $userid,
-    'group' => $groupid,
-    'page' => $page,
-    'perpage' => $perpage
-);
-
 $PAGE->set_pagelayout('report');
 
 $actionbar = new \core_grades\output\general_action_bar($context,
@@ -114,6 +102,7 @@ if ($itemtype == 'user') {
     print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, false,
         true, null, null, $report->screen->item, $actionbar);
 } else {
+    $actionbar = new \gradereport_singleview\output\gradeitem_action_bar($context, $report);
     print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, false,
         true, null, null, null, $actionbar);
 }
