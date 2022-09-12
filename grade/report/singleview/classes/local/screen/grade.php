@@ -157,7 +157,6 @@ class grade extends tablelike implements selectable_items, filterable_items {
      */
     public function original_headers() {
         return array(
-            '', // For filter icon.
             get_string('fullnameuser', 'core'),
             get_string('grade', 'grades'),
             get_string('range', 'grades'),
@@ -200,7 +199,6 @@ class grade extends tablelike implements selectable_items, filterable_items {
 
         $item->imagealt = $fullname;
         $url = new moodle_url("/user/view.php", array('id' => $item->id, 'course' => $this->courseid));
-        $iconstring = get_string('filtergrades', 'gradereport_singleview', $fullname);
         $grade->label = $fullname;
         $userpic = $OUTPUT->user_picture($item, ['link' => false, 'visibletoscreenreaders' => false]);
 
@@ -210,14 +208,11 @@ class grade extends tablelike implements selectable_items, filterable_items {
         }
 
         $line = array(
-            $OUTPUT->action_icon($this->format_link('user', $item->id), new pix_icon('t/editstring', ''), null,
-                    ['title' => $iconstring, 'aria-label' => $iconstring]),
             html_writer::link($url, $userpic . $fullname),
             $finalgrade,
             $this->item_range()
         );
         $lineclasses = array(
-            "action",
             "user",
             "grade",
             "range",
@@ -226,7 +221,7 @@ class grade extends tablelike implements selectable_items, filterable_items {
         $i = 0;
         foreach ($line as $key => $value) {
             $cell = new \html_table_cell($value);
-            if ($isheader = $i == 1) {
+            if ($isheader = $i == 0) {
                 $cell->header = $isheader;
                 $cell->scope = "row";
             }
