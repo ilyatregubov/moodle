@@ -204,7 +204,7 @@ class grade extends tablelike implements selectable_items, filterable_items {
 
         $finalgrade = new gradereport_singleview\local\ui\finalgrade($grade);
         if (!empty($this->structure)) {
-            $finalgrade .= $this->structure->get_grade_analysis_icon($grade);
+            $finalgrade .= $this->structure->get_grade_action_menu($grade);
         }
 
         $line = array(
