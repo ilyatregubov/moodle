@@ -24,7 +24,6 @@
 
 namespace gradereport_singleview\local\ui;
 
-use html_writer;
 defined('MOODLE_INTERNAL') || die;
 
 /**
@@ -39,6 +38,9 @@ class text_attribute extends element {
     /** @var bool $isdisabled Is this input disabled? */
     private $isdisabled;
 
+    /** @var bool If this is a read-only input. */
+    private bool $isreadonly;
+
     /**
      * Constructor
      *
@@ -46,9 +48,11 @@ class text_attribute extends element {
      * @param string $value The input initial value.
      * @param string $label The label for this input field.
      * @param bool $isdisabled Is this input disabled.
+     * @param bool $isreadonly If this is a read-only input.
      */
-    public function __construct($name, $value, $label, $isdisabled = false) {
+    public function __construct($name, $value, $label, $isdisabled = false, bool $isreadonly = false) {
         $this->isdisabled = $isdisabled;
+        $this->isreadonly = $isreadonly;
         parent::__construct($name, $value, $label);
     }
 
@@ -72,6 +76,7 @@ class text_attribute extends element {
             'name' => $this->name,
             'value' => $this->value,
             'disabled' => $this->isdisabled,
+            'readonly' => $this->isreadonly,
         ];
 
         $context->label = '';
