@@ -1,5 +1,6 @@
 .path-grade-report-singleview div.reporttable {
     text-align: center;
+    margin: 12px auto 12px auto;
 }
 
 .path-grade-report-singleview div.groupselector,
@@ -24,7 +25,7 @@
 }
 
 .path-grade-report-singleview div.reporttable form div {
-    text-align: center;
+    text-align: left;
 }
 
 .path-grade-report-singleview .singleview_buttons {
@@ -32,7 +33,7 @@
 }
 
 .path-grade-report-singleview div.reporttable h2 {
-    text-align: center;
+    text-align: left;
 }
 
 .path-grade-report-singleview .reporttable tbody th,
@@ -86,6 +87,16 @@
 .path-grade-report-singleview div.reporttable form .singleview_bulk input {
     margin-left: 10px;
     margin-right: 10px;
+}
+
+input[type=text] {
+    height: 44px;
+}
+
+input[type=checkbox] {
+    width: 22px;
+    height: 21px;
+    margin: 11.5px auto 11.5px auto;
 }
 
 .path-grade-report-singleview .singleview_bulk > fieldset {
