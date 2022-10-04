@@ -49,7 +49,15 @@
             {{/js}}
         {{/gradeitemselector}}
         <div class="navitem ml-auto">
+            <div class="col-auto text-right">
+                {{{addfieldmenu}}}
+            </div>
             {{>gradereport_singleview/page_toggler}}
         </div>
     </div>
 </div>
+{{#js}}
+    require(['gradereport_singleview/bulkactions'], function(bulkactions) {
+    bulkactions.init();
+    });
+{{/js}}
