@@ -167,8 +167,11 @@ abstract class screen {
      *
      * @param string $key A unique key for this control - inserted in the classes.
      * @return string
+     * @deprecated since Moodle 4.1
      */
     public function make_toggle($key) {
+        debugging('Use of make_toggle is deprecated', DEBUG_DEVELOPER);
+
         $attrs = array('href' => '#');
 
         // Do proper lang strings for title attributes exist for the given key?
@@ -198,17 +201,18 @@ abstract class screen {
     }
 
     /**
-     * Make a toggle link with some text before it.
+     * Make a toggle link with some text before it. Deprecated to use actions menu.
      *
      * @param string $key A unique key for this control - inserted in the classes.
      * @return string
+     * @deprecated since Moodle 4.1
      */
     public function make_toggle_links($key) {
-        return get_string($key, 'gradereport_singleview') . ' ' .
-            $this->make_toggle($key);
+        debugging('Use of make_toggle_links is deprecated', DEBUG_DEVELOPER);
+        return get_string($key, 'gradereport_singleview');
     }
 
-    /**
+        /**
      * Get the default heading for the screen.
      *
      * @return string
@@ -268,7 +272,6 @@ abstract class screen {
             'requires' => array('base', 'dom', 'event', 'event-simulate', 'io-base')
         );
 
-        $PAGE->requires->string_for_js('overridenoneconfirm', 'gradereport_singleview');
         $PAGE->requires->js_init_call('M.gradereport_singleview.init', array(), false, $module);
     }
 
