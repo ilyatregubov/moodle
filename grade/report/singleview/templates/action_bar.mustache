@@ -39,6 +39,15 @@
         {{/itemselector}}
         {{#pagetoggler}}
             <div class="d-flex ml-auto">
+                {{#addfieldmenu}}
+                        <div class="navitem-divider"></div>
+                        <div class="navitem">{{{addfieldmenu}}}</div>
+                        {{#js}}
+                            require(['gradereport_singleview/bulkactions'], function(bulkactions) {
+                            bulkactions.init();
+                            });
+                        {{/js}}
+                {{/addfieldmenu}}
                 <div class="navitem-divider"></div>
                 <div class="navitem">
                     {{>gradereport_singleview/page_toggler}}

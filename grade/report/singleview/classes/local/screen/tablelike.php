@@ -27,7 +27,9 @@ namespace gradereport_singleview\local\screen;
 use html_table;
 use html_writer;
 use stdClass;
+use grade_item;
 use grade_grade;
+use gradereport_singleview\local\ui\bulk_insert;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -195,6 +197,8 @@ abstract class tablelike extends screen {
             $this->index++;
         }
 
+        $underlying = get_class($this);
+
         $data = new stdClass();
         $data->table = $table;
         $data->instance = $this;
@@ -203,16 +207,31 @@ abstract class tablelike extends screen {
         $buttonhtml = implode(' ', $this->buttons());
 
         $buttons = html_writer::tag('div', $buttonhtml, $buttonattr);
+        $selectview = new select($this->courseid, $this->itemid, $this->groupid);
 
         $sessionvalidation = html_writer::empty_tag('input',
             ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 
-        $html = html_writer::tag('form',
-            html_writer::table($table) . $buttons . $sessionvalidation,
-            ['method' => 'POST']
+        $html = $selectview->html();
+        $html .= html_writer::tag('form',
+            $buttons . html_writer::table($table) . $this->bulk_insert() . $buttons . $sessionvalidation,
+            array('method' => 'POST')
         );
-
+        $html .= $selectview->html();
         return $html;
+    }
+
+    /**
+     * Get the HTML for the bulk insert form
+     *
+     * @return string
+     */
+    public function bulk_insert() {
+        return html_writer::tag(
+            'div',
+            (new bulk_insert($this->item))->html(),
+            ['class' => 'singleview_bulk', 'hidden' => true]
+        );
     }
 
     /**
