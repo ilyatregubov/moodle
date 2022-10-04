@@ -282,6 +282,7 @@ abstract class screen {
         $warnings = array();
 
         $fields = $this->definition();
+        $fields[] = 'finalgrade';
 
         // Avoiding execution timeouts when updating
         // a large amount of grades.
