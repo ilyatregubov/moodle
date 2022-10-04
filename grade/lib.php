@@ -1668,6 +1668,24 @@ class grade_structure {
     }
 
     /**
+     * Returns an action menu for the grade item or user.
+     *
+     * @param moodle_url $url Action menu url
+     * @param string $title Action menu title
+     * @return string
+     */
+    public function get_show_grade_action_menu(moodle_url $url, string $title) : string {
+        global $OUTPUT;
+
+        $menuitems[] = new action_menu_link_secondary($url, null, $title);
+        $menu = new action_menu($menuitems);
+        $icon = $OUTPUT->pix_icon('i/moremenu', $title);
+        $menu->set_menu_trigger($icon, 'btn btn-icon icon-size-2 bg-secondary d-flex align-items-center justify-content-center');
+        $menu->set_menu_left();
+        return $OUTPUT->render($menu);
+    }
+
+    /**
      * Returns an action menu for the grade.
      *
      * @param grade_grade $grade A grade_grade object
