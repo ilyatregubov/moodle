@@ -42,8 +42,10 @@ export const init = () => {
 
             if (roleHolder.dataset.role === 'overridenonegrades') {
                 const confirm = new M.core.confirm({
-                    title:      M.util.get_string('confirm', 'moodle'),
+                    title:      M.util.get_string('removeoverride', 'gradereport_singleview'),
                     question:   M.util.get_string('overridenoneconfirm', 'gradereport_singleview'),
+                    noLabel: M.util.get_string('cancel', 'moodle'),
+                    yesLabel: M.util.get_string('removeoverridesave', 'gradereport_singleview')
                 });
 
                 confirm.on('complete-yes', function() {
