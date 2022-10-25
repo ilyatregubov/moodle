@@ -197,8 +197,6 @@ abstract class tablelike extends screen {
             $this->index++;
         }
 
-        $underlying = get_class($this);
-
         $data = new stdClass();
         $data->table = $table;
         $data->instance = $this;
@@ -207,17 +205,14 @@ abstract class tablelike extends screen {
         $buttonhtml = implode(' ', $this->buttons());
 
         $buttons = html_writer::tag('div', $buttonhtml, $buttonattr);
-        $selectview = new select($this->courseid, $this->itemid, $this->groupid);
 
         $sessionvalidation = html_writer::empty_tag('input',
             ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 
-        $html = $selectview->html();
-        $html .= html_writer::tag('form',
-            $buttons . html_writer::table($table) . $this->bulk_insert() . $buttons . $sessionvalidation,
+        $html = html_writer::tag('form',
+            html_writer::table($table) . $this->bulk_insert() . $buttons . $sessionvalidation,
             array('method' => 'POST')
         );
-        $html .= $selectview->html();
         return $html;
     }
 

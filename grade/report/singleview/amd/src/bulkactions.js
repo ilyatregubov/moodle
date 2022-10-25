@@ -74,7 +74,7 @@ export const init = () => {
             } else if (roleHolder.dataset.role === 'bulklegend') {
                 ModalFactory.create({
                     type: ModalFactory.types.SAVE_CANCEL,
-                    body: Templates.render('gradereport_singleview/bulkinsert', {}),
+                    body: Templates.render('gradereport_singleview/bulkinsert', {id: 'bulkinsertmodal', name: 'bulkinsertmodal'}),
                     title: 'Bulk insert',
                 })
                     .then(function (modal) {

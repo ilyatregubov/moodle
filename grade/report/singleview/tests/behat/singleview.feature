@@ -114,11 +114,14 @@ Feature: We can use Single view
 
   Scenario: I can bulk update grades.
     Given I follow "Single view for Ann, Jill, Grainne, Beauchamp"
-    Then I should see "Gronya,Beecham"
-    When I set the field "For" to "All grades"
-    And I set the field "Insert value" to "1.0"
-    And I set the field "Perform bulk insert" to "1"
-    And I press "Save"
+    And I should see "Gronya,Beecham"
+    When I turn editing mode on
+    And I click on "Actions" "link"
+    And I click on "Bulk insert" "link"
+    And I click on "I understand that my unsaved data might be lost" "checkbox"
+    And I click on "All grades" "radio"
+    And I set the field "Insert value modal" to "1.0"
+    And I click on "Save" "button" in the ".modal-dialog" "css_element"
     Then I should see "Grades were set for 6 items"
 
   Scenario: I can bulk update grades with custom decimal separator
@@ -127,10 +130,13 @@ Feature: We can use Single view
       | core_langconfig | decsep   | #     |
     And I follow "Single view for Ann, Jill, Grainne, Beauchamp"
     And I should see "Gronya,Beecham"
-    When I set the field "For" to "All grades"
-    And I set the field "Insert value" to "1#25"
-    And I set the field "Perform bulk insert" to "1"
-    And I press "Save"
+    When I turn editing mode on
+    And I click on "Actions" "link"
+    And I click on "Bulk insert" "link"
+    And I click on "I understand that my unsaved data might be lost" "checkbox"
+    And I click on "All grades" "radio"
+    And I set the field "Insert value modal" to "1#25"
+    And I click on "Save" "button" in the ".modal-dialog" "css_element"
     Then I should see "Grades were set for 6 items"
     # Custome scale, cast to int
     And the field "Grade for new grade item 1" matches value "Disappointing"
@@ -154,8 +160,7 @@ Feature: We can use Single view
     And I follow "Test assignment four"
     Then I should see "Test assignment four"
 
-  Scenario: Activities are clickable only when
-    it has a valid activity page.
+  Scenario: Activities are clickable only when it has a valid activity page.
     Given I follow "Single view for Ann, Jill, Grainne, Beauchamp"
     And "new grade item 1" "link" should not exist in the "//tbody//tr[position()=1]//td[position()=2]" "xpath_element"
     Then "Category total" "link" should not exist in the "//tbody//tr[position()=2]//td[position()=2]" "xpath_element"

@@ -30,6 +30,7 @@ $string['assessmentname'] = 'Grade item';
 $string['blanks'] = 'Empty grades';
 $string['bulkappliesto'] = 'For';
 $string['bulkinsertvalue'] = 'Insert value';
+$string['bulkinsertvaluemodal'] = 'Insert value modal';
 $string['bulklegend'] = 'Bulk insert';
 $string['bulkchoice'] = 'For which grades do you want to insert?';
 $string['bulkperform'] = 'Perform bulk insert';
