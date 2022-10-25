@@ -35,10 +35,6 @@
     text-align: center;
 }
 
-.path-grade-report-singleview input[name^="finalgrade"] {
-    width: 50px;
-}
-
 .path-grade-report-singleview .reporttable tbody th,
 .path-grade-report-singleview .reporttable tbody td.range {
     white-space: nowrap;
@@ -105,4 +101,9 @@
     max-height: 150px;
     height: 150px;
     overflow: auto;
+}
+
+.path-grade-report-singleview .user-selector .userinitials {
+    width: 40px;
+    height: 40px;
 }

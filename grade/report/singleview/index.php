@@ -41,6 +41,8 @@ $itemtype = optional_param('item', $defaulttype, PARAM_TEXT);
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = optional_param('perpage', 100, PARAM_INT);
 
+$edit = optional_param('edit', -1, PARAM_BOOL); // Sticky editing mode.
+
 if (empty($itemid) && ($itemtype !== 'user_select' && $itemtype !== 'grade_select')) {
     $itemid = $userid;
     $itemtype = $defaulttype;
@@ -57,7 +59,8 @@ $pageparams = [
     'perpage'   => $perpage,
 ];
 $PAGE->set_url(new moodle_url('/grade/report/singleview/index.php', $pageparams));
-$PAGE->set_pagelayout('incourse');
+$PAGE->set_pagelayout('report');
+$PAGE->set_other_editing_capability('moodle/grade:edit');
 
 if (!$course = $DB->get_record('course', $courseparams)) {
     throw new \moodle_exception('invalidcourseid');
@@ -82,6 +85,18 @@ $gpr = new grade_plugin_return([
     'courseid' => $courseid
 ]);
 
+// Build editing on/off button for themes that need it.
+$button = '';
+if ($PAGE->user_allowed_editing() && !$PAGE->theme->haseditswitch) {
+    if ($edit != - 1) {
+        $USER->editing = $edit;
+    }
+
+    // Page params for the turn editing on button.
+    $options = $gpr->get_options();
+    $button = $OUTPUT->edit_button(new moodle_url($PAGE->url, $options), 'get');
+}
+
 // Last selected report session tracking.
 if (!isset($USER->grade_last_report)) {
     $USER->grade_last_report = [];
@@ -92,28 +107,20 @@ $report = new gradereport_singleview\report\singleview($courseid, $gpr, $context
 
 $reportname = $report->screen->heading();
 
-$pluginname = get_string('pluginname', 'gradereport_singleview');
-
-$pageparams = [
-    'id' => $courseid,
-    'itemid' => $itemid,
-    'item' => $itemtype,
-    'userid' => $userid,
-    'group' => $groupid,
-    'page' => $page,
-    'perpage' => $perpage,
-];
-
-$PAGE->set_pagelayout('report');
-
-$actionbar = new \core_grades\output\general_action_bar($context,
-    new moodle_url('/grade/report/singleview/index.php', ['id' => $courseid]), 'report', 'singleview');
+if ($itemtype == 'user' || $itemtype == 'user_select') {
+    $actionbar = new \gradereport_singleview\output\action_bar($context, $report, 'user');
+} else if ($itemtype == 'grade' || $itemtype == 'grade_select') {
+    $actionbar = new \gradereport_singleview\output\action_bar($context, $report, 'grade');
+} else {
+    $actionbar = new \core_grades\output\general_action_bar($context, new moodle_url('/grade/report/singleview/index.php',
+        ['id' => $courseid]), 'report', 'singleview');
+}
 
 if ($itemtype == 'user') {
-    print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, false,
+    print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, $button,
         true, null, null, $report->screen->item, $actionbar);
 } else {
-    print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, false,
+    print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, $button,
         true, null, null, null, $actionbar);
 }
 
@@ -173,19 +180,8 @@ if (!empty($options)) {
     }
 }
 
-if (!is_null($graderleftnav)) {
-    echo $graderleftnav;
-}
-if (!is_null($graderrightnav)) {
-    echo $graderrightnav;
-}
-
 if ($report->screen->supports_paging()) {
     echo $report->screen->pager();
-}
-
-if ($report->screen->display_group_selector()) {
-    echo $report->group_selector;
 }
 
 echo $report->output();

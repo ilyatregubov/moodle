@@ -135,14 +135,14 @@ class user extends tablelike implements selectable_items {
      */
     public function original_headers(): array {
         return [
-            '', // For filter icon.
             get_string('assessmentname', 'gradereport_singleview'),
+            '', // For filter icon.
             get_string('gradecategory', 'grades'),
-            get_string('range', 'grades'),
             get_string('grade', 'grades'),
+            get_string('range', 'grades'),
             get_string('feedback', 'grades'),
-            $this->make_toggle_links('override'),
-            $this->make_toggle_links('exclude')
+            get_string('override', 'gradereport_singleview'),
+            get_string('exclude', 'gradereport_singleview'),
         ];
     }
 
@@ -170,8 +170,6 @@ class user extends tablelike implements selectable_items {
              $lockicon = $OUTPUT->pix_icon('t/locked', 'grade is locked');
         }
 
-        $iconstring = get_string('filtergrades', 'gradereport_singleview', $item->get_name());
-
         // Create a fake gradetreeitem so we can call get_element_header().
         // The type logic below is from grade_category->_get_children_recursion().
         $gradetreeitem = [];
@@ -186,25 +184,31 @@ class user extends tablelike implements selectable_items {
         $itemlabel = $this->structure->get_element_header($gradetreeitem, true, false, false, false, true);
         $grade->label = $item->get_name();
 
+        $formatteddefinition = $this->format_definition($grade);
+
         $line = [
-            $OUTPUT->action_icon($this->format_link('grade', $item->id), new pix_icon('t/editstring', ''), null,
-                    ['title' => $iconstring, 'aria-label' => $iconstring]),
             $this->format_icon($item) . $lockicon . $itemlabel,
+            $this->get_item_action_menu($item),
             $this->category($item),
-            new range($item)
+            $formatteddefinition['finalgrade'],
+            new range($item),
+            $formatteddefinition['feedback'],
+            $formatteddefinition['override'],
+            $formatteddefinition['exclude'],
         ];
         $lineclasses = [
-            "action",
-            "gradeitem",
-            "category",
-            "range"
+            'gradeitem',
+            'action',
+            'category',
+            'grade',
+            'range',
         ];
 
         $outputline = [];
         $i = 0;
         foreach ($line as $key => $value) {
             $cell = new \html_table_cell($value);
-            if ($isheader = $i == 1) {
+            if ($isheader = $i == 0) {
                 $cell->header = $isheader;
                 $cell->scope = "row";
             }
@@ -215,7 +219,7 @@ class user extends tablelike implements selectable_items {
             $i++;
         }
 
-        return $this->format_definition($outputline, $grade);
+        return $outputline;
     }
 
     /**
@@ -227,6 +231,27 @@ class user extends tablelike implements selectable_items {
     private function format_icon($item): string {
         $element = ['type' => 'item', 'object' => $item];
         return $this->structure->get_element_icon($element);
+    }
+
+    /**
+     * Return the action menu HTML for the grade item.
+     *
+     * @param grade_item $item
+     * @return mixed
+     */
+    private function get_item_action_menu(grade_item $item) {
+        global $OUTPUT;
+
+        $menuitems = [];
+        $url = new moodle_url($this->format_link('grade', $item->id));
+        $title = get_string('showallgrades', 'core_grades');
+        $menuitems[] = new \action_menu_link_secondary($url, null, $title);
+        $menu = new \action_menu($menuitems);
+        $icon = $OUTPUT->pix_icon('i/moremenu', get_string('actions'));
+        $menu->set_menu_trigger($icon);
+        $menu->set_menu_left();
+
+        return $OUTPUT->render($menu);
     }
 
     /**

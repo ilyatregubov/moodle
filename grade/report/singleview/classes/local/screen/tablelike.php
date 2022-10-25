@@ -28,7 +28,6 @@ use html_table;
 use html_writer;
 use stdClass;
 use grade_grade;
-use gradereport_singleview\local\ui\bulk_insert;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -134,11 +133,11 @@ abstract class tablelike extends screen {
 
     /**
      * Get a element to generate the HTML for this table row
-     * @param array $line This is a list of lines in the table (modified)
      * @param grade_grade $grade The grade.
      * @return array
      */
-    public function format_definition(array $line, grade_grade $grade): array {
+    public function format_definition(grade_grade $grade): array {
+        $line = [];
         foreach ($this->definition() as $i => $field) {
             // Table tab index.
             $tab = ($i * $this->total) + $this->index;
@@ -146,16 +145,16 @@ abstract class tablelike extends screen {
             $html = new $classname($grade, $tab);
 
             if ($field == 'finalgrade' and !empty($this->structure)) {
-                $html .= $this->structure->get_grade_analysis_icon($grade);
+                $html .= $this->structure->get_grade_action_menu($grade);
             }
 
             // Singleview users without proper permissions should be presented
             // disabled checkboxes for the Exclude grade attribute.
-            if ($field == 'exclude' && !has_capability('moodle/grade:manage', $this->context)){
+            if ($field == 'exclude' && !has_capability('moodle/grade:manage', $this->context)) {
                 $html->disabled = true;
             }
 
-            $line[] = $html;
+            $line[$field] = $html;
         }
         return $line;
     }
@@ -204,31 +203,16 @@ abstract class tablelike extends screen {
         $buttonhtml = implode(' ', $this->buttons());
 
         $buttons = html_writer::tag('div', $buttonhtml, $buttonattr);
-        $selectview = new select($this->courseid, $this->itemid, $this->groupid);
 
         $sessionvalidation = html_writer::empty_tag('input',
             ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 
-        $html = $selectview->html();
-        $html .= html_writer::tag('form',
-            $buttons . html_writer::table($table) . $this->bulk_insert() . $buttons . $sessionvalidation,
+        $html = html_writer::tag('form',
+            html_writer::table($table) . $buttons . $sessionvalidation,
             ['method' => 'POST']
         );
-        $html .= $selectview->html();
-        return $html;
-    }
 
-    /**
-     * Get the HTML for the bulk insert form
-     *
-     * @return string
-     */
-    public function bulk_insert(): string {
-        return html_writer::tag(
-            'div',
-            (new bulk_insert($this->item))->html(),
-            ['class' => 'singleview_bulk']
-        );
+        return $html;
     }
 
     /**
