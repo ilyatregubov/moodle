@@ -1557,9 +1557,8 @@ class completion_info {
         }
 
         // Conditions to show pass/fail:
-        // a) Grade has pass mark (default is 0.00000 which is boolean true so be careful)
-        // b) Grade is visible (neither hidden nor hidden-until)
-        if ($item->gradepass && $item->gradepass > 0.000009 && !$item->hidden) {
+        // Grade has pass mark (default is 0.00000 which is boolean true so be careful).
+        if ($item->gradepass && $item->gradepass > 0.000009) {
             // Use final grade if set otherwise raw grade
             $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
 
