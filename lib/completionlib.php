@@ -1556,10 +1556,15 @@ class completion_info {
             return COMPLETION_INCOMPLETE;
         }
 
+        $cm = get_coursemodule_from_instance($item->itemmodule,
+            $item->iteminstance, $item->courseid);
+
         // Conditions to show pass/fail:
+        // a) Completion criteria to achieve pass grade is enabled
+        // or
         // a) Grade has pass mark (default is 0.00000 which is boolean true so be careful)
         // b) Grade is visible (neither hidden nor hidden-until)
-        if ($item->gradepass && $item->gradepass > 0.000009 && !$item->hidden) {
+        if ($cm->completionpassgrade || ($item->gradepass && $item->gradepass > 0.000009 && !$item->hidden)) {
             // Use final grade if set otherwise raw grade
             $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
 
@@ -1567,7 +1572,11 @@ class completion_info {
             if ($score >= $item->gradepass) {
                 return COMPLETION_COMPLETE_PASS;
             } else {
-                return COMPLETION_COMPLETE_FAIL;
+                if ($item->hidden) {
+                    return COMPLETION_INCOMPLETE;
+                } else {
+                    return COMPLETION_COMPLETE_FAIL;
+                }
             }
         } else {
             // Not displaying pass/fail, so just if there is a grade

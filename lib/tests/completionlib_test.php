@@ -1220,14 +1220,27 @@ class completionlib_test extends advanced_testcase {
      * @covers ::inform_grade_changed
      */
     public function test_inform_grade_changed() {
-        $this->mock_setup();
+        global $CFG;
+        $this->resetAfterTest();
+
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(array('enablecompletion' => 1));
+        $assigngenerator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
+        $assign = $assigngenerator->create_instance([
+            'course' => $course->id,
+            'completion' => COMPLETION_DISABLED,
+            'completionusegrade' => 1,
+            'gradepass' => 1,
+        ]);
+        $cm = get_coursemodule_from_instance('assign', $assign->id);
+        $assign = new \assign(\context_module::instance($assign->cmid), false, false);
+        $item = $assign->get_grade_item();
 
         $mockbuilder = $this->getMockBuilder('completion_info');
         $mockbuilder->onlyMethods(array('is_enabled', 'update_state'));
-        $mockbuilder->setConstructorArgs(array((object)array('id' => 42)));
+        $mockbuilder->setConstructorArgs(array((object)array('id' => $course->id)));
 
-        $cm = (object)array('course' => 42, 'id' => 13, 'completion' => 0, 'completiongradeitemnumber' => null);
-        $item = (object)array('itemnumber' => 3,  'gradepass' => 1,  'hidden' => 0);
         $grade = (object)array('userid' => 31337,  'finalgrade' => 0,  'rawgrade' => 0);
 
         // Not enabled (should do nothing).
@@ -1248,7 +1261,6 @@ class completionlib_test extends advanced_testcase {
 
         // Enabled and completion required but item number is wrong,  does nothing.
         $c = $mockbuilder->getMock();
-        $cm = (object)array('course' => 42, 'id' => 13, 'completion' => 0, 'completiongradeitemnumber' => 7);
         $c->expects($this->once())
             ->method('is_enabled')
             ->with($cm)
@@ -1259,7 +1271,6 @@ class completionlib_test extends advanced_testcase {
         // to call update_state with the new potential state being obtained from
         // internal_get_grade_state.
         $c = $mockbuilder->getMock();
-        $cm = (object)array('course' => 42, 'id' => 13, 'completion' => 0, 'completiongradeitemnumber' => 3);
         $grade = (object)array('userid' => 31337,  'finalgrade' => 1,  'rawgrade' => 0);
         $c->expects($this->once())
             ->method('is_enabled')
@@ -1274,7 +1285,6 @@ class completionlib_test extends advanced_testcase {
         // Same as above but marked deleted. It is supposed to call update_state
         // with new potential state being COMPLETION_INCOMPLETE.
         $c = $mockbuilder->getMock();
-        $cm = (object)array('course' => 42, 'id' => 13, 'completion' => 0, 'completiongradeitemnumber' => 3);
         $grade = (object)array('userid' => 31337,  'finalgrade' => 1,  'rawgrade' => 0);
         $c->expects($this->once())
             ->method('is_enabled')
@@ -1291,13 +1301,24 @@ class completionlib_test extends advanced_testcase {
      * @covers ::internal_get_grade_state
      */
     public function test_internal_get_grade_state() {
-        $this->mock_setup();
+        global $CFG;
+        $this->resetAfterTest();
 
-        $item = new stdClass;
+        $CFG->enablecompletion = true;
+
+        $course = $this->getDataGenerator()->create_course(array('enablecompletion' => 1));
+        $assigngenerator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
+        $assign = $assigngenerator->create_instance([
+            'course' => $course->id,
+            'completion' => COMPLETION_DISABLED,
+            'completionusegrade' => 1,
+            'gradepass' => 4,
+        ]);
+        $cm = get_coursemodule_from_instance('assign', $assign->id);
+        $assign = new \assign(\context_module::instance($assign->cmid), false, false);
+        $item = $assign->get_grade_item();
+
         $grade = new stdClass;
-
-        $item->gradepass = 4;
-        $item->hidden = 0;
         $grade->rawgrade = 4.0;
         $grade->finalgrade = null;
 
