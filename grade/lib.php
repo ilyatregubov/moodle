@@ -1540,17 +1540,22 @@ class grade_structure {
      * @param bool  $withdescription Show description if defined by this item.
      * @param bool  $fulltotal If the item is a category total, returns $categoryname."total"
      *                         instead of "Category total" or "Course total"
+     * @param bool  $dimmed If element is shown as dimmed.
      *
      * @return string header
      */
     public function get_element_header(&$element, $withlink = false, $icon = true, $spacerifnone = false,
-        $withdescription = false, $fulltotal = false) {
+        $withdescription = false, $fulltotal = false, $dimmed = false) {
         $header = '';
 
         if ($icon) {
             $header .= $this->get_element_icon($element, $spacerifnone);
         }
 
+        $dimmedclass = '';
+        if ($dimmed) {
+            $dimmedclass = ' dimmed_text';
+        }
         $title = $element['object']->get_name($fulltotal);
         $titleunescaped = $element['object']->get_name($fulltotal, false);
         $header .= $title;
@@ -1566,9 +1571,9 @@ class grade_structure {
             $a->title = $titleunescaped;
             $title = get_string('linktoactivity', 'grades', $a);
 
-            $header = html_writer::link($url, $header, array('title' => $title, 'class' => 'gradeitemheader'));
+            $header = html_writer::link($url, $header, array('title' => $title, 'class' => 'gradeitemheader' . $dimmedclass));
         } else {
-            $header = html_writer::span($header, 'gradeitemheader', array('title' => $titleunescaped, 'tabindex' => '0'));
+            $header = html_writer::span($header, 'gradeitemheader' . $dimmedclass, array('title' => $titleunescaped, 'tabindex' => '0'));
         }
 
         if ($withdescription) {
@@ -1935,7 +1940,7 @@ class grade_structure {
     }
 
     /**
-     * Returns an action menu item leading to the edit grade page
+     * Returns an action menu item leading to the edit grade/grade item page
      *
      * @param array  $element An array representing an element in the grade_tree
      * @param object $gpr A grade_plugin_return object
@@ -1943,20 +1948,21 @@ class grade_structure {
      */
     public function get_edit_menu_item(array $element, object $gpr) : ?action_menu_link_secondary {
         $url = null;
+        $title = '';
         if (!has_capability('moodle/grade:manage', $this->context)) {
             if (!($element['type'] == 'grade') || !has_capability('moodle/grade:edit', $this->context)) {
                 return null;
             }
         }
 
-        static $streditgrade = null;
-        if (is_null($streditgrade)) {
-            $streditgrade = get_string('editgrade', 'grades');
-        }
-
         $object = $element['object'];
 
         if ($element['type'] == 'grade') {
+            static $streditgrade = null;
+            if (is_null($streditgrade)) {
+                $streditgrade = get_string('editgrade', 'grades');
+            }
+
             if (empty($object->id)) {
                 $url = new moodle_url('/grade/edit/tree/grade.php',
                     ['courseid' => $this->courseid, 'itemid' => $object->itemid, 'userid' => $object->userid]);
@@ -1965,10 +1971,33 @@ class grade_structure {
                     ['courseid' => $this->courseid, 'id' => $object->id]);
             }
             $title = $streditgrade;
-            $gpr->add_url_params($url);
-            $url = new action_menu_link_secondary($url, null, $title);
+        } else if (($element['type'] == 'item') || ($element['type'] == 'categoryitem') ||
+            ($element['type'] == 'courseitem')) {
+            static $streditgradeitem = null;
+            if (is_null($streditgradeitem)) {
+                $streditgradeitem = get_string('itemsedit', 'grades');
+            }
+
+            if (empty($object->outcomeid) || empty($CFG->enableoutcomes)) {
+                $url = new moodle_url('/grade/edit/tree/item.php',
+                    ['courseid' => $this->courseid, 'id' => $object->id]);
+            } else {
+                $url = new moodle_url('/grade/edit/tree/outcomeitem.php',
+                    ['courseid' => $this->courseid, 'id' => $object->id]);
+            }
+            $title = $streditgradeitem;
+        } else if ($element['type'] == 'category') {
+            static $streditgradecategory = null;
+            if (is_null($streditgradecategory)) {
+                $streditgradecategory = get_string('categoryedit', 'grades', );
+            }
+
+            $url = new moodle_url('/grade/edit/tree/category.php',
+                ['courseid' => $this->courseid, 'id' => $object->id]);
+            $title = $streditgradecategory;
         }
-        return $url;
+        $gpr->add_url_params($url);
+        return new action_menu_link_secondary($url, null, $title);
     }
 
     /**
@@ -2076,6 +2105,8 @@ class grade_structure {
             } else {
                 $url = new action_menu_link_secondary($url, null, $title);
             }
+        } else {
+            $url = new action_menu_link_secondary($url, null, $title);
         }
 
         return $url;
@@ -2139,7 +2170,7 @@ class grade_structure {
     }
 
     /**
-     * Returns an action menu item with url to lock/unlock grade
+     * Returns an action menu item with url to lock/unlock grade/grade item/grade category
      *
      * @param array  $element An array representing an element in the grade_tree
      * @param object $gpr A grade_plugin_return object
@@ -2158,38 +2189,34 @@ class grade_structure {
             $strlock = get_string('lock', 'grades');
         }
 
-        $url = null;
+        $url = new moodle_url('/grade/edit/tree/action.php',
+            ['id' => $this->courseid, 'sesskey' => sesskey(), 'eid' => $element['eid']]);
+        $url = $gpr->add_url_params($url);
 
-        if ($element['type'] == 'grade') {
-            $url = new moodle_url('/grade/edit/tree/action.php',
-                ['id' => $this->courseid, 'sesskey' => sesskey(), 'eid' => $element['eid']]);
-            $url = $gpr->add_url_params($url);
-
-            if ($element['object']->grade_item->is_locked()) {
+        if (($element['type'] == 'grade') && ($element['object']->grade_item->is_locked())) {
                 // Don't allow an unlocking action for a grade whose grade item is locked: just print a state icon.
                 $strparamobj = new stdClass();
                 $strparamobj->itemname = $element['object']->grade_item->get_name(true, true);
                 $strnonunlockable = get_string('nonunlockableverbose', 'grades', $strparamobj);
                 $title = $strunlock;
                 $url = html_writer::span($title, 'text-muted', ['title' => $strnonunlockable]);
-            } else if ($element['object']->is_locked()) {
-                $title = $strunlock;
-                if (!has_capability('moodle/grade:manage', $this->context) &&
-                    !has_capability('moodle/grade:unlock', $this->context)) {
-                    $url = html_writer::span($title, 'text-muted'); // May be we need a hint that capabilities are missing.
-                } else {
-                    $url->param('action', 'unlock');
-                    $url = new action_menu_link_secondary($url, null, $title);
-                }
+        } else if ($element['object']->is_locked()) {
+            $title = $strunlock;
+            if (!has_capability('moodle/grade:manage', $this->context) &&
+                !has_capability('moodle/grade:unlock', $this->context)) {
+                $url = html_writer::span($title, 'text-muted'); // May be we need a hint that capabilities are missing.
             } else {
-                $title = $strlock;
-                if (!has_capability('moodle/grade:manage', $this->context) &&
-                    !has_capability('moodle/grade:lock', $this->context)) {
-                    $url = html_writer::span($title, 'text-muted'); // May be we need a hint that capabilities are missing.
-                } else {
-                    $url->param('action', 'lock');
-                    $url = new action_menu_link_secondary($url, null, $title);
-                }
+                $url->param('action', 'unlock');
+                $url = new action_menu_link_secondary($url, null, $title);
+            }
+        } else {
+            $title = $strlock;
+            if (!has_capability('moodle/grade:manage', $this->context) &&
+                !has_capability('moodle/grade:lock', $this->context)) {
+                $url = html_writer::span($title, 'text-muted'); // May be we need a hint that capabilities are missing.
+            } else {
+                $url->param('action', 'lock');
+                $url = new action_menu_link_secondary($url, null, $title);
             }
         }
 
@@ -2241,6 +2268,45 @@ class grade_structure {
         }
 
         return $returnactionmenulink ? null : '';
+    }
+
+    /**
+     * Returns an action menu item with url to edit calculation for grade item.
+     *
+     * @param array  $element An array representing an element in the grade_tree
+     * @param object $gpr A grade_plugin_return object
+     *
+     * @return mixed
+     */
+    public function get_edit_calculation_menu_item(array $element, object $gpr) {
+
+        $object = $element['object'];
+
+        static $streditcalculation = null;
+
+        if (is_null($streditcalculation)) {
+            $streditcalculation = get_string('editcalculation', 'grades');
+        }
+
+        $url = new moodle_url('/grade/edit/tree/calculation.php',
+            ['courseid' => $this->courseid, 'id' => $object->id]);
+        $url = $gpr->add_url_params($url);
+        return new action_menu_link_secondary($url, null, $streditcalculation);
+    }
+
+    /**
+     * Returns an action menu item with url to change category view to show grades only.
+     *
+     * @param moodle_url $url Url to grader report page
+     * @param string $title Menu item title
+     * @param string $action View mode to change to
+     *
+     * @return action_menu_link_secondary
+     */
+    public function get_category_view_mode_menu_item(moodle_url $url, string $title, string $action) : action_menu_link_secondary {
+        $urlnew = $url;
+        $urlnew->param('action', $action);
+        return new action_menu_link_secondary($urlnew, null, $title);
     }
 }
 
