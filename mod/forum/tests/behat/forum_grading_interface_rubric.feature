@@ -63,10 +63,10 @@ Feature: I can grade a students interaction across a rubric forum
     And I set the field with xpath "//textarea[contains(@aria-label,'Criterion 2 remark')]" to "Nice effort"
     And I set the field with xpath "//textarea[contains(@aria-label,'Criterion 3 remark')]" to "A lot of room to grow"
     And I click on "Save changes and proceed to the previous user" "button"
-    And I wait until "Well done" "text" does not exist
+    And I wait until "Teacher 1" "text" exists
     And the field with xpath "//textarea[contains(@aria-label,'Criterion 1 remark')]" does not match value "Well done"
     And I click on "Save changes and proceed to the next user" "button"
-    And I wait until "Well done" "text" exists
+    And I wait until "Student 1" "text" exists
     And the field with xpath "//textarea[contains(@aria-label,'Criterion 1 remark')]" matches value "Well done"
     # Confirm the grade is now in the grading report.
     And I am on "Course 1" course homepage
