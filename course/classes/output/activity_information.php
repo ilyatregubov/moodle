@@ -170,11 +170,39 @@ class activity_information implements renderable, templatable {
         foreach ($this->cmcompletion->get_details() as $key => $detail) {
             // Set additional attributes for the template.
             $detail->key = $key;
-            $detail->statuscomplete = in_array($detail->status, [COMPLETION_COMPLETE, COMPLETION_COMPLETE_PASS]);
-            $detail->statuscompletefail = $detail->status == COMPLETION_COMPLETE_FAIL;
-            // This is not used by core themes but may be needed in custom themes.
-            $detail->statuscompletepass = $detail->status == COMPLETION_COMPLETE_PASS;
-            $detail->statusincomplete = $detail->status == COMPLETION_INCOMPLETE;
+
+            $userid = $this->cmcompletion->userid;
+            $gradeitem = \grade_item::fetch(array('itemtype' => 'mod',
+                'itemmodule' => $this->cminfo->modname,
+                'iteminstance' => $this->cminfo->instance,
+                'courseid' => $course->id));
+            $grade = $gradeitem->get_grade($userid);
+            $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
+            if (($key == 'completionpassgrade' || $key == 'completionusegrade')
+                && $this->cminfo->completionpassgrade && $score && !$gradeitem->hidden) {
+                $detail->statusincomplete = false;
+                if ($key == 'completionusegrade') {
+                    $detail->statuscompletepass = false;
+                    $detail->statuscompletefail = false;
+                    $detail->statuscomplete = true;
+                } else {
+                    if ($score >= $gradeitem->gradepass) {
+                        $detail->statuscomplete = true;
+                        $detail->statuscompletepass = true;
+                        $detail->statuscompletefail = false;
+                    } else {
+                        $detail->statuscomplete = false;
+                        $detail->statuscompletepass = false;
+                        $detail->statuscompletefail = true;
+                    }
+                }
+            } else {
+                $detail->statuscomplete = in_array($detail->status, [COMPLETION_COMPLETE, COMPLETION_COMPLETE_PASS]);
+                $detail->statusincomplete = $detail->status == COMPLETION_INCOMPLETE;
+                $detail->statuscompletefail = $detail->status == COMPLETION_COMPLETE_FAIL;
+                // This is not used by core themes but may be needed in custom themes.
+                $detail->statuscompletepass = $detail->status == COMPLETION_COMPLETE_PASS;
+            }
 
             // Add an accessible description to be used for title and aria-label attributes for overridden completion details.
             if ($data->overrideby) {

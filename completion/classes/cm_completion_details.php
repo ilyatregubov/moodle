@@ -47,7 +47,7 @@ class cm_completion_details {
     protected $cminfo = null;
 
     /** @var int The user ID. */
-    protected $userid = 0;
+    public $userid = 0;
 
     /** @var bool Whether to return automatic completion details. */
     protected $returndetails = true;

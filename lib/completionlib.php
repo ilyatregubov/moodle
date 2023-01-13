@@ -1572,7 +1572,7 @@ class completion_info {
             if ($score >= $item->gradepass) {
                 return COMPLETION_COMPLETE_PASS;
             } else {
-                if ($item->hidden) {
+                if ($cm->completionpassgrade) {
                     return COMPLETION_INCOMPLETE;
                 } else {
                     return COMPLETION_COMPLETE_FAIL;
