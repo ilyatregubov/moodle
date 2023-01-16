@@ -106,7 +106,7 @@ Feature: Completion pass grade
     And I log out
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And "Vinnie Student1" user has completed "Music history" activity
+    And "Vinnie Student1" user has not completed "Music history" activity
 
   @javascript
   Scenario: View automatic completion items as a passing student

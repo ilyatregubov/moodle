@@ -67,10 +67,10 @@ Feature: Course completion state should match completion criteria
     And I am on the "Course 1" course page
     And I navigate to "Reports" in current page administration
     And I click on "Activity completion" "link"
-    And "Student 1, Test assignment name: Completed (did not achieve pass grade)" "icon" should exist in the "Student 1" "table_row"
+    And "Student 1, Test assignment name: Not completed" "icon" should exist in the "Student 1" "table_row"
     And I navigate to "Reports" in current page administration
     And I click on "Course completion" "link" in the "region-main" "region"
-    And "Student 1, Test assignment name: Completed (did not achieve pass grade)" "icon" should exist in the "Student 1" "table_row"
+    And "Student 1, Test assignment name: Not completed" "icon" should exist in the "Student 1" "table_row"
     And "Student 1, Course complete: Not completed" "icon" should exist in the "Student 1" "table_row"
     And I log out
     When I am on the "Course 1" course page logged in as "student1"

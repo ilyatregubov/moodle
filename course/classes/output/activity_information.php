@@ -38,6 +38,10 @@ use renderer_base;
 use stdClass;
 use templatable;
 
+require_once($CFG->libdir . '/grade/grade_item.php');
+require_once($CFG->libdir . '/grade/constants.php');
+require_once($CFG->libdir . '/grade/grade_grade.php');
+
 /**
  * The activity information renderable class.
  *
@@ -176,7 +180,7 @@ class activity_information implements renderable, templatable {
                 'itemnumber' => 0,
                 'itemmodule' => $this->cminfo->modname,
                 'iteminstance' => $this->cminfo->instance,
-                'courseid' => $course->id]); // Itemnumber = 0?
+                'courseid' => $course->id]); // Itemnumber = 0 sometimes there are several itemnumbers?
             $score = null;
             if ($gradeitem) {
                 $grade = $gradeitem->get_grade($userid);

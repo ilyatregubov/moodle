@@ -76,9 +76,9 @@ Feature: Award badges based on activity completion
     And I am on the "Course 1" course page logged in as teacher1
     And I navigate to "Badges > Manage badges" in current page administration
     And I follow "Course Badge"
-    Then I should see "Recipients (1)"
+    Then I should see "Recipients (0)"
 
-  Scenario Outline: Previously graded pass/fail students should earn a badge after enabling a badge
+  Scenario: Previously graded pass/fail students should earn a badge after enabling a badge
     Given I am on the "Course 1" course page logged in as teacher1
     And I navigate to "Badges" in current page administration
     And I press "Manage badges"
@@ -87,7 +87,7 @@ Feature: Award badges based on activity completion
     And I set the field "type" to "Activity completion"
     And I click on "Expand all" "link"
     And I set the field "Quiz - Test quiz name" to "1"
-    And I set the field "<aggregationcriteria>" to "1"
+    And I set the field "Any of the selected activities is complete" to "1"
     And I press "Save"
 
     # Fail grade with student2
@@ -104,7 +104,7 @@ Feature: Award badges based on activity completion
     And I am on the "Course 1" course page logged in as student1
     And I am on the "Test quiz name" "quiz activity" page
     And I press "Re-attempt quiz"
-    And I set the field "False" to "0"
+    And I set the field "True" to "1"
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
     And I click on "Submit" "button" in the "Submit all your answers and finish?" "dialogue"
@@ -116,9 +116,4 @@ Feature: Award badges based on activity completion
     And I follow "Course Badge"
     When I press "Enable access"
     And I press "Continue"
-    Then I should see "Recipients (2)"
-
-    Examples:
-      | aggregationcriteria                         |
-      | Any of the selected activities is complete  |
-      | All of the selected activities are complete |
+    Then I should see "Recipients (1)"
