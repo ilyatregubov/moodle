@@ -131,6 +131,25 @@ class completion_criteria_completion extends data_object {
     }
 
     /**
+     * Mark this user as inprogress in this course
+     *
+     * If the user is already marked as inprogress, the time will not be changed
+     *
+     * @param integer $timestarted Time started (optional)
+     * @return  int|null id of completion record on successful update.
+     */
+    public function mark_inprogress($timestarted = null) {
+
+        // Mark course completion record as started (if not already)
+        $cc = array(
+            'course'    => $this->course,
+            'userid'    => $this->userid
+        );
+        $ccompletion = new completion_completion($cc);
+        $ccompletion->mark_inprogress($this->timecompleted);
+    }
+
+    /**
      * Attach a preloaded criteria object to this object
      *
      * @param   $criteria   object  completion_criteria
