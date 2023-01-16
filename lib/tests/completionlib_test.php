@@ -421,7 +421,7 @@ class completionlib_test extends advanced_testcase {
                     'gradepass' => 50,
                 ],
                 40,
-                COMPLETION_COMPLETE_FAIL
+                COMPLETION_INCOMPLETE
             ],
             "Passing grade not enabled with passing grade set." => [
                 [

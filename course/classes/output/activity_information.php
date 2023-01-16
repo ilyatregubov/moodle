@@ -172,12 +172,16 @@ class activity_information implements renderable, templatable {
             $detail->key = $key;
 
             $userid = $this->cmcompletion->userid;
-            $gradeitem = \grade_item::fetch(array('itemtype' => 'mod',
+            $gradeitem = \grade_item::fetch(['itemtype' => 'mod',
+                'itemnumber' => 0,
                 'itemmodule' => $this->cminfo->modname,
                 'iteminstance' => $this->cminfo->instance,
-                'courseid' => $course->id));
-            $grade = $gradeitem->get_grade($userid);
-            $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
+                'courseid' => $course->id]); // Itemnumber = 0?
+            $score = null;
+            if ($gradeitem) {
+                $grade = $gradeitem->get_grade($userid);
+                $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
+            }
             if (($key == 'completionpassgrade' || $key == 'completionusegrade')
                 && $this->cminfo->completionpassgrade && $score && !$gradeitem->hidden) {
                 $detail->statusincomplete = false;

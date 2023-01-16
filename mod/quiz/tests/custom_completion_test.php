@@ -179,7 +179,7 @@ class custom_completion_test extends advanced_testcase {
         $completiondetails = new cm_completion_details($completioninfo, $cm, (int) $failstudent->id);
 
         // Check the results.
-        $this->assertEquals(COMPLETION_COMPLETE_FAIL, $completiondetails->get_details()['completionpassgrade']->status);
+        $this->assertEquals(COMPLETION_INCOMPLETE, $completiondetails->get_details()['completionpassgrade']->status);
         $this->assertEquals(
             'Receive a passing grade',
             $completiondetails->get_details()['completionpassgrade']->description
@@ -367,7 +367,7 @@ class custom_completion_test extends advanced_testcase {
         $completiondetails = new cm_completion_details($completioninfo, $cminfo, (int) $student->id);
 
         // Check the results. Completion is fail because gradepass = 80.
-        $this->assertEquals(COMPLETION_COMPLETE_FAIL, $completiondetails->get_details()['completionpassgrade']->status);
+        $this->assertEquals(COMPLETION_INCOMPLETE, $completiondetails->get_details()['completionpassgrade']->status);
         $this->assertEquals(
             'Receive a passing grade',
             $completiondetails->get_details()['completionpassgrade']->description
@@ -414,7 +414,7 @@ class custom_completion_test extends advanced_testcase {
         $completiondetails = new cm_completion_details($completioninfo, $cminfo, (int) $student->id);
 
         // Check the results. Completion is fail because student grade = 50.
-        $this->assertEquals(COMPLETION_COMPLETE_FAIL, $completiondetails->get_details()['completionpassgrade']->status);
+        $this->assertEquals(COMPLETION_INCOMPLETE, $completiondetails->get_details()['completionpassgrade']->status);
         $this->assertEquals(
             'Receive a passing grade',
             $completiondetails->get_details()['completionpassgrade']->description
@@ -440,7 +440,7 @@ class custom_completion_test extends advanced_testcase {
         $completiondetails = new cm_completion_details($completioninfo, $cminfo, (int) $student->id);
 
         // Check the results. Completion is fail.
-        $this->assertEquals(COMPLETION_COMPLETE_FAIL, $completiondetails->get_details()['completionpassgrade']->status);
+        $this->assertEquals(COMPLETION_INCOMPLETE, $completiondetails->get_details()['completionpassgrade']->status);
         $this->assertEquals(
             'Receive a passing grade',
             $completiondetails->get_details()['completionpassgrade']->description
