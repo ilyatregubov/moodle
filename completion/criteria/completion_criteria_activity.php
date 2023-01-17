@@ -28,6 +28,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->libdir . '/gradelib.php');
+
 /**
  * Course completion critieria - completion on activity completion
  *
@@ -155,6 +157,19 @@ class completion_criteria_activity extends completion_criteria {
 
         $data = $info->get_data($cm, false, $completion->userid);
 
+        $userid = $completion->userid;
+        $itemnumber = $cm->completiongradeitemnumber;
+        $gradeitem = \grade_item::fetch(['itemtype' => 'mod',
+            'itemnumber' => $itemnumber,
+            'itemmodule' => $this->module,
+            'iteminstance' => $cm->instance,
+            'courseid' => $cm->course]);
+        $score = null;
+        if ($gradeitem) {
+            $grade = $gradeitem->get_grade($userid);
+            $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
+        }
+
         // If the activity is complete
         if (in_array($data->completionstate, array(COMPLETION_COMPLETE, COMPLETION_COMPLETE_PASS, COMPLETION_COMPLETE_FAIL))) {
             if ($mark) {
@@ -162,6 +177,8 @@ class completion_criteria_activity extends completion_criteria {
             }
 
             return true;
+        } else if ($score) {
+            $completion->mark_inprogress();
         }
 
         return false;
