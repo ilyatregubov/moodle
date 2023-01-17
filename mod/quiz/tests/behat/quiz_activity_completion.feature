@@ -81,5 +81,5 @@ Feature: View activity completion in the quiz activity
 
     Examples:
       | answer | passcompletionexpected | expectedactivitycompletion             |
-      | False  | failed                 | Completed (did not achieve pass grade) |
+      | False  | failed                 | Not completed                          |
       | True   | done                   | Completed (achieved pass grade)        |
