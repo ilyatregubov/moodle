@@ -127,7 +127,7 @@ Feature: Enable Block Completion in a course using activity completion
     And I log out
     When I am on the "Test assign name" "assign activity" page logged in as student1
     And I am on "Course 1" course homepage
-    Then I should see "Status: Pending" in the "Course completion status" "block"
+    Then I should see "Status: In progress" in the "Course completion status" "block"
     And I should see "0 of 1" in the "Activity completion" "table_row"
     And I trigger cron
     And I am on "Course 1" course homepage
