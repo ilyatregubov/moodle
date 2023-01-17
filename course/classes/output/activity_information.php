@@ -31,12 +31,15 @@ use context;
 use core\activity_dates;
 use core_availability\info;
 use core_completion\cm_completion_details;
+use core_grades\component_gradeitems;
 use core_user;
 use core_user\fields;
 use renderable;
 use renderer_base;
 use stdClass;
 use templatable;
+
+require_once($CFG->libdir . '/gradelib.php');
 
 /**
  * The activity information renderable class.
@@ -170,11 +173,63 @@ class activity_information implements renderable, templatable {
         foreach ($this->cmcompletion->get_details() as $key => $detail) {
             // Set additional attributes for the template.
             $detail->key = $key;
+
+            $isgradecriteria = false;
+            if (($key == 'completionpassgrade' || $key == 'completionusegrade')
+                && $this->cminfo->completionpassgrade && $detail->status == COMPLETION_INCOMPLETE) {
+                $isgradecriteria = true;
+
+                if (!isset($gradeitem)) {
+                    $itemnumber = $this->cminfo->completiongradeitemnumber;
+
+                    $gradeitem = \grade_item::fetch(['itemtype' => 'mod',
+                        'itemnumber' => $itemnumber,
+                        'itemmodule' => $this->cminfo->modname,
+                        'iteminstance' => $this->cminfo->instance,
+                        'courseid' => $course->id]);
+                }
+
+                if ($gradeitem && !isset($score)) {
+                    $grade = $gradeitem->get_grade($this->cmcompletion->userid);
+                    $score = !is_null($grade->finalgrade) ? $grade->finalgrade : $grade->rawgrade;
+                }
+            }
+
             $detail->statuscomplete = in_array($detail->status, [COMPLETION_COMPLETE, COMPLETION_COMPLETE_PASS]);
+            $detail->statusincomplete = $detail->status == COMPLETION_INCOMPLETE;
             $detail->statuscompletefail = $detail->status == COMPLETION_COMPLETE_FAIL;
             // This is not used by core themes but may be needed in custom themes.
             $detail->statuscompletepass = $detail->status == COMPLETION_COMPLETE_PASS;
-            $detail->statusincomplete = $detail->status == COMPLETION_INCOMPLETE;
+
+            if ($isgradecriteria && $score && $gradeitem) {
+                if ($key == 'completionusegrade') {
+                    $detail->statusincomplete = false;
+                    $detail->statuscompletepass = false;
+                    $detail->statuscompletefail = false;
+                    $detail->statuscomplete = true;
+                } else if ($key == 'completionpassgrade' && !$gradeitem->hidden) {
+                    if ($score >= $gradeitem->gradepass) {
+                        $detail->statusincomplete = false;
+                        $detail->statuscomplete = true;
+                        $detail->statuscompletepass = true;
+                        $detail->statuscompletefail = false;
+                    } else {
+                        $detail->statusincomplete = false;
+                        $detail->statuscomplete = false;
+                        $detail->statuscompletepass = false;
+                        $detail->statuscompletefail = true;
+                    }
+                }
+            }
+
+            // Fix state if completionpass grade is not enabled, but pass grade is set.
+            if ($key == 'completionusegrade' &&
+                    !$this->cminfo->completionpassgrade && $detail->status == COMPLETION_COMPLETE_FAIL) {
+                $detail->statusincomplete = false;
+                $detail->statuscompletepass = false;
+                $detail->statuscompletefail = false;
+                $detail->statuscomplete = true;
+            }
 
             // Add an accessible description to be used for title and aria-label attributes for overridden completion details.
             if ($data->overrideby) {
