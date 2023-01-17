@@ -1110,6 +1110,9 @@ class completion_info {
 
                 if (empty($data->coursemoduleid)) {
                     $cacheddata[$data->cmid] = $defaultdata;
+                    if ($data->viewed) {
+                        $cacheddata[$data->cmid]['viewed'] = $data->viewed;
+                    }
                     $cacheddata[$data->cmid]['coursemoduleid'] = $data->cmid;
                 } else {
                     unset($data->cmid);
