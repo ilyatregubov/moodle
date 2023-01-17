@@ -78,5 +78,5 @@ Feature: Pass grade activity completion information in the LTI activity
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
     And "Vinnie Student1" user has completed "Music history" activity
-    And "Vinnie Student2" user has completed "Music history" activity
+    And "Vinnie Student2" user has not completed "Music history" activity
     And "Vinnie Student3" user has not completed "Music history" activity

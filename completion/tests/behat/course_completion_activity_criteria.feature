@@ -67,14 +67,14 @@ Feature: Course completion state should match completion criteria
     And I am on the "Course 1" course page
     And I navigate to "Reports" in current page administration
     And I click on "Activity completion" "link"
-    And "Student 1, Test assignment name: Completed (did not achieve pass grade)" "icon" should exist in the "Student 1" "table_row"
+    And "Student 1, Test assignment name: Not completed" "icon" should exist in the "Student 1" "table_row"
     And I navigate to "Reports" in current page administration
     And I click on "Course completion" "link" in the "region-main" "region"
-    And "Student 1, Test assignment name: Completed (did not achieve pass grade)" "icon" should exist in the "Student 1" "table_row"
+    And "Student 1, Test assignment name: Not completed" "icon" should exist in the "Student 1" "table_row"
     And "Student 1, Course complete: Not completed" "icon" should exist in the "Student 1" "table_row"
     And I log out
     When I am on the "Course 1" course page logged in as "student1"
-    And I should see "Status: Pending" in the "Course completion status" "block"
+    And I should see "Status: In progress" in the "Course completion status" "block"
     And the "Receive a grade" completion condition of "Test assignment name" is displayed as "done"
     And the "Receive a passing grade" completion condition of "Test assignment name" is displayed as "failed"
     And I am on the "My courses" page
@@ -141,8 +141,7 @@ Feature: Course completion state should match completion criteria
     And I log out
     When I am on the "Course 1" course page logged in as "student1"
     And I should see "Status: Complete" in the "Course completion status" "block"
-    # Once MDL-75582 is fixed "failed" should be changed to "done"
-    And the "Receive a grade" completion condition of "Test assignment name" is displayed as "failed"
+    And the "Receive a grade" completion condition of "Test assignment name" is displayed as "done"
     And I am on the "My courses" page
     And I should see "100%" in the "Course overview" "block"
     And I log out
