@@ -3,6 +3,7 @@ information provided here is intended especially for developers.
 
 === 4.2 ===
 
+* 'Show calculations' setting has been removed from grader report (link is moved to grade action menu)
 * 'Show activity icons' setting has been removed from grader report
 * 'Show grade analysis icon' setting has been removed from grader report (link is moved to grade action menu)
 * 'Show locks' setting has been removed from grader report (link is moved to grade action menu)
