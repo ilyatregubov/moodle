@@ -33,6 +33,7 @@ $page          = optional_param('page', 0, PARAM_INT);   // active page
 $edit          = optional_param('edit', -1, PARAM_BOOL); // sticky editting mode
 
 $sortitemid    = optional_param('sortitemid', 0, PARAM_ALPHANUMEXT);
+$sort          = optional_param('sort', '', PARAM_ALPHANUMEXT);
 $action        = optional_param('action', 0, PARAM_ALPHAEXT);
 $move          = optional_param('move', 0, PARAM_INT);
 $type          = optional_param('type', 0, PARAM_ALPHA);
@@ -111,6 +112,12 @@ $reportname = get_string('pluginname', 'gradereport_grader');
 
 // Do this check just before printing the grade header (and only do it once).
 grade_regrade_final_grades_if_required($course);
+
+if ($sort == 'asc') {
+    $SESSION->gradeuserreport->sort = 'DESC';
+} else if ($sort == 'desc') {
+    $SESSION->gradeuserreport->sort = 'ASC';
+}
 
 //Initialise the grader report object that produces the table
 //the class grade_report_grader_ajax was removed as part of MDL-21562

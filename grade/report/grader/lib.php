@@ -405,7 +405,14 @@ class grade_report_grader extends grade_report {
                     $this->groupwheresql_params, $enrolledparams, $relatedctxparams);
 
             $sortjoin = "LEFT JOIN {grade_grades} g ON g.userid = u.id AND g.itemid = $this->sortitemid";
-            $sort = "g.finalgrade $this->sortorder, u.idnumber, u.lastname, u.firstname, u.email";
+//            $sort = "g.finalgrade $this->sortorder NULLS LAST, u.idnumber, u.lastname, u.firstname, u.email";
+
+            if ($this->sortorder == 'ASC') {
+                $sort = $DB->sql_order_by_null('g.finalgrade');
+            } else {
+                $sort = $DB->sql_order_by_null('g.finalgrade', SORT_DESC);
+            }
+            $sort .= ", u.idnumber, u.lastname, u.firstname, u.email";
         } else {
             $sortjoin = '';
 
@@ -652,8 +659,13 @@ class grade_report_grader extends grade_report {
             $fieldheader->attributes['class'] = 'userfield user' . $field;
             $fieldheader->scope = 'col';
             $fieldheader->header = true;
-            $fieldheader->text = $arrows[$field];
+            $element = [];
+            $element['type'] = 'userfield';
+            $element['type'] = 'userfield';
+            $test = $this->get_grade_action_menu($element);
 
+
+            $fieldheader->text = $arrows[$field] . $test;
             $headerrow->cells[] = $fieldheader;
         }
 
@@ -760,6 +772,11 @@ class grade_report_grader extends grade_report {
             $headingrow->attributes['class'] = 'heading_name_row';
 
             foreach ($row as $element) {
+                $sortlink = clone($this->baseurl);
+                if (isset($element['object']->id)) {
+                    $sortlink->param('sortitemid', $element['object']->id);
+                }
+
                 $type   = $element['type'];
 
                 if (!empty($element['colspan'])) {
@@ -806,13 +823,22 @@ class grade_report_grader extends grade_report {
                 } else {
                     // Element is a grade_item.
 
+                    $arrow= '';
+                    if ($element['object']->id == $this->sortitemid) {
+                        if ($this->sortorder == 'ASC') {
+                            $arrow = $this->get_sort_arrow('down', $sortlink);
+                        } else {
+                            $arrow = $this->get_sort_arrow('up', $sortlink);
+                        }
+                    }
+
                     $dimmed = false;
                     if ($element['object']->is_hidden()) {
                         $dimmed = true;
                     }
 
                     $headerlink = $this->gtree->get_element_header($element, true,
-                        true, false, false, true, $dimmed);
+                        true, false, false, true, $dimmed, $sortlink);
 
                     $itemcell = new html_table_cell();
                     $itemcell->attributes['class'] = $type . ' ' . $catlevel .
@@ -826,7 +852,7 @@ class grade_report_grader extends grade_report {
                     }
 
                     $itemcell->colspan = $colspan;
-                    $itemcell->text = $headerlink . $singleview . $statusicons;
+                    $itemcell->text = $headerlink . $arrow . $singleview . $statusicons;
                     $itemcell->header = true;
                     $itemcell->scope = 'col';
 
@@ -1643,7 +1669,33 @@ class grade_report_grader extends grade_report {
             }
         } else if (($element['type'] == 'item') ||
             ($element['type'] == 'categoryitem') ||
-            ($element['type'] == 'courseitem')) {
+            ($element['type'] == 'courseitem') || $element['type'] == 'userfield') {
+
+            if ($element['type'] !== 'userfield') {
+                // View all grades items.
+                // FIXME: MDL-52678 This is extremely hacky we should have an API for inserting grade column links.
+                if (get_capability_info('gradereport/singleview:view')) {
+                    if (has_all_capabilities(['gradereport/singleview:view', 'moodle/grade:viewall',
+                        'moodle/grade:edit'], $this->context)) {
+
+                        $title = $this->get_lang_string('singleview', 'grades');
+                        $url = new moodle_url('/grade/report/singleview/index.php', [
+                            'id' => $this->course->id,
+                            'item' => 'grade',
+                            'itemid' => $element['object']->id
+                        ]);
+                        $this->gpr->add_url_params($url);
+                        $menuitems[] = new action_menu_link_secondary($url, null, $title);
+                    }
+                }
+            }
+
+            if ($element['type'] == 'item') {
+                $advancedgrading = $this->gtree->get_advanced_grading_menu_item($element, $this->gpr);
+                if ($advancedgrading) {
+                    $menuitems[] = $advancedgrading;
+                }
+            }
 
             // Sorting item.
             $sortlink = clone($this->baseurl);
@@ -1651,32 +1703,15 @@ class grade_report_grader extends grade_report {
                 $sortlink->param('sortitemid', $element['object']->id);
             }
 
-            if ($element['object']->id == $this->sortitemid) {
-                $title = $this->get_lang_string('asc');
-                $this->gpr->add_url_params($sortlink);
-                $menuitems[] = new action_menu_link_secondary($sortlink, null, $title);
-                $title = $this->get_lang_string('desc');
-                $menuitems[] = new action_menu_link_secondary($sortlink, null, $title);
-            }
+            $title = $this->get_lang_string('asc');
+            $sortlink->param('sort', 'asc');
+            $this->gpr->add_url_params($sortlink);
+            $menuitems[] = new action_menu_link_secondary($sortlink, null, $title);
+            $title = $this->get_lang_string('desc');
+            $sortlink->param('sort', 'desc');
+            $menuitems[] = new action_menu_link_secondary($sortlink, null, $title);
 
-            // View all grades items.
-            // FIXME: MDL-52678 This is extremely hacky we should have an API for inserting grade column links.
-            if (get_capability_info('gradereport/singleview:view')) {
-                if (has_all_capabilities(['gradereport/singleview:view', 'moodle/grade:viewall',
-                    'moodle/grade:edit'], $this->context)) {
-
-                    $title = $this->get_lang_string('singleview', 'grades');
-                    $url = new moodle_url('/grade/report/singleview/index.php', [
-                        'id' => $this->course->id,
-                        'item' => 'grade',
-                        'itemid' => $element['object']->id
-                    ]);
-                    $this->gpr->add_url_params($url);
-                    $menuitems[] = new action_menu_link_secondary($url, null, $title);
-                }
-            }
-
-            if (!empty($USER->editing)) {
+            if (!empty($USER->editing) && $element['type'] !== 'userfield') {
                 if ($element['type'] == 'item') {
                     $menuitems[] = $this->gtree->get_edit_menu_item($element, $this->gpr);
                 }
@@ -1727,7 +1762,9 @@ class grade_report_grader extends grade_report {
         if ($menuitems) {
             $menu = new action_menu($menuitems);
             $menu->set_additional_classes('grader');
-            $menu->attributes['data-id'] = $element['object']->id;
+            if ($element['type'] !== 'userfield') {
+                $menu->attributes['data-id'] = $element['object']->id;
+            }
             $icon = $OUTPUT->pix_icon('i/moremenu', $this->get_lang_string('actions'));
             $menu->set_menu_trigger($icon);
             $menu->set_menu_left();

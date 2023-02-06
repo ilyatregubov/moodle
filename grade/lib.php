@@ -1541,11 +1541,13 @@ class grade_structure {
      * @param bool  $fulltotal If the item is a category total, returns $categoryname."total"
      *                         instead of "Category total" or "Course total"
      * @param bool  $dimmed If element is shown as dimmed.
+     * @param moodle_url|null  $sortlink Link to sort column.
      *
      * @return string header
      */
-    public function get_element_header(&$element, $withlink = false, $icon = true, $spacerifnone = false,
-        $withdescription = false, $fulltotal = false, $dimmed = false) {
+    public function get_element_header(array &$element, bool $withlink = false, bool $icon = true,
+            bool $spacerifnone = false, bool $withdescription = false, bool $fulltotal = false,
+            bool $dimmed = false, ?moodle_url $sortlink = null) {
         $header = '';
 
         if ($icon) {
@@ -1565,12 +1567,16 @@ class grade_structure {
             return $header;
         }
 
-        if ($withlink && $url = $this->get_activity_link($element)) {
+        if ($sortlink) {
+            $url = $sortlink; // BUT WHAT IF withlink = false and sortlink = true??????????
+            $header = html_writer::link($url, $header, array('title' => $titleunescaped, 'class' => 'gradeitemheader' . $dimmedclass));
+        }
+
+        if (!$sortlink && $withlink && $url = $this->get_activity_link($element)) {
             $a = new stdClass();
             $a->name = get_string('modulename', $element['object']->itemmodule);
             $a->title = $titleunescaped;
             $title = get_string('linktoactivity', 'grades', $a);
-
             $header = html_writer::link($url, $header, array('title' => $title, 'class' => 'gradeitemheader' . $dimmedclass));
         } else {
             $header = html_writer::span($header, 'gradeitemheader' . $dimmedclass, array('title' => $titleunescaped, 'tabindex' => '0'));
@@ -1998,6 +2004,62 @@ class grade_structure {
         }
         $gpr->add_url_params($url);
         return new action_menu_link_secondary($url, null, $title);
+    }
+
+    /**
+     * Returns an action menu item leading to the edit grade/grade item page
+     *
+     * @param array  $element An array representing an element in the grade_tree
+     * @param object $gpr A grade_plugin_return object
+     * @return action_menu_link_secondary|null
+     */
+    public function get_advanced_grading_menu_item(array $element, object $gpr) : ?action_menu_link_secondary {
+        global $CFG;
+
+        /** @var array static cache of the grade.php file existence flags */
+        static $hasgradephp = array();
+
+        $itemtype = $element['object']->itemtype;
+        $itemmodule = $element['object']->itemmodule;
+        $iteminstance = $element['object']->iteminstance;
+        $itemnumber = $element['object']->itemnumber;
+
+        // Links only for module items that have valid instance, module and are
+        // called from grade_tree with valid modinfo
+        if ($itemtype == 'mod' && $iteminstance && $itemmodule && $this->modinfo) {
+
+            // Get $cm efficiently and with visibility information using modinfo
+            $instances = $this->modinfo->get_instances();
+            if (!empty($instances[$itemmodule][$iteminstance])) {
+                $cm = $instances[$itemmodule][$iteminstance];
+
+                // Do not add link if activity is not visible to the current user
+                if ($cm->uservisible) {
+                    if (!array_key_exists($itemmodule, $hasgradephp)) {
+                        if (file_exists($CFG->dirroot . '/mod/' . $itemmodule . '/grade.php')) {
+                            $hasgradephp[$itemmodule] = true;
+                        } else {
+                            $hasgradephp[$itemmodule] = false;
+                        }
+                    }
+
+                    // If module has grade.php, add link to that.
+                    if ($hasgradephp[$itemmodule]) {
+                        $args = array('id' => $cm->id, 'itemnumber' => $itemnumber);
+                        if (isset($element['userid'])) {
+                            $args['userid'] = $element['userid'];
+                        }
+
+                        $url = new moodle_url('/mod/' . $itemmodule . '/grade.php', $args);
+                        $title = get_string('advancedgrading', 'gradereport_grader', $itemmodule);
+                        $gpr->add_url_params($url);
+                        return new action_menu_link_secondary($url, null, $title);
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

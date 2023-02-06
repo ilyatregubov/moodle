@@ -47,6 +47,7 @@ $string['summarygrader'] = 'A table with the names of students in the first colu
 $string['useractivitygrade'] = '{$a} grade';
 $string['userreport'] = 'User report';
 $string['overriddengrade'] = 'Overridden grade';
+$string['advancedgrading'] = 'View {$a} results';
 
 // Deprecated since Moodle 4.2.
 $string['privacy:metadata:preference:grade_report_showanalysisicon'] = 'Whether to show grade analysis icon by default. If the activity module supports it, the grade analysis icon links to a page with more detailed explanation of the grade and how it was obtained.';
