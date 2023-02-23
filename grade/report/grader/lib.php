@@ -1635,6 +1635,37 @@ class grade_report_grader extends grade_report {
 
             $singleviewstring = $this->get_lang_string('singleview', 'grades');
 
+            static $capabilities = null;
+            if (is_null($capabilities)) {
+                $capabilities = [];
+
+                $capabilities['canmanagegrades'] = false;
+                if (has_capability('moodle/grade:manage', $this->context)) {
+                    $capabilities['canmanagegrades'] = true;
+                }
+
+                $capabilities['canhidegrades'] = false;
+                if (has_capability('moodle/grade:hide', $this->context)) {
+                    $capabilities['canhidegrades'] = true;
+                }
+
+                $capabilities['canlockgrades'] = false;
+                if (has_capability('moodle/grade:lock', $this->context)) {
+                    $capabilities['canlockgrades'] = true;
+                }
+
+                $capabilities['canunlockgrades'] = false;
+                if (has_capability('moodle/grade:unlock', $this->context)) {
+                    $capabilities['canunlockgrades'] = true;
+                }
+
+                $capabilities['caneditgrades'] = false;
+                if (has_capability('moodle/grade:edit', $this->context)) {
+                    $capabilities['caneditgrades'] = true;
+                }
+
+            }
+
             if ($element['type'] == 'grade') {
                 $item = $element['object']->grade_item;
                 if ($item->is_course_item() || $item->is_category_item()) {
@@ -1642,14 +1673,9 @@ class grade_report_grader extends grade_report {
                 }
 
                 if (!empty($USER->editing)) {
-                    if ($editable) {
-                        $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings);
-                    }
-
-                    if (has_capability('moodle/grade:manage', $this->context)) {
-                        $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings);
-                        $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
-                    }
+                    $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings, $capabilities, $editable);
+                    $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings, $capabilities);
+                    $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings, $capabilities);
                 }
 
                 $context->gradeanalysisurl = $this->gtree->get_grade_analysis_link($element['object'], $gradeanalysisstring);
@@ -1668,27 +1694,17 @@ class grade_report_grader extends grade_report {
                     $context->divider = true;
 
                     if ($element['type'] == 'item') {
-                        $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings);
+                        $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings, $capabilities);
                     }
 
-                    if (has_capability('moodle/grade:manage', $this->context)) {
+                    $context->editcalculationurl =
+                        $this->gtree->get_edit_calculation_link($element, $this->gpr, $editcalculationstrings, $capabilities);
 
-                        $object = $element['object'];
-
-                        $isscale = $object->gradetype == GRADE_TYPE_SCALE;
-                        $isvalue = $object->gradetype == GRADE_TYPE_VALUE;
-
-                        // Show calculation icon only when calculation possible.
-                        if (!$object->is_external_item() && ($isscale || $isvalue)) {
-                            $context->editcalculationurl =
-                                $this->gtree->get_edit_calculation_link($element, $this->gpr, $editcalculationstrings);
-                        }
-
-                        if ($object->itemmodule !== 'quiz') {
-                            $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings);
-                        }
-                        $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
+                    $object = $element['object'];
+                    if ($object->itemmodule !== 'quiz') {
+                        $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings, $capabilities);
                     }
+                    $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings, $capabilities);
                 }
             } else if ($element['type'] == 'category') {
                 $categoryid = $element['object']->id;
@@ -1720,12 +1736,9 @@ class grade_report_grader extends grade_report {
 
                 if (!empty($USER->editing)) {
                     $context->divider = true;
-                    $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings);
-
-                    if (has_capability('moodle/grade:manage', $this->context)) {
-                        $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings);
-                        $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
-                    }
+                    $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings, $capabilities);
+                    $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings, $capabilities);
+                    $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings, $capabilities);
                 }
 
             }

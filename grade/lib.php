@@ -1945,15 +1945,18 @@ class grade_structure {
      * @param array  $element An array representing an element in the grade_tree
      * @param object $gpr A grade_plugin_return object
      * @param array $langstrings Language strings
+     * @param array $capabilities Capabilities to check
+     * @param bool $editable If grade/grade item is editable
      * @return string|null
      */
-    public function get_edit_link(array $element, object $gpr, array $langstrings): ?string {
+    public function get_edit_link(array $element, object $gpr, array $langstrings, array $capabilities,
+            bool $editable = true): ?string {
         $url = null;
         $title = '';
-        if (!has_capability('moodle/grade:manage', $this->context)) {
-            if (!($element['type'] == 'grade') || !has_capability('moodle/grade:edit', $this->context)) {
+        if (!$editable ||
+            (!$capabilities['canmanagegrades'] &&
+            (!($element['type'] == 'grade') || !$capabilities['caneditgrades']))) {
                 return null;
-            }
         }
 
         $object = $element['object'];
@@ -2108,12 +2111,12 @@ class grade_structure {
      * @param array  $element An array representing an element in the grade_tree
      * @param object $gpr A grade_plugin_return object
      * @param array $langstrings Language strings
+     * @param array $capabilities Capabilities to check
      * @return string|null
      */
-    public function get_hiding_link(array $element, object $gpr, array $langstrings): ?string {
-        if (!$element['object']->can_control_visibility() ||
-            (!has_capability('moodle/grade:manage', $this->context) &&
-                !has_capability('moodle/grade:hide', $this->context))) {
+    public function get_hiding_link(array $element, object $gpr, array $langstrings, array $capabilities): ?string {
+        if (!$element['object']->can_control_visibility() || !$capabilities['canmanagegrades'] ||
+            !$capabilities['canhidegrades']) {
             return null;
         }
 
@@ -2209,46 +2212,47 @@ class grade_structure {
      * @param array  $element An array representing an element in the grade_tree
      * @param object $gpr A grade_plugin_return object
      * @param array $langstrings Language strings
+     * @param array $capabilities Capabilities to check
      *
      * @return string|null
      */
-    public function get_locking_link(array $element, object $gpr, array $langstrings): ?string {
+    public function get_locking_link(array $element, object $gpr, array $langstrings, array $capabilities): ?string {
 
-        $title = '';
-        $url = new moodle_url('/grade/edit/tree/action.php',
-            ['id' => $this->courseid, 'sesskey' => sesskey(), 'eid' => $element['eid']]);
-        $url = $gpr->add_url_params($url);
+        if ($capabilities['canmanagegrades']) {
+            $title = '';
+            $url = new moodle_url('/grade/edit/tree/action.php',
+                ['id' => $this->courseid, 'sesskey' => sesskey(), 'eid' => $element['eid']]);
+            $url = $gpr->add_url_params($url);
 
-        if (($element['type'] == 'grade') && ($element['object']->grade_item->is_locked())) {
-            // Don't allow an unlocking action for a grade whose grade item is locked: just print a state icon.
-            $strparamobj = new stdClass();
-            $strparamobj->itemname = $element['object']->grade_item->get_name(true, true);
-            $strnonunlockable = get_string('nonunlockableverbose', 'grades', $strparamobj);
-            $title = $langstrings[0];
-            return html_writer::span($title, 'text-muted dropdown-item', ['title' => $strnonunlockable,
-                'aria-label' => $title, 'role' => 'menuitem']);
-        } else if ($element['object']->is_locked()) {
-            $title = $langstrings[0];
-            if (!has_capability('moodle/grade:manage', $this->context) &&
-                !has_capability('moodle/grade:unlock', $this->context)) {
-                return html_writer::span($title, 'text-muted dropdown-item',
-                    ['aria-label' => $title, 'role' => 'menuitem']);
+            if (($element['type'] == 'grade') && ($element['object']->grade_item->is_locked())) {
+                // Don't allow an unlocking action for a grade whose grade item is locked: just print a state icon.
+                $strparamobj = new stdClass();
+                $strparamobj->itemname = $element['object']->grade_item->get_name(true, true);
+                $strnonunlockable = get_string('nonunlockableverbose', 'grades', $strparamobj);
+                $title = $langstrings[0];
+                return html_writer::span($title, 'text-muted dropdown-item', ['title' => $strnonunlockable,
+                    'aria-label' => $title, 'role' => 'menuitem']);
+            } else if ($element['object']->is_locked()) {
+                if ($capabilities['canunlockgrades']) {
+                    $title = $langstrings[0];
+                    $url->param('action', 'unlock');
+                } else {
+                    return null;
+                }
             } else {
-                $url->param('action', 'unlock');
+                if ($capabilities['canlockgrades']) {
+                    $title = $langstrings[1];
+                    $url->param('action', 'lock');
+                } else {
+                    return null;
+                }
             }
+
+            return html_writer::link($url, $title,
+                ['class' => 'dropdown-item', 'aria-label' => $title, 'role' => 'menuitem']);
         } else {
-            $title = $langstrings[1];
-            if (!has_capability('moodle/grade:manage', $this->context) &&
-                !has_capability('moodle/grade:lock', $this->context)) {
-                return html_writer::span($title, 'text-muted dropdown-item',
-                    ['aria-label' => $title, 'role' => 'menuitem']);
-            } else {
-                $url->param('action', 'lock');
-            }
+            return null;
         }
-
-        return html_writer::link($url, $title,
-            ['class' => 'dropdown-item', 'aria-label' => $title, 'role' => 'menuitem']);
     }
 
     /**
@@ -2304,18 +2308,28 @@ class grade_structure {
      * @param array  $element An array representing an element in the grade_tree
      * @param object $gpr A grade_plugin_return object
      * @param string $editcalculationstrings Language string
+     * @param array $capabilities Capbilities to check
      *
      * @return string|null
      */
-    public function get_edit_calculation_link(array $element, object $gpr, string $editcalculationstrings) : ?string {
+    public function get_edit_calculation_link(array $element, object $gpr,
+            string $editcalculationstrings, array $capabilities): ?string {
 
-        $object = $element['object'];
+        if ($capabilities['canmanagegrades']) {
+            $object = $element['object'];
+            $isscale = $object->gradetype == GRADE_TYPE_SCALE;
+            $isvalue = $object->gradetype == GRADE_TYPE_VALUE;
 
-        $url = new moodle_url('/grade/edit/tree/calculation.php',
-            ['courseid' => $this->courseid, 'id' => $object->id]);
-        $url = $gpr->add_url_params($url);
-        return html_writer::link($url, $editcalculationstrings,
-            ['class' => 'dropdown-item', 'aria-label' => $editcalculationstrings, 'role' => 'menuitem']);
+            // Show calculation icon only when calculation possible.
+            if (!$object->is_external_item() && ($isscale || $isvalue)) {
+                $url = new moodle_url('/grade/edit/tree/calculation.php',
+                    ['courseid' => $this->courseid, 'id' => $object->id]);
+                $url = $gpr->add_url_params($url);
+                return html_writer::link($url, $editcalculationstrings,
+                    ['class' => 'dropdown-item', 'aria-label' => $editcalculationstrings, 'role' => 'menuitem']);
+            }
+        }
+        return null;
     }
 
     /**
@@ -2328,7 +2342,7 @@ class grade_structure {
      *
      * @return string|null
      */
-    public function get_category_view_mode_link(moodle_url $url, string $title, string $action, bool $active = false) :?string {
+    public function get_category_view_mode_link(moodle_url $url, string $title, string $action, bool $active = false): ?string {
         $urlnew = $url;
         $urlnew->param('action', $action);
         $active = $active ? 'true' : 'false';
