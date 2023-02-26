@@ -30,10 +30,10 @@ Feature: We can duplicate grade items that already exist.
     And I navigate to "Setup > Gradebook setup" in the course gradebook
     And I should not see "Duplicate   Category1"
     And I should not see "Duplicate   Assignment1"
-    When I duplicate the grade item "Item1"
+    When I duplicate the grade item "Item1" "gradeitem"
     Then I should see "Item1 (copy)"
-    And I open the action menu in "Item1 (copy)" "table_row"
-    And I choose "Edit settings" in the open action menu
+    And I click on grade item menu "Item1 (copy)" of type "gradeitem" on "setup" page
+    And I choose "Edit grade item" in the open action menu
     And the field "Item name" matches value "Item1 (copy)"
     And the field "ID number" matches value ""
     And the field "Grade type" matches value "Value"
