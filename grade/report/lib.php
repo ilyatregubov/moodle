@@ -90,12 +90,6 @@ abstract class grade_report {
      */
     public $page;
 
-    /**
-     * Array of cached language strings (using get_string() all the time takes a long time!).
-     * @var array $lang_strings
-     */
-    public $lang_strings = array();
-
     // GROUP VARIABLES (including SQL)
 
     /**
@@ -271,20 +265,6 @@ abstract class grade_report {
     abstract public function process_action($target, $action);
 
     /**
-     * First checks the cached language strings, then returns match if found, or uses get_string()
-     * to get it from the DB, caches it then returns it.
-     * @param string $strcode
-     * @param string $section Optional language section
-     * @return string
-     */
-    public function get_lang_string($strcode, $section=null) {
-        if (empty($this->lang_strings[$strcode])) {
-            $this->lang_strings[$strcode] = get_string($strcode, $section);
-        }
-        return $this->lang_strings[$strcode];
-    }
-
-    /**
      * Fetches and returns a count of all the users that will be shown on this page.
      * @param boolean $groups include groups limit
      * @param boolean $users include users limit - default false, used for searching purposes
@@ -418,7 +398,7 @@ abstract class grade_report {
         global $OUTPUT;
         $pix = ['up' => 't/sort_desc', 'down' => 't/sort_asc'];
         $matrix = ['up' => 'desc', 'down' => 'asc'];
-        $strsort = $this->get_lang_string($matrix[$direction], 'moodle');
+        $strsort = grade_helper::get_lang_string($matrix[$direction], 'moodle');
 
         $arrow = $OUTPUT->pix_icon($pix[$direction], '', '', ['class' => 'sorticon']);
         return html_writer::link($sortlink, $arrow, ['title' => $strsort, 'aria-label' => $strsort]);

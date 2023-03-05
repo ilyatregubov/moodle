@@ -2341,6 +2341,215 @@ class grade_structure {
         return html_writer::link($urlnew, $title,
             ['class' => 'dropdown-item', 'aria-label' => $title, 'aria-current' => $active, 'role' => 'menuitem']);
     }
+
+    /**
+     * Sets status icons for the grade.
+     *
+     * @param array $element array with grade item info
+     * @return string status icons container HTML
+     */
+    public function set_grade_status_icons(array $element) : string {
+        global $OUTPUT;
+
+        $attributes = ['class' => 'text-muted'];
+
+        $statusicons = '';
+        if ($element['object']->is_hidden()) {
+            $statusicons .= $OUTPUT->pix_icon('i/show', grade_helper::get_lang_string('hidden', 'grades'),
+                'moodle', $attributes);
+        }
+
+        if ($element['object']->is_locked()) {
+            $statusicons .= $OUTPUT->pix_icon('i/lock', grade_helper::get_lang_string('locked', 'grades'),
+                'moodle', $attributes);
+        }
+
+        if ($element['object'] instanceof grade_grade) {
+            $grade = $element['object'];
+            if ($grade->is_overridden()) {
+                $statusicons .= $OUTPUT->pix_icon('i/overriden_grade',
+                    grade_helper::get_lang_string('overridden', 'grades'), 'moodle', $attributes);
+            }
+
+            if ($grade->is_excluded()) {
+                $statusicons .= $OUTPUT->pix_icon('i/excluded', grade_helper::get_lang_string('excluded', 'grades'),
+                    'moodle', $attributes);
+            }
+        }
+
+        $class = 'grade_icons';
+        if (isset($element['type']) && ($element['type'] == 'category')) {
+            $class = 'category_grade_icons';
+        }
+        if ($statusicons) {
+            $statusicons = $OUTPUT->container($statusicons, $class);
+        }
+        return $statusicons;
+    }
+
+    /**
+     * Returns an action menu for the grade.
+     *
+     * @param array $element Array with cell info.
+     * @param string $mode Mode - gradeitem, user or setup
+     * @return string
+     */
+    public function get_cell_action_menu(array $element, string $mode): string {
+        global $OUTPUT, $USER, $CFG;
+        require_once($CFG->dirroot . '/grade/report/grader/lib.php');
+
+        $context = new stdClass();
+        $gpr = new grade_plugin_return(['type' => 'report', 'plugin' => 'grader', 'courseid' => $this->courseid]);
+        $report = new grade_report_grader($this->courseid, $gpr, $this->context);
+
+        if ($mode == 'gradeitem') {
+            $editable = true;
+            $editstrings = [];
+            $editstrings[] = grade_helper::get_lang_string('editgrade', 'grades');
+            $editstrings[] = grade_helper::get_lang_string('itemsedit', 'grades');
+            $editstrings[] = grade_helper::get_lang_string('categoryedit', 'grades');
+
+            $editcalculationstrings = grade_helper::get_lang_string('editcalculation', 'grades');
+
+            $hidestrings = [];
+            $hidestrings[] = grade_helper::get_lang_string('show');
+            $hidestrings[] = grade_helper::get_lang_string('hide');
+
+            $lockstrings = [];
+            $lockstrings[] = grade_helper::get_lang_string('unlock', 'grades');
+            $lockstrings[] = grade_helper::get_lang_string('lock', 'grades');
+
+            $gradeanalysisstring = grade_helper::get_lang_string('gradeanalysis', 'grades');
+
+            $singleviewstring = grade_helper::get_lang_string('singleview', 'grades');
+
+            static $capabilities = null;
+            if (is_null($capabilities)) {
+                $capabilities = [];
+
+                $capabilities['canmanagegrades'] = false;
+                if (has_capability('moodle/grade:manage', $this->context)) {
+                    $capabilities['canmanagegrades'] = true;
+                }
+
+                $capabilities['canhidegrades'] = false;
+                if (has_capability('moodle/grade:hide', $this->context)) {
+                    $capabilities['canhidegrades'] = true;
+                }
+
+                $capabilities['canlockgrades'] = false;
+                if (has_capability('moodle/grade:lock', $this->context)) {
+                    $capabilities['canlockgrades'] = true;
+                }
+
+                $capabilities['canunlockgrades'] = false;
+                if (has_capability('moodle/grade:unlock', $this->context)) {
+                    $capabilities['canunlockgrades'] = true;
+                }
+
+                $capabilities['caneditgrades'] = false;
+                if (has_capability('moodle/grade:edit', $this->context)) {
+                    $capabilities['caneditgrades'] = true;
+                }
+
+            }
+
+            if ($element['type'] == 'grade') {
+                $item = $element['object']->grade_item;
+                if ($item->is_course_item() || $item->is_category_item()) {
+                    $editable = (bool)get_config('moodle', 'grade_overridecat');;
+                }
+
+                if (!empty($USER->editing)) {
+                    $context->editurl = $this->get_edit_link($element, $gpr, $editstrings, $capabilities, $editable);
+                    $context->hideurl = $this->get_hiding_link($element, $gpr, $hidestrings, $capabilities);
+                    $context->lockurl = $this->get_locking_link($element, $gpr, $lockstrings, $capabilities);
+                }
+
+                $context->gradeanalysisurl = $this->get_grade_analysis_link($element['object'], $gradeanalysisstring);
+            } else if (($element['type'] == 'item') ||
+                ($element['type'] == 'categoryitem') ||
+                ($element['type'] == 'courseitem')) {
+
+                if ($element['type'] == 'item') {
+                    $context->singleviewreporturl =
+                        \gradereport_singleview\report\singleview::get_singleview_link($this->context, $this->courseid,
+                            $element, $gpr, $singleviewstring, $mode);
+                    $context->advancedgradingurl = $this->get_advanced_grading_link($element, $gpr);
+                }
+
+                if (!empty($USER->editing)) {
+                    $context->divider = true;
+
+                    if ($element['type'] == 'item') {
+                        $context->editurl = $this->get_edit_link($element, $gpr, $editstrings, $capabilities);
+                    }
+
+                    $context->editcalculationurl =
+                        $this->get_edit_calculation_link($element, $gpr, $editcalculationstrings, $capabilities);
+
+                    $object = $element['object'];
+                    if ($object->itemmodule !== 'quiz') {
+                        $context->hideurl = $this->get_hiding_link($element, $gpr, $hidestrings, $capabilities);
+                    }
+                    $context->lockurl = $this->get_locking_link($element, $gpr, $lockstrings, $capabilities);
+                }
+            } else if ($element['type'] == 'category') {
+                $categoryid = $element['object']->id;
+
+                // Load language strings.
+                $strswitchminus = grade_helper::get_lang_string('aggregatesonly', 'grades');
+                $strswitchplus = grade_helper::get_lang_string('gradesonly', 'grades');
+                $strswitchwhole = grade_helper::get_lang_string('fullmode', 'grades');
+
+                $url = new moodle_url($gpr->get_return_url(null,
+                    ['target' => $element['eid'], 'sesskey' => sesskey()]));
+
+                $gradesonly = false;
+                $aggregatesonly = false;
+                $fullmode = false;
+                if (in_array($categoryid, $report->collapsed['gradesonly'])) {
+                    $gradesonly = true;
+                } else if (in_array($categoryid, $report->collapsed['aggregatesonly'])) {
+                    $aggregatesonly = true;
+                } else {
+                    $fullmode = true;
+                }
+                $context->gradesonlyurl =
+                    $this->get_category_view_mode_link($url, $strswitchplus, 'switch_plus', $gradesonly);
+                $context->aggregatesonlyurl =
+                    $this->get_category_view_mode_link($url, $strswitchminus, 'switch_minus', $aggregatesonly);
+                $context->fullmodeurl =
+                    $this->get_category_view_mode_link($url, $strswitchwhole, 'switch_whole', $fullmode);
+
+                if (!empty($USER->editing)) {
+                    $context->editurl = $this->get_edit_link($element, $gpr, $editstrings, $capabilities);
+                    $context->hideurl = $this->get_hiding_link($element, $gpr, $hidestrings, $capabilities);
+                    $context->lockurl = $this->get_locking_link($element, $gpr, $lockstrings, $capabilities);
+                }
+
+            }
+
+            $context->dataid = $element['object']->id;
+        } else if ($mode == 'user') {
+            $singleviewstring = grade_helper::get_lang_string('singleviewuser', 'grades');
+            $userreportstring = grade_helper::get_lang_string('userreport', 'gradereport_grader');
+            $context->singleviewreporturl =
+                \gradereport_singleview\report\singleview::get_singleview_link($this->context, $this->courseid,
+                    $element, $gpr, $singleviewstring, $mode);
+            $context->userreporturl =
+                \gradereport_user\report\user::get_userreport_link($this->context, $this->courseid,
+                    $element, $gpr, $userreportstring);
+            $context->dataid = $element['userid'];
+        }
+
+        if (!empty($USER->editing) || isset($context->gradeanalysisurl)
+            || isset($context->singleviewreporturl)  || isset($context->gradesonlyurl)) {
+            return $OUTPUT->render_from_template('core_grades/cellmenu', $context);
+        }
+        return '';
+    }
+
 }
 
 /**
@@ -3173,6 +3382,26 @@ abstract class grade_helper {
      * @var array
      */
     protected static $aggregationstrings = null;
+    /**
+     * Cached grade tree plugin strings
+     * @var array
+     */
+    protected static $langstrings = [];
+
+    /**
+     * First checks the cached language strings, then returns match if found, or uses get_string()
+     * to get it from the DB, caches it then returns it.
+     *
+     * @param string $strcode
+     * @param string|null $section Optional language section
+     * @return string
+     */
+    public static function get_lang_string(string $strcode, ?string $section = null): string {
+        if (empty(self::$langstrings[$strcode])) {
+            self::$langstrings[$strcode] = get_string($strcode, $section);
+        }
+        return self::$langstrings[$strcode];
+    }
 
     /**
      * Gets strings commonly used by the describe plugins

@@ -687,7 +687,7 @@ class grade_report_grader extends grade_report {
             // when horizontally scrolling through the table contents (most noticeable when in RTL mode).
             // Therefore, add slight padding on the left or right when using RTL mode.
             $usercell->attributes['class'] .= ' pl-3';
-            $usercell->text .= $this->get_cell_action_menu(['userid' => $userid], 'user');
+            $usercell->text .= $this->gtree->get_cell_action_menu(['userid' => $userid], 'user');
 
             $userrow->cells[] = $usercell;
 
@@ -724,7 +724,7 @@ class grade_report_grader extends grade_report {
         $this->rowcount = 0;
         $numusers = count($this->users);
         $gradetabindex = 1;
-        $strgrade = $this->get_lang_string('gradenoun');
+        $strgrade = \grade_helper::get_lang_string('gradenoun');
         $this->get_sort_arrows();
 
         // Get preferences once.
@@ -783,7 +783,7 @@ class grade_report_grader extends grade_report {
                         $categorycell->header = true;
                         $categorycell->scope = 'col';
 
-                        $statusicons = $this->set_grade_status_icons($element);
+                        $statusicons = $this->gtree->set_grade_status_icons($element);
                         if ($statusicons) {
                             $categorycell->text .= $statusicons;
                             $categorycell->attributes['class'] .= ' statusicons';
@@ -811,8 +811,8 @@ class grade_report_grader extends grade_report {
                         ' highlightable'. ' i'. $element['object']->id;
                     $itemcell->attributes['data-itemid'] = $element['object']->id;
 
-                    $singleview = $this->get_cell_action_menu($element, 'gradeitem');
-                    $statusicons = $this->set_grade_status_icons($element);
+                    $singleview = $this->gtree->get_cell_action_menu($element, 'gradeitem');
+                    $statusicons = $this->gtree->set_grade_status_icons($element);
                     if ($statusicons) {
                         $itemcell->attributes['class'] .= ' statusicons';
                     }
@@ -941,7 +941,7 @@ class grade_report_grader extends grade_report {
                     $gradepass = '';
                     $context->gradepassicon = '';
                 }
-                $context->statusicons = $this->set_grade_status_icons($element);
+                $context->statusicons = $this->gtree->set_grade_status_icons($element);
 
                 // If in editing mode, we need to print either a text box or a drop down (for scales)
                 // grades in item of type grade category or course are not directly editable.
@@ -981,9 +981,9 @@ class grade_report_grader extends grade_report {
                         if ($quickgrading && $grade->is_editable()) {
                             $context->iseditable = true;
                             if (empty($item->outcomeid)) {
-                                $nogradestr = $this->get_lang_string('nograde');
+                                $nogradestr = \grade_helper::get_lang_string('nograde');
                             } else {
-                                $nogradestr = $this->get_lang_string('nooutcome', 'grades');
+                                $nogradestr = \grade_helper::get_lang_string('nooutcome', 'grades');
                             }
                             $attributes = [
                                 'tabindex' => $tabindices[$item->id]['grade'],
@@ -1066,7 +1066,7 @@ class grade_report_grader extends grade_report {
                 }
 
                 if (!$item->needsupdate) {
-                    $context->actionmenu = $this->get_cell_action_menu($element, 'gradeitem');
+                    $context->actionmenu = $this->gtree->get_cell_action_menu($element, 'gradeitem');
                 }
 
                 $itemcell->text = $OUTPUT->render_from_template('gradereport_grader/cell', $context);
@@ -1092,51 +1092,6 @@ class grade_report_grader extends grade_report {
         }
 
         return $rows;
-    }
-
-    /**
-     * Sets status icons for the grade.
-     * @param array $element array with grade item info
-     *
-     * @return string status icons container HTML
-     */
-    public function set_grade_status_icons(array $element) : string {
-        global $OUTPUT;
-
-        $attributes = ['class' => 'text-muted'];
-
-        $statusicons = '';
-        if ($element['object']->is_hidden()) {
-            $statusicons .= $OUTPUT->pix_icon('i/show', $this->get_lang_string('hidden', 'grades'),
-                'moodle', $attributes);
-        }
-
-        if ($element['object']->is_locked()) {
-            $statusicons .= $OUTPUT->pix_icon('i/lock', $this->get_lang_string('locked', 'grades'),
-                'moodle', $attributes);
-        }
-
-        if ($element['object'] instanceof grade_grade) {
-            $grade = $element['object'];
-            if ($grade->is_overridden()) {
-                $statusicons .= $OUTPUT->pix_icon('i/overriden_grade',
-                 $this->get_lang_string('overridden', 'grades'), 'moodle', $attributes);
-            }
-
-            if ($grade->is_excluded()) {
-                $statusicons .= $OUTPUT->pix_icon('i/excluded', $this->get_lang_string('excluded', 'grades'),
-                    'moodle', $attributes);
-            }
-        }
-
-        $class = 'grade_icons';
-        if ($element['type'] == 'category') {
-            $class = 'category_grade_icons';
-        }
-        if ($statusicons) {
-            $statusicons = $OUTPUT->container($statusicons, $class);
-        }
-        return $statusicons;
     }
 
     /**
@@ -1192,7 +1147,7 @@ class grade_report_grader extends grade_report {
             $controlscell->attributes['class'] = 'header controls';
             $controlscell->header = true;
             $controlscell->colspan = $colspan;
-            $controlscell->text = $this->get_lang_string('controls', 'grades');
+            $controlscell->text = \grade_helper::get_lang_string('controls', 'grades');
             $controlsrow->cells[] = $controlscell;
 
             $rows[] = $controlsrow;
@@ -1217,7 +1172,7 @@ class grade_report_grader extends grade_report {
             $rangecell->colspan = $colspan;
             $rangecell->header = true;
             $rangecell->scope = 'row';
-            $rangecell->text = $this->get_lang_string('range', 'grades');
+            $rangecell->text = \grade_helper::get_lang_string('range', 'grades');
             $rangerow->cells[] = $rangecell;
             $rows[] = $rangerow;
         }
@@ -1521,7 +1476,7 @@ class grade_report_grader extends grade_report {
      * @return string HTML
      */
     protected function get_course_header($element) {
-        $actionmenu = $this->get_cell_action_menu($element, 'gradeitem');
+        $actionmenu = $this->gtree->get_cell_action_menu($element, 'gradeitem');
 
         if (in_array($element['object']->id, $this->collapsed['aggregatesonly'])) {
             $showing = get_string('showingaggregatesonly', 'grades');
@@ -1600,138 +1555,6 @@ class grade_report_grader extends grade_report {
         }
 
         return $OUTPUT->container($editicon.$editcalculationicon.$showhideicon.$lockunlockicon.$gradeanalysisicon, 'grade_icons');
-    }
-
-    /**
-     * Returns an action menu for the grade.
-     *
-     * @param array $element Array with cell info.
-     * @param string $mode Mode - gradeitem or user
-     * @return string
-     */
-    public function get_cell_action_menu(array $element, string $mode): string {
-        global $OUTPUT, $USER;
-
-        $context = new stdClass();
-
-        if ($mode == 'gradeitem') {
-            $editable = true;
-            $editstrings = [];
-            $editstrings[] = $this->get_lang_string('editgrade', 'grades');
-            $editstrings[] = $this->get_lang_string('itemsedit', 'grades');
-            $editstrings[] = $this->get_lang_string('categoryedit', 'grades');
-
-            $editcalculationstrings = $this->get_lang_string('editcalculation', 'grades');
-
-            $hidestrings = [];
-            $hidestrings[] = $this->get_lang_string('show');
-            $hidestrings[] = $this->get_lang_string('hide');
-
-            $lockstrings = [];
-            $lockstrings[] = $this->get_lang_string('unlock', 'grades');
-            $lockstrings[] = $this->get_lang_string('lock', 'grades');
-
-            $gradeanalysisstring = $this->get_lang_string('gradeanalysis', 'grades');
-
-            $singleviewstring = $this->get_lang_string('singleview', 'grades');
-
-            if ($element['type'] == 'grade') {
-                $item = $element['object']->grade_item;
-                if ($item->is_course_item() || $item->is_category_item()) {
-                    $editable = $this->overridecat;
-                }
-
-                if (!empty($USER->editing)) {
-                    if ($editable) {
-                        $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings);
-                    }
-                    $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings);
-                    $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
-                }
-
-                $context->gradeanalysisurl = $this->gtree->get_grade_analysis_link($element['object'], $gradeanalysisstring);
-            } else if (($element['type'] == 'item') ||
-                ($element['type'] == 'categoryitem') ||
-                ($element['type'] == 'courseitem')) {
-
-                if ($element['type'] == 'item') {
-                    $context->singleviewreporturl =
-                        \gradereport_singleview\report\singleview::get_singleview_link($this->context, $this->courseid,
-                            $element, $this->gpr, $singleviewstring, $mode);
-                    $context->advancedgradingurl = $this->gtree->get_advanced_grading_link($element, $this->gpr);
-                }
-
-                if (!empty($USER->editing)) {
-                    $context->divider = true;
-
-                    if ($element['type'] == 'item') {
-                        $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings);
-                    }
-
-                    $context->editcalculationurl =
-                        $this->gtree->get_edit_calculation_link($element, $this->gpr, $editcalculationstrings);
-
-                    $object = $element['object'];
-                    if ($object->itemmodule !== 'quiz') {
-                        $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings);
-                    }
-                    $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
-                }
-            } else if ($element['type'] == 'category') {
-                $categoryid = $element['object']->id;
-
-                // Load language strings.
-                $strswitchminus = $this->get_lang_string('aggregatesonly', 'grades');
-                $strswitchplus = $this->get_lang_string('gradesonly', 'grades');
-                $strswitchwhole = $this->get_lang_string('fullmode', 'grades');
-
-                $url = new moodle_url($this->gpr->get_return_url(null,
-                    ['target' => $element['eid'], 'sesskey' => sesskey()]));
-
-                $gradesonly = false;
-                $aggregatesonly = false;
-                $fullmode = false;
-                if (in_array($categoryid, $this->collapsed['gradesonly'])) {
-                    $gradesonly = true;
-                } else if (in_array($categoryid, $this->collapsed['aggregatesonly'])) {
-                    $aggregatesonly = true;
-                } else {
-                    $fullmode = true;
-                }
-                $context->gradesonlyurl =
-                    $this->gtree->get_category_view_mode_link($url, $strswitchplus, 'switch_plus', $gradesonly);
-                $context->aggregatesonlyurl =
-                    $this->gtree->get_category_view_mode_link($url, $strswitchminus, 'switch_minus', $aggregatesonly);
-                $context->fullmodeurl =
-                    $this->gtree->get_category_view_mode_link($url, $strswitchwhole, 'switch_whole', $fullmode);
-
-                if (!empty($USER->editing)) {
-                    $context->divider = true;
-                    $context->editurl = $this->gtree->get_edit_link($element, $this->gpr, $editstrings);
-                    $context->hideurl = $this->gtree->get_hiding_link($element, $this->gpr, $hidestrings);
-                    $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
-                }
-
-            }
-
-            $context->dataid = $element['object']->id;
-        } else if ($mode == 'user') {
-            $singleviewstring = $this->get_lang_string('singleviewuser', 'grades');
-            $userreportstring = $this->get_lang_string('userreport', 'gradereport_grader');
-            $context->singleviewreporturl =
-                \gradereport_singleview\report\singleview::get_singleview_link($this->context, $this->courseid,
-                    $element, $this->gpr, $singleviewstring, $mode);
-            $context->userreporturl =
-                \gradereport_user\report\user::get_userreport_link($this->context, $this->courseid,
-                    $element, $this->gpr, $userreportstring);
-            $context->dataid = $element['userid'];
-        }
-
-        if (!empty($USER->editing) || isset($context->gradeanalysisurl)
-            || isset($context->singleviewreporturl)  || isset($context->gradesonlyurl)) {
-            return $OUTPUT->render_from_template('gradereport_grader/cellmenu', $context);
-        }
-        return '';
     }
 
     /**
@@ -1945,8 +1768,8 @@ class grade_report_grader extends grade_report {
         global $OUTPUT, $CFG;
         $arrows = array();
 
-        $strsortasc   = $this->get_lang_string('sortasc', 'grades');
-        $strsortdesc  = $this->get_lang_string('sortdesc', 'grades');
+        $strsortasc = \grade_helper::get_lang_string('sortasc', 'grades');
+        $strsortdesc = \grade_helper::get_lang_string('sortdesc', 'grades');
         $iconasc = $OUTPUT->pix_icon('t/sort_asc', $strsortasc, '', array('class' => 'iconsmall sorticon'));
         $icondesc = $OUTPUT->pix_icon('t/sort_desc', $strsortdesc, '', array('class' => 'iconsmall sorticon'));
 
@@ -1967,7 +1790,7 @@ class grade_report_grader extends grade_report {
         if (!empty($requirednames)) {
             foreach ($requirednames as $name) {
                 $arrows['studentname'] .= html_writer::link(
-                    new moodle_url($this->baseurl, array('sortitemid' => $name)), $this->get_lang_string($name)
+                    new moodle_url($this->baseurl, array('sortitemid' => $name)), \grade_helper::get_lang_string($name)
                 );
                 if ($this->sortitemid == $name) {
                     $arrows['studentname'] .= $this->sortorder == 'ASC' ? $iconasc : $icondesc;
