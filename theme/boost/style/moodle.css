@@ -19784,7 +19784,8 @@ p.arrow_button {
   min-width: 4.5em;
   background-color: #f8f9fa;
   border: none;
-  vertical-align: middle; }
+  vertical-align: middle;
+  max-width: 9em; }
   .path-grade-edit-tree .setup-grades.generaltable tr td.column-name {
     padding-left: 24px; }
     .path-grade-edit-tree .setup-grades.generaltable tr td.column-name .small {
