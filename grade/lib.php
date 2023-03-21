@@ -3177,6 +3177,27 @@ abstract class grade_helper {
     protected static $aggregationstrings = null;
 
     /**
+     * Cached grade tree plugin strings
+     * @var array
+     */
+    protected static $langstrings = [];
+
+    /**
+     * First checks the cached language strings, then returns match if found, or uses get_string()
+     * to get it from the DB, caches it then returns it.
+     *
+     * @param string $strcode
+     * @param string|null $section Optional language section
+     * @return string
+     */
+    public static function get_lang_string(string $strcode, ?string $section = null): string {
+        if (empty(self::$langstrings[$strcode])) {
+            self::$langstrings[$strcode] = get_string($strcode, $section);
+        }
+        return self::$langstrings[$strcode];
+    }
+
+    /**
      * Gets strings commonly used by the describe plugins
      *
      * report => get_string('view'),
