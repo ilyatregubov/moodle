@@ -187,7 +187,7 @@ class behat_gradereport_grader extends behat_base {
     protected function get_gradeitem_selector(string $itemname) : string {
 
         $itemid = $this->get_grade_item_id($itemname);
-        return "//table[@id='user-grades']//*[@data-id='" . $itemid . "']";
+        return "//table[@id='user-grades']//*[@data-gradeitemid='" . $itemid . "']";
     }
 
     /**
@@ -200,7 +200,7 @@ class behat_gradereport_grader extends behat_base {
     protected function get_course_grade_category_selector(string $coursename) {
 
         $itemid = $this->get_course_grade_category_id($coursename);
-        return "//table[@id='user-grades']//*[@data-id='" . $itemid . "']";
+        return "//table[@id='user-grades']//*[@data-gradecategoryid='" . $itemid . "']";
     }
 
     /**
@@ -213,7 +213,7 @@ class behat_gradereport_grader extends behat_base {
     protected function get_grade_category_selector(string $categoryname) : string {
 
         $itemid = $this->get_grade_category_id($categoryname);
-        return "//table[@id='user-grades']//*[@data-id='" . $itemid . "']";
+        return "//table[@id='user-grades']//*[@data-gradecategoryid='" . $itemid . "']";
     }
 
     /**
@@ -239,7 +239,7 @@ class behat_gradereport_grader extends behat_base {
     protected function get_user_selector(string $student) : string {
 
         $userid = $this->get_user_id($student);
-        return "//table[@id='user-grades']//*[@data-id='" . $userid . "']";
+        return "//table[@id='user-grades']//*[@data-userid='" . $userid . "']";
     }
 
 }

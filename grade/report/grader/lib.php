@@ -1651,6 +1651,8 @@ class grade_report_grader extends grade_report {
                 ($element['type'] == 'categoryitem') ||
                 ($element['type'] == 'courseitem')) {
 
+                $context->isgradeitemmenu = true;
+
                 if ($element['type'] == 'item') {
                     foreach ($this->get_report_links($this->context, $this->courseid, $element, $this->gpr, $mode)
                             as $count => $reportlink) {
@@ -1677,6 +1679,8 @@ class grade_report_grader extends grade_report {
                     $context->lockurl = $this->gtree->get_locking_link($element, $this->gpr, $lockstrings);
                 }
             } else if ($element['type'] == 'category') {
+                $context->isgradecategorymenu = true;
+
                 $categoryid = $element['object']->id;
 
                 // Load language strings.
@@ -1715,6 +1719,7 @@ class grade_report_grader extends grade_report {
 
             $context->dataid = $element['object']->id;
         } else if ($mode == 'user') {
+            $context->isusermenu = true;
             foreach ($this->get_report_links($this->context, $this->courseid, $element, $this->gpr, $mode)
                     as $count => $reportlink) {
                 $temp = 'reporturl' . $count;

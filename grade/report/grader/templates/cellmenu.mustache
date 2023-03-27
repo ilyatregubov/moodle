@@ -23,13 +23,21 @@
         "editurl": "<a class='dropdown-item' aria-label='Edit grade' role='menuitem' href='grade/edit/tree/grade.php?courseid=13&itemid=608&userid=85&gpr_type=report&gpr_plugin=grader&gpr_courseid=13'>Edit grade</a>",
         "hideurl": "<a class='dropdown-item' aria-label='Hide' role='menuitem' href='grade/edit/tree/action.php?id=13&sesskey=sMAOMLAAN5&eid=n608u85&gpr_type=report&gpr_plugin=grader&gpr_courseid=13&action=hide'>Hide</a>",
         "reporturl0": "<a class='dropdown-item' aria-label='Single view for this user' role='menuitem' href='grade/report/singleview/index.php?id=13&amp;itemid=39&amp;item=user&amp;gpr_type=report&amp;gpr_plugin=grader&amp;gpr_courseid=13'>Single view for this user</a>",
-        "reporturl1": "<a class='dropdown-item' aria-label='User report' role='menuitem' href='grade/report/user/index.php?userid=39&amp;id=13&amp;gpr_type=report&amp;gpr_plugin=grader&amp;gpr_courseid=13'>User report</a>"
+        "reporturl1": "<a class='dropdown-item' aria-label='User report' role='menuitem' href='grade/report/user/index.php?userid=39&amp;id=13&amp;gpr_type=report&amp;gpr_plugin=grader&amp;gpr_courseid=13'>User report</a>",
+        "divider": true,
+        "isgradeitemmenu": true,
+        "isgradecategorymenu": false,
+        "isusermenu": false,
+        "dataid": "123"
     }
 }}
 <div class="action-menu mb-1 moodle-actionmenu grader">
     <div class="dropdown">
         <button class="btn btn-link btn-icon icon-size-3 cellmenubtn"
-            type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-id={{dataid}}>
+            type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                {{#isgradeitemmenu}}data-gradeitemid={{dataid}}{{/isgradeitemmenu}}
+                {{#isgradecategorymenu}}data-gradecategoryid={{dataid}}{{/isgradecategorymenu}}
+                {{#isusermenu}}data-userid={{dataid}}{{/isusermenu}}>
             <i class="icon fa fa-ellipsis-h fa-fw m-0" title="{{#str}} cellactions, gradereport_grader {{/str}}" aria-hidden="true"></i>
             <span class="sr-only">{{#str}} cellactions, gradereport_grader {{/str}}</span>
         </button>
