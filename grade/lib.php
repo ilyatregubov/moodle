@@ -2548,7 +2548,7 @@ class grade_structure {
 
                 // Sorting item.
                 if ($baseurl) {
-                    $sortlink = $baseurl;
+                    $sortlink = clone($baseurl);
                     if (isset($element['object']->id)) {
                         $sortlink->param('sortitemid', $element['object']->id);
                     } else if ($element['type'] == 'userfield') {
