@@ -35026,7 +35026,6 @@ p.arrow_button {
 .path-grade-report-singleview .reporttable .action-menu {
   display: inline-block;
   margin-left: 0.5rem;
-  float: right;
 }
 .path-grade-report-singleview .reporttable .dropdown-toggle::after {
   display: none;
