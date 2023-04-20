@@ -46,7 +46,7 @@ Feature: We can understand the gradebook user report
     And I navigate to "Setup > Gradebook setup" in the course gradebook
     And I press "Add category"
     And I set the field "Category name" to "Sub category"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on "Move" "link" in the "Test assignment six" "table_row"
     # This xpath finds the forth last row in the table.
     And I click on "Move to here" "link" in the "//tbody//tr[position()=last()-3]" "xpath_element"

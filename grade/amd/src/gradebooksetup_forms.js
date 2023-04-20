@@ -35,17 +35,33 @@ export const init = () => {
             event.preventDefault();
             const trigger = event.target.closest('[data-trigger="add-item-form"]');
             // If we are adding or editing a grade item change the Modal header.
-            const title = trigger.getAttribute('data-itemid') === '-1' ?
-                getString('newitem', 'core_grades') : getString('itemsedit', 'core_grades');
+            const formArgs = () => {
+                const args = {};
+                const isGradeItem = trigger.getAttribute('data-itemid');
+                const isGradeCategory = trigger.getAttribute('data-category');
+                args.args = {
+                    courseid: trigger.getAttribute('data-courseid')
+                };
+                if (isGradeItem) {
+                    args.formClass = 'core_grades\\form\\add_item';
+                    args.title = trigger.getAttribute('data-itemid') === '-1' ?
+                        getString('newitem', 'core_grades') : getString('itemsedit', 'core_grades');
+                    args.args.itemid = trigger.getAttribute('data-itemid');
+                } else if (isGradeCategory) {
+                    args.formClass = 'core_grades\\form\\add_category';
+                    args.title = trigger.getAttribute('data-category') === '-1' ?
+                        getString('newcategory', 'core_grades') : getString('categoryedit', 'core_grades');
+                    args.args.category = trigger.getAttribute('data-category');
+                }
+                return args;
+            };
+            const params = formArgs();
             const modalForm = new ModalForm({
                 modalConfig: {
-                    title: title,
+                    title: params.title,
                 },
-                formClass: 'core_grades\\form\\add_item',
-                args: {
-                    itemid: trigger.getAttribute('data-itemid'),
-                    courseid: trigger.getAttribute('data-courseid')
-                },
+                formClass: params.formClass,
+                args: params.args,
                 saveButtonText: getString('save', 'core'),
                 returnFocus: trigger,
             });

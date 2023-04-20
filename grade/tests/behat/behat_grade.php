@@ -72,6 +72,9 @@ class behat_grade extends behat_base {
         }
         $this->execute("behat_action_menu::i_choose_in_the_open_action_menu", $linktext);
 
+        // Some modals can be long and some links might not be seen on smaller screens.
+        $this->execute("behat_general::i_change_window_size_to", ['window', 'large']);
+
         $this->execute("behat_forms::i_set_the_following_fields_to_these_values", $data);
         if ($this->getSession()->getPage()->find('xpath', './/button[@data-action="save"]')) {
             $container = $this->get_selected_node("core_grades > gradeitem modal", "form");

@@ -43,21 +43,21 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
       | Weight adjusted     | 1  |
       | Weight              | 20 |
       | Extra credit        | 0  |
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat median" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the following fields to these values:
       | Weight adjusted     | 1  |
       | Weight              | 5  |
       | Extra credit        | 0  |
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat min" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the following fields to these values:
       | Weight adjusted     | 0  |
       | Weight              | 0  |
       | Extra credit        | 1  |
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     And the field "Weight adjusted" matches value "0"
@@ -107,85 +107,85 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     Given I click on grade item menu "Course 1" of type "course" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Mean of grades"
-    When I press "Save changes"
+    When I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    Then I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    Then I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a2" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a3" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a4" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat mean" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I expand all fieldsets
-    And I should not see "Weight adjusted"
-    And I should not see "Weight" in the "#id_headerparent" "css_element"
-    And I should not see "Extra credit"
-    And I press "Cancel"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
+    And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat median" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I expand all fieldsets
-    And I should not see "Weight adjusted"
-    And I should not see "Weight" in the "#id_headerparent" "css_element"
-    And I should not see "Extra credit"
-    And I press "Cancel"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
+    And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat min" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I expand all fieldsets
-    And I should not see "Weight adjusted"
-    And I should not see "Weight" in the "#id_headerparent" "css_element"
-    And I should not see "Extra credit"
-    And I press "Cancel"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
+    And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat natural &" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Mean of grades"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b3" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b4" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
-    And I should not see "Weight adjusted"
-    And I should not see "Weight"
-    And I should not see "Extra credit"
+    And I should not see "Weight adjusted" in the ".modal-body" "css_element"
+    And I should not see "Weight" in the ".modal-body" "css_element"
+    And I should not see "Extra credit" in the ".modal-body" "css_element"
     And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     # Switching back.
     And I click on grade item menu "Course 1" of type "course" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Natural"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     And the field "Weight adjusted" matches value "0"
@@ -211,23 +211,23 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I expand all fieldsets
     And the field "Weight adjusted" matches value "0"
     And the field "Extra credit" matches value "0"
-    And I press "Cancel"
+    And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat median" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I expand all fieldsets
     And the field "Weight adjusted" matches value "0"
     And the field "Extra credit" matches value "0"
-    And I press "Cancel"
+    And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat min" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I expand all fieldsets
     And the field "Weight adjusted" matches value "0"
     And the field "Extra credit" matches value "0"
-    And I press "Cancel"
+    And I select "Cancel" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Cat natural &" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Natural"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     And the field "Weight adjusted" matches value "0"
@@ -253,7 +253,7 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     Given I click on grade item menu "Course 1" of type "course" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Weighted mean of grades"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     Then I should not see "Weight adjusted"
@@ -302,7 +302,7 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I click on grade item menu "Cat natural &" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Weighted mean of grades"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     And I should not see "Weight adjusted"
@@ -331,7 +331,7 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I click on grade item menu "Course 1" of type "course" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Natural"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     And the field "Weight adjusted" matches value "0"
@@ -373,7 +373,7 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I click on grade item menu "Cat natural &" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
     And I set the field "Aggregation" to "Natural"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I click on grade item menu "Item b1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
     And the field "Weight adjusted" matches value "0"

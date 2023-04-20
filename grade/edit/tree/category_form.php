@@ -28,10 +28,22 @@ if (!defined('MOODLE_INTERNAL')) {
 
 require_once $CFG->libdir.'/formslib.php';
 
+/**
+ * @deprecated
+ * @todo MDL-XXXXX This will be deleted in Moodle 4.7
+ */
 class edit_category_form extends moodleform {
     private $aggregation_options = array();
 
+    /**
+     * @deprecated since Moodle 4.3
+     * @todo MDL-XXXXX This will be deleted in Moodle 4.7
+     */
     function definition() {
+
+        debugging('The function definition() is deprecated, please do not use it anymore.',
+            DEBUG_DEVELOPER);
+
         global $CFG, $COURSE, $DB, $OUTPUT;
         $mform =& $this->_form;
 
@@ -296,8 +308,14 @@ class edit_category_form extends moodleform {
     }
 
 
-/// tweak the form - depending on existing data
+    /**
+     * @deprecated since Moodle 4.3
+     * @todo MDL-XXXXX This will be deleted in Moodle 4.7
+     */
     function definition_after_data() {
+        debugging('The function definition_after_data() is deprecated, please do not use it anymore.',
+            DEBUG_DEVELOPER);
+
         global $CFG, $COURSE;
 
         $mform =& $this->_form;
@@ -534,8 +552,14 @@ class edit_category_form extends moodleform {
         }
     }
 
-/// perform extra validation before submission
+    /**
+     * @deprecated since Moodle 4.3
+     * @todo MDL-XXXXX This will be deleted in Moodle 4.7
+     */
     function validation($data, $files) {
+        debugging('The function validation() is deprecated, please do not use it anymore.',
+            DEBUG_DEVELOPER);
+
         global $COURSE;
         $gradeitem = false;
         if ($data['id']) {

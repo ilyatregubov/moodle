@@ -38,7 +38,7 @@ Feature: Editing a grade item
     And I set the following fields to these values:
       | Category name | Cat 1         |
       | Aggregation   | Highest grade |
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I press "Add grade item"
     And I set the following fields to these values:
       | Item name      | Item 1 |
@@ -56,17 +56,17 @@ Feature: Editing a grade item
     Then I should not see "This category has associated grade items which have been overridden. Therefore some grades have already been awarded"
     And I expand all fieldsets
     And I set the field "Grade type" to "Scale"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I should see "Scale must be selected"
     And I set the field "Scale" to "ABCDEF"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I should not see "You cannot change the type, as grades already exist for this item"
     And I click on grade item menu "Cat 1" of type "category" on "setup" page
     And I choose "Edit category" in the open action menu
     And I should not see "This category has associated grade items which have been overridden. Therefore some grades have already been awarded"
     And I expand all fieldsets
     And I set the field "Scale" to "Letter scale"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I should not see "You cannot change the scale, as grades already exist for this item"
 
   Scenario: Attempting to change a category item's grade type when overridden grades already exist
@@ -87,7 +87,7 @@ Feature: Editing a grade item
     And I expand all fieldsets
     And I set the field "Grade type" to "Scale"
     And I set the field "Scale" to "ABCDEF"
-    And I press "Save changes"
+    And I select "Save" in the "form" "core_grades > gradeitem modal"
     And I navigate to "View > Grader report" in the course gradebook
     And I turn editing mode on
     And I give the grade "C" to the user "Student 1" for the grade item "Cat 1 total"
@@ -126,7 +126,7 @@ Feature: Editing a grade item
     And I expand all fieldsets
     And I set the field "Rescale overridden grades" to "Yes"
     And I set the field "Maximum grade" to "87#50"
-    When I press "Save changes"
+    When I select "Save" in the "form" "core_grades > gradeitem modal"
     And I navigate to "View > Grader report" in the course gradebook
     And I click on user menu "Student 1"
     And I choose "Single view for this user" in the open action menu

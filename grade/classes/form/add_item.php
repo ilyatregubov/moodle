@@ -55,6 +55,8 @@ class add_item extends dynamic_form {
                 $url = new moodle_url('/grade/edit/tree/outcomeitem.php', ['id' => $id, 'courseid' => $courseid]);
                 redirect($gpr->add_url_params($url));
             }
+
+            // Do we need this???????????????????????
             if ($gradeitem->is_course_item() || $gradeitem->is_category_item()) {
                 $gradecategory = $gradeitem->get_item_category();
                 $url = new moodle_url('/grade/edit/tree/category.php', ['id' => $gradecategory->id, 'courseid' => $courseid]);
