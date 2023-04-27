@@ -50,7 +50,7 @@ class add_item extends dynamic_form {
         $gpr = new grade_plugin_return();
 
         if ($gradeitem = grade_item::fetch(['id' => $id, 'courseid' => $courseid])) {
-            // redirect if outcomeid present
+            // Redirect if outcomeid present.
             if (!empty($gradeitem->outcomeid) && !empty($CFG->enableoutcomes)) {
                 $url = new moodle_url('/grade/edit/tree/outcomeitem.php', ['id' => $id, 'courseid' => $courseid]);
                 redirect($gpr->add_url_params($url));

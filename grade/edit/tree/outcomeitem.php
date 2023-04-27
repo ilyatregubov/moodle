@@ -63,7 +63,7 @@ $heading = get_string('outcomeitemsedit', 'grades');
 if ($grade_item = grade_item::fetch(array('id'=>$id, 'courseid'=>$courseid))) {
     // redirect if outcomeid present
     if (empty($grade_item->outcomeid)) {
-        // TODO: Confirm the link with @MDL-77639
+        // TODO: Confirm the link with @MDL-77639.
         $url = new moodle_url('/grade/edit/tree/index.php', ['id' => $courseid, 'gid' => $id]);
         redirect($gpr->add_url_params($url));
     }
