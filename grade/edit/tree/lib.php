@@ -875,7 +875,7 @@ class grade_edit_tree_column_name extends grade_edit_tree_column {
         if (($this->deepest_level > 1) && ($params['itemtype'] != 'course') && ($params['itemtype'] != 'category')) {
             global $OUTPUT;
 
-            $label = !defined('BEHAT_SITE_RUNNING') ? get_string('select', 'grades', $params['name']) : '';
+            $label = get_string('select', 'grades', $item->itemname);
 
             if (empty($params['itemtype']) || empty($params['eid'])) {
                 throw new \moodle_exception('missingitemtypeoreid', 'core_grades');

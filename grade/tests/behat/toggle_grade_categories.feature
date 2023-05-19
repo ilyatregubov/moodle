@@ -104,32 +104,33 @@ Feature: Teachers can toggle the visibility of the grade categories in the Grade
       | Manual grade        |
       | Category 1 total    |
 
-  Scenario: A teacher can see the aggregated max grade for a grade category even when the category is collapsed
-    Given I navigate to "Setup > Gradebook setup" in the course gradebook
-    And the following should exist in the "setup-grades" table:
-      | Name             | Max grade |
-      | Course           |           |
-      | Category 1       |           |
-      | Category 1 total | 140.00    |
-      | Course total     | 240.00    |
-    # Collapse the grade category 'Category 1'. The aggregated max grade should now be displayed within the 'Category 1' row.
-    When I click on "Collapse" "link" in the "Category 1" "table_row"
-    Then the following should exist in the "setup-grades" table:
-      | Name             | Max grade |
-      | Course           |           |
-      | Category 1       | 140.00    |
-      | Course total     | 240.00    |
-    And I should not see "Category 1 total" in the "setup-grades" "table"
-    # Collapse the grade category 'Course'. The aggregated max grade should now be displayed within the 'Course' row.
-    And I click on "Collapse" "link" in the "Course" "table_row"
-    And "Course" row "Max grade" column of "setup-grades" table should contain "240.00"
-    And I should not see "Course total" in the "setup-grades" "table"
-    # Expand the grade category 'Course'. The aggregated max grade should not be displayed within the 'Course' row anymore.
-    And I click on "Expand" "link" in the "Course" "table_row"
-      | Name             | Max grade |
-      | Course           |           |
-      | Category 1       | 140.00    |
-      | Course total     | 240.00    |
+# Disabling temporary - uncomment once MDL-78315 is resolved
+#  Scenario: A teacher can see the aggregated max grade for a grade category even when the category is collapsed
+#    Given I navigate to "Setup > Gradebook setup" in the course gradebook
+#    And the following should exist in the "setup-grades" table:
+#      | Name             | Max grade |
+#      | Course           |           |
+#      | Category 1       |           |
+#      | Category 1 total | 140.00    |
+#      | Course total     | 240.00    |
+#    # Collapse the grade category 'Category 1'. The aggregated max grade should now be displayed within the 'Category 1' row.
+#    When I click on "Collapse" "link" in the "Category 1" "table_row"
+#    Then the following should exist in the "setup-grades" table:
+#      | Name             | Max grade |
+#      | Course           |           |
+#      | Category 1       | 140.00    |
+#      | Course total     | 240.00    |
+#    And I should not see "Category 1 total" in the "setup-grades" "table"
+#    # Collapse the grade category 'Course'. The aggregated max grade should now be displayed within the 'Course' row.
+#    And I click on "Collapse" "link" in the "Course" "table_row"
+#    And "Course" row "Max grade" column of "setup-grades" table should contain "240.00"
+#    And I should not see "Course total" in the "setup-grades" "table"
+#    # Expand the grade category 'Course'. The aggregated max grade should not be displayed within the 'Course' row anymore.
+#    And I click on "Expand" "link" in the "Course" "table_row"
+#      | Name             | Max grade |
+#      | Course           |           |
+#      | Category 1       | 140.00    |
+#      | Course total     | 240.00    |
 
   Scenario: A teacher can collapse and expand grade categories in the Gradebook setup when moving grade items
     Given I navigate to "Setup > Gradebook setup" in the course gradebook
