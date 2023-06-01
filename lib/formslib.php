@@ -1339,9 +1339,10 @@ abstract class moodleform {
      *
      * @param bool $cancel whether to show cancel button, default true
      * @param string $submitlabel label for submit button, defaults to get_string('savechanges')
+     * @param null|string $submit2label Not used - just here for compatibility
      * @param bool $issticky whether to make the submit button sticky, default false
      */
-    public function add_action_buttons($cancel = true, $submitlabel=null, bool $issticky = false) {
+    public function add_action_buttons($cancel = true, $submitlabel=null, $submit2label=null, bool $issticky = false) {
         if (is_null($submitlabel)){
             $submitlabel = get_string('savechanges');
         }

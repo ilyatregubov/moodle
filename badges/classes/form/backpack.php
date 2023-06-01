@@ -104,8 +104,10 @@ class backpack extends external_backpack {
      *
      * @param bool $cancel
      * @param null|text $submitlabel
+     * @param null|string $submit2label  null means default, false means none, string is label text
+     * @param bool $issticky whether to make the submit button sticky, default false
      */
-    public function add_action_buttons($cancel = true, $submitlabel = null) {
+    public function add_action_buttons($cancel = true, $submitlabel = null, $submit2label=null, bool $issticky = false) {
         $mform = $this->_form;
         if (isset($this->_customdata['email'])) {
             $buttonarray = [];

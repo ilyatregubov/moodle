@@ -1207,10 +1207,11 @@ abstract class moodleform_mod extends moodleform {
      *
      * @param bool $cancel show cancel button
      * @param string $submitlabel null means default, false means none, string is label text
-     * @param string $submit2label  null means default, false means none, string is label text
+     * @param null|string $submit2label  null means default, false means none, string is label text
+     * @param bool $issticky whether to make the submit button sticky, default false
      * @return void
      */
-    function add_action_buttons($cancel=true, $submitlabel=null, $submit2label=null) {
+    function add_action_buttons($cancel=true, $submitlabel=null, $submit2label=null, bool $issticky = false) {
         if (is_null($submitlabel)) {
             $submitlabel = get_string('savechangesanddisplay');
         }

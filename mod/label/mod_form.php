@@ -47,7 +47,7 @@ class mod_label_mod_form extends moodleform_mod {
 
 //-------------------------------------------------------------------------------
 // buttons
-        $this->add_action_buttons(true, false, null);
+        $this->add_action_buttons(true, false);
 
     }
 

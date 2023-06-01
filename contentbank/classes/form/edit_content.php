@@ -78,10 +78,12 @@ abstract class edit_content extends moodleform {
      *
      * @param bool $cancel
      * @param string|null $submitlabel
+     * @param null|string $submit2label  null means default, false means none, string is label text
+     * @param bool $issticky whether to make the submit button sticky, default false
      *
      * @return void
      */
-    public function add_action_buttons($cancel = true, $submitlabel = null): void {
+    public function add_action_buttons($cancel = true, $submitlabel = null, $submit2label=null, bool $issticky = false): void {
         if (is_null($submitlabel)) {
             $submitlabel = get_string('save');
         }

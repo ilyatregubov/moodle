@@ -217,9 +217,11 @@ class tool_uploadcourse_step2_form extends tool_uploadcourse_base_form {
      *
      * @param bool $cancel whether to show cancel button, default true
      * @param string $submitlabel label for submit button, defaults to get_string('savechanges')
+     * @param null|string $submit2label  null means default, false means none, string is label text
+     * @param bool $issticky whether to make the submit button sticky, default false
      * @return void
      */
-    public function add_action_buttons($cancel = true, $submitlabel = null) {
+    public function add_action_buttons($cancel = true, $submitlabel = null, $submit2label=null, bool $issticky = false) {
         $mform =& $this->_form;
         $buttonarray = array();
         $buttonarray[] = &$mform->createElement('submit', 'showpreview', get_string('preview', 'tool_uploadcourse'));
