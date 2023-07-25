@@ -930,7 +930,16 @@ class tool_uploadcourse_course {
         $enrolmentplugins = tool_uploadcourse_helper::get_enrolment_plugins();
         $instances = enrol_get_instances($courseid, false);
 
+        // Cache since its same for all methods withing a course.
+        if ($courseid && empty($this->assignableroles[$courseid])) {
+            $coursecontext = \context_course::instance($courseid);
+            $this->assignableroles[$courseid] = get_assignable_roles($coursecontext, ROLENAME_SHORT);
+        }
+        $assignableroles = [];
+        $contextlevels = [];
+
         foreach ($enrolmentdata as $method => $options) {
+            $plugin = $enrolmentplugins[$method];
 
             if (isset($options['role']) || isset($options['roleid'])) {
                 if (isset($options['role'])) {
@@ -940,24 +949,32 @@ class tool_uploadcourse_course {
                     $roleid = $options['roleid'];
                     $role = $DB->get_field('role', 'shortname', ['id' => $roleid], MUST_EXIST);
                 }
+
+                if (empty($this->contextlevels[$roleid])) {
+                    $this->contextlevels[$roleid] = get_role_contextlevels($roleid);
+                }
+                $contextlevels = $this->contextlevels[$roleid];
+
                 if ($courseid) {
-                    if (!$this->validate_role_context($courseid, $roleid)) {
+                    if (!array_key_exists($roleid, $this->assignableroles[$courseid])) {
                         $errors['contextrolenotallowed'] = new lang_string('contextrolenotallowed', 'core_role', $role);
 
                         break;
+                    } else {
+                        $assignableroles = $this->assignableroles[$courseid];
                     }
                 } else {
                     // We can at least check that context level is correct while actual context not exist.
-                    if (!$this->validate_role_context_level($roleid)) {
+                    if (!in_array(CONTEXT_COURSE, $this->contextlevels[$roleid])) {
                         $errors['contextrolenotallowed'] = new lang_string('contextrolenotallowed', 'core_role', $role);
-
                         break;
                     }
                 }
             }
 
-            $plugin = $enrolmentplugins[$method];
-            $errors += $plugin->validate_enrol_plugin_data($options, $courseid);
+            $options = $plugin->fill_enrol_custom_fields($options, $courseid, $assignableroles, $contextlevels);
+            $errors = array_merge($errors, $plugin->validate_enrol_plugin_data($options, $courseid));
+//            $this->enrolmentdata[$method] = array_merge($this->enrolmentdata[$method], $options);
             if ($errors) {
                 break;
             }
@@ -1021,10 +1038,19 @@ class tool_uploadcourse_course {
             return;
         }
 
+        if ($course->id && empty($this->assignableroles[$course->id])) {
+            $coursecontext = \context_course::instance($course->id);
+            $this->assignableroles[$course->id] = get_assignable_roles($coursecontext, ROLENAME_SHORT);
+        }
+        $assignableroles = $this->assignableroles[$course->id];
+
+        $contextlevels = [];
+
         $enrolmentplugins = tool_uploadcourse_helper::get_enrolment_plugins();
         $instances = enrol_get_instances($course->id, false);
         foreach ($enrolmentdata as $enrolmethod => $method) {
 
+            // But how we can upload multiple instances of same type then?.
             $instance = null;
             foreach ($instances as $i) {
                 if ($i->enrol == $enrolmethod) {
@@ -1056,14 +1082,52 @@ class tool_uploadcourse_course {
                 // Create/update enrolment.
                 $plugin = $enrolmentplugins[$enrolmethod];
 
+                if ($instance) {
+                    $method['instanceid'] = intval($instance->id);
+                }
+
+                // Sort out the given role.
+                if (isset($method['role']) || isset($method['roleid'])) {
+                    if (isset($method['role'])) {
+                        $role = $method['role'];
+                        $roleid = $DB->get_field('role', 'id', ['shortname' => $role], MUST_EXIST);
+                    } else {
+                        $roleid = $method['roleid'];
+                        $role = $DB->get_field('role', 'shortname', ['id' => $roleid], MUST_EXIST);
+                    }
+                    if (!array_key_exists($roleid, $this->assignableroles[$course->id])) {
+                        $this->error('contextrolenotallowed',
+                            new lang_string('contextrolenotallowed', 'core_role', $role));
+                        break;
+                    }
+
+                    if (empty($this->contextlevels[$roleid])) {
+                        $this->contextlevels[$roleid] = get_role_contextlevels($roleid);
+                        $contextlevels = $this->contextlevels[$roleid];
+                    }
+                    $contextlevels = $this->contextlevels[$roleid];
+                }
+
                 $status = ($todisable) ? ENROL_INSTANCE_DISABLED : ENROL_INSTANCE_ENABLED;
-                $method = $plugin->fill_enrol_custom_fields($method, $course->id);
+                // Is the enrolment period set?
+                if (!empty($method['enrolperiod'])) {
+                    if (preg_match('/^\d+$/', $method['enrolperiod'])) {
+                        $method['enrolperiod'] = (int) $method['enrolperiod'];
+                    } else {
+                        // Try and convert period to seconds.
+                        $method['enrolperiod'] = strtotime('1970-01-01 GMT + ' . $method['enrolperiod']);
+                    }
+                }
+
+                $method = $plugin->fill_enrol_custom_fields($method, $course->id, $assignableroles, $contextlevels);
 
                 // Create a new instance if necessary.
                 if (empty($instance) && $plugin->can_add_instance($course->id)) {
-                    $error = $plugin->validate_plugin_data_context($method, $course->id);
-                    if ($error) {
-                        $this->error('contextnotallowed', $error);
+                    $errors = $plugin->validate_plugin_data_context($method, $course->id);
+                    if ($errors) {
+                        foreach ($errors as $key => $error) {
+                            $this->error($key, $error);
+                        }
                         break;
                     }
                     $instanceid = $plugin->add_instance($course, $method);
@@ -1071,6 +1135,12 @@ class tool_uploadcourse_course {
                     $instance->roleid = $plugin->get_config('roleid');
                     // On creation the user can decide the status.
                     $plugin->update_status($instance, $status);
+
+                    // Might need to load some data since it was just created.
+                    if ($instance) {
+                        $method['instanceid'] = intval($instance->id);
+                    }
+                    $method = $plugin->fill_enrol_custom_fields($method, $course->id, $assignableroles, $contextlevels);
                 }
 
                 // Check if the we need to update the instance status.
@@ -1100,16 +1170,6 @@ class tool_uploadcourse_course {
                 $modifiedinstance->enrolstartdate = (isset($method['startdate']) ? strtotime($method['startdate']) : 0);
                 $modifiedinstance->enrolenddate = (isset($method['enddate']) ? strtotime($method['enddate']) : 0);
 
-                // Is the enrolment period set?
-                if (isset($method['enrolperiod']) && ! empty($method['enrolperiod'])) {
-                    if (preg_match('/^\d+$/', $method['enrolperiod'])) {
-                        $method['enrolperiod'] = (int) $method['enrolperiod'];
-                    } else {
-                        // Try and convert period to seconds.
-                        $method['enrolperiod'] = strtotime('1970-01-01 GMT + ' . $method['enrolperiod']);
-                    }
-                    $modifiedinstance->enrolperiod = $method['enrolperiod'];
-                }
                 if ($instance->enrolstartdate > 0 && isset($method['enrolperiod'])) {
                     $modifiedinstance->enrolenddate = $instance->enrolstartdate + $method['enrolperiod'];
                 }
@@ -1121,26 +1181,15 @@ class tool_uploadcourse_course {
                 }
 
                 // Sort out the given role.
-                if (isset($method['role']) || isset($method['roleid'])) {
-                    if (isset($method['role'])) {
-                        $role = $method['role'];
-                        $roleid = $DB->get_field('role', 'id', ['shortname' => $role], MUST_EXIST);
-                    } else {
-                        $roleid = $method['roleid'];
-                        $role = $DB->get_field('role', 'shortname', ['id' => $roleid], MUST_EXIST);
-                    }
-                    if (!$this->validate_role_context($course->id, $roleid)) {
-                        $this->error('contextrolenotallowed',
-                            new lang_string('contextrolenotallowed', 'core_role', $role));
-                        break;
-                    }
-
-                    $roleids = tool_uploadcourse_helper::get_role_ids();
+                if (isset($roleid)) {
+                    $roleids = tool_uploadcourse_helper::get_role_ids();  /// WTF is this??????????????????????It caches
                     if (in_array($roleid, $roleids)) {
                         $modifiedinstance->roleid = $roleid;
                     }
                 }
 
+                // May be we don't need above then.
+                $modifiedinstance = (object) array_merge((array) $modifiedinstance, $method);
                 $plugin->update_instance($instance, $modifiedinstance);
             }
         }
@@ -1154,6 +1203,7 @@ class tool_uploadcourse_course {
      * @return bool
      */
     protected function validate_role_context(int $courseid, int $roleid) : bool {
+        // Deprecate me!!!!!!!!!!!!!!!!
         if (empty($this->assignableroles[$courseid])) {
             $coursecontext = \context_course::instance($courseid);
             $this->assignableroles[$courseid] = get_assignable_roles($coursecontext, ROLENAME_SHORT);
@@ -1171,6 +1221,7 @@ class tool_uploadcourse_course {
      * @return bool
      */
     protected function validate_role_context_level(int $roleid) : bool {
+        // Deprecate me!!!!!!!!!!!!!!!!
         if (empty($this->contextlevels[$roleid])) {
             $this->contextlevels[$roleid] = get_role_contextlevels($roleid);
         }

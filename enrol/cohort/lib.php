@@ -512,7 +512,7 @@ class enrol_cohort_plugin extends enrol_plugin {
      * @param int|null $courseid Course ID.
      * @return array Errors
      */
-    public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null) : array {
+    public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null): array {
         global $DB;
 
         $errors = [];
@@ -536,10 +536,7 @@ class enrol_cohort_plugin extends enrol_plugin {
 
         if ($courseid) {
             $enrolmentdata = $this->fill_enrol_custom_fields($enrolmentdata, $courseid);
-            $error = $this->validate_plugin_data_context($enrolmentdata, $courseid);
-            if ($error) {
-                $errors['contextnotallowed'] = $error;
-            }
+            array_merge($errors, $this->validate_plugin_data_context($enrolmentdata, $courseid));
 
             if (isset($enrolmentdata['groupname']) && $enrolmentdata['groupname']) {
                 $groupname = $enrolmentdata['groupname'];
@@ -572,9 +569,11 @@ class enrol_cohort_plugin extends enrol_plugin {
      *
      * @param array $enrolmentdata enrolment data.
      * @param int $courseid Course ID.
+     * @param array $assignableroles Assignable roles.
+     * @param array $contextlevels Context levels.
      * @return array Updated enrolment data with custom fields info.
      */
-    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid) : array {
+    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid, array $assignableroles, array $contextlevels) : array {
         global $DB;
 
         // Cohort name is not unique.
@@ -598,16 +597,16 @@ class enrol_cohort_plugin extends enrol_plugin {
      *
      * @param array $enrolmentdata enrolment data to validate.
      * @param int|null $courseid Course ID.
-     * @return lang_string|null Error
+     * @return array Errors
      */
-    public function validate_plugin_data_context(array $enrolmentdata, ?int $courseid = null) : ?lang_string {
-        $error = null;
+    public function validate_plugin_data_context(array $enrolmentdata, ?int $courseid = null): array {
+        $errors = [];
         $cohortid = $enrolmentdata['customint1'];
         $coursecontext = \context_course::instance($courseid);
         if (!cohort_get_cohort($cohortid, $coursecontext)) {
-            $error = new lang_string('contextcohortnotallowed', 'cohort', $enrolmentdata['cohortname']);
+            $errors['contextnotallowed'] = new lang_string('contextcohortnotallowed', 'cohort', $enrolmentdata['cohortname']);
         }
-        return $error;
+        return $errors;
     }
 }
 

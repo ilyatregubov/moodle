@@ -23,6 +23,7 @@
  */
 
 use enrol_lti\data_connector;
+use enrol_lti\helper;
 use enrol_lti\local\ltiadvantage\repository\resource_link_repository;
 use IMSGlobal\LTI\ToolProvider\ToolConsumer;
 
@@ -36,6 +37,9 @@ defined('MOODLE_INTERNAL') || die();
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class enrol_lti_plugin extends enrol_plugin {
+
+    /** @var array assignable roles. */
+    protected $assignableroles = [];
 
     /**
      * Return true if we can add a new instance to this course.
@@ -446,6 +450,307 @@ class enrol_lti_plugin extends enrol_plugin {
         $instanceid = parent::add_instance($course, (array)$data);
         $step->set_mapping('enrol', $oldid, $instanceid);
     }
+
+    /**
+     * Check if data is valid for a given enrolment plugin
+     *
+     * @param array $enrolmentdata enrolment data to validate.
+     * @param int|null $courseid Course ID.
+     * @return array Errors
+     */
+    public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null): array {
+
+
+	    this should call fill_blah - see how cohort does it
+        $errors = [];
+        if (!enrol_is_enabled('lti')) {
+            $errors['plugindisabled'] =
+                new lang_string('plugindisabled', 'enrol_lti');
+        }
+
+        if (!empty($enrolmentdata['ltiversion']) && ($enrolmentdata['ltiversion'] !== 'LTI-1p3')) {
+            $errors['unsupportedltiversion'] =
+                new lang_string('unsupportedltiversion', 'enrol_lti', $enrolmentdata['ltiversion']);
+        }
+
+        if ($courseid) {
+            $errors = array_merge($errors, $this->validate_plugin_data_context($enrolmentdata, $courseid));
+        }
+
+        if (!empty($enrolmentdata['enrolperiod'])) {
+            if (preg_match('/^\d+$/', $enrolmentdata['enrolperiod'])) {
+                $enrolmentdata['enrolperiod'] = (int) $enrolmentdata['enrolperiod'];
+            } else {
+                // Try and convert period to seconds.
+                $enrolmentdata['enrolperiod'] = strtotime('1970-01-01 GMT + ' . $enrolmentdata['enrolperiod']);
+            }
+            if ($enrolmentdata['enrolperiod'] === false) {
+                $errors['errorenrolperiodformat'] = new lang_string('enrolperiodformaterror', 'enrol_lti');
+            }
+        }
+
+        if (!empty($enrolmentdata['startdate'])) {
+            $enrolmentdata['startdate'] = strtotime($enrolmentdata['startdate']);
+            if ($enrolmentdata['startdate'] === false) {
+                $errors['errorenrolstartdateformat'] = new lang_string('enrolstartdateformaterror', 'enrol_lti');
+            }
+        }
+
+        if (!empty($enrolmentdata['enddate'])) {
+            $enrolmentdata['enddate'] = strtotime($enrolmentdata['enddate']);
+            if ($enrolmentdata['enddate'] === false) {
+                $errors['errorenrolenddateformat'] = new lang_string('enrolenddateformaterror', 'enrol_lti');
+            }
+        }
+
+        if (!empty($enrolmentdata['startdate']) && !empty($enrolmentdata['enddate']) &&
+            ($enrolmentdata['enddate'] < $enrolmentdata['startdate'])) {
+            $errors['errorenrolenddate'] = new lang_string('enrolenddateerror', 'enrol_lti');
+        }
+
+        if (!empty($enrolmentdata['maxenrolled']) && !is_int($enrolmentdata['maxenrolled'])) {
+            $errors['errormaxenrolledformat'] = new lang_string('errormaxenrolledformat', 'enrol_lti');
+        }
+
+        if (isset($enrolmentdata['provisioningmodeinstructor']) && !$enrolmentdata['provisioningmodeinstructor']) {
+            $errors['errorprovisioningmodeteacherlaunch'] = new lang_string('errorprovisioningmodeteacherlaunch', 'enrol_lti');
+        }
+
+        if (isset($enrolmentdata['provisioningmodelearner']) && !$enrolmentdata['provisioningmodelearner']) {
+            $errors['errorprovisioningmodelearner'] = new lang_string('errorprovisioningmodelearner', 'enrol_lti');
+        }
+
+        if (isset($enrolmentdata['membersyncmode']) && !$enrolmentdata['membersyncmode']) {
+            $options = [
+                get_string('membersyncmodeenrolandunenrol', 'enrol_lti'),
+                get_string('membersyncmodeenrolnew', 'enrol_lti'),
+                get_string('membersyncmodeunenrolmissing', 'enrol_lti')
+            ];
+            if (!in_array($enrolmentdata['membersyncmode'], $options)) {
+                $errors['errormembersyncmode'] = new lang_string('errormembersyncmode', 'enrol_lti');
+            }
+        }
+
+        if (isset($enrolmentdata['maildisplay']) && !$enrolmentdata['maildisplay']) {
+            $errors['errormaildisplay'] = new lang_string('errormaildisplay', 'enrol_lti');
+        }
+
+        if (!empty($enrolmentdata['country'])) {
+            $options = get_string_manager()->get_list_of_countries();
+            if (!in_array($enrolmentdata['country'], $options)) {
+                $errors['errorcountry'] = new lang_string('errorcountry', 'enrol_lti');
+            }
+        }
+
+        if (isset($enrolmentdata['timezone']) && !$enrolmentdata['timezone']) {
+            $errors['errortimezone'] = new lang_string('errortimezone', 'enrol_lti');
+        }
+
+        if (!empty($enrolmentdata['lang'])) {
+            $options = get_string_manager()->get_list_of_translations();
+            if (!array_key_exists($enrolmentdata['lang'], $options)) {
+                $errors['errorlang'] = new lang_string('errorlang', 'enrol_lti');
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Check if plugin data is allowed in relevant context.
+     *
+     * @param array $enrolmentdata enrolment data to validate.
+     * @param int|null $courseid Course ID.
+     * @return array Errors
+     */
+    public function validate_plugin_data_context(array $enrolmentdata, ?int $courseid = null): array {
+        global $DB;
+
+        $context = \context_course::instance($courseid);
+
+        $errors = [];
+        if (!empty($enrolmentdata['tooltobeprovided'])) {
+            $tools = [];
+            $tools[$context->id] = get_string('course');
+            $modinfo = get_fast_modinfo($courseid);
+            $mods = $modinfo->get_cms();
+            foreach ($mods as $mod) {
+                $tools[$mod->context->id] = format_string($mod->name);
+            }
+            if (!in_array($enrolmentdata['tooltobeprovided'], $tools)) {
+                $errors['errortooltobeprovided'] =
+                    new lang_string('errortooltobeprovided', 'enrol_lti', $enrolmentdata['tooltobeprovided']);
+            } else {
+                $contextid = array_search($enrolmentdata['tooltobeprovided'], $tools);
+            }
+        }
+
+        if (!empty($enrolmentdata['requirecompletion']) && isset($contextid)) {
+            $course = get_course($courseid);
+            $completion = new completion_info($course);
+            $moodlecontext = $DB->get_record('context', ['id' => $contextid]);
+            if ($moodlecontext->contextlevel == CONTEXT_MODULE) {
+                $cm = get_coursemodule_from_id(false, $moodlecontext->instanceid, 0, false, MUST_EXIST);
+            } else {
+                $cm = null;
+            }
+
+            if (!$completion->is_enabled($cm)) {
+                $errors['errorrequirecompletion'] = new lang_string('errorcompletionenabled', 'enrol_lti', $enrolmentdata['tooltobeprovided']);
+            }
+        }
+
+        if (isset($enrolmentdata['roleinstructor']) && !$enrolmentdata['roleinstructor']) {
+            $errors['errorroleinstructor'] = new lang_string('errorroleinstructor', 'enrol_lti');
+        }
+
+        if (isset($enrolmentdata['rolelearner']) && !$enrolmentdata['rolelearner']) {
+            $errors['errorrolelearner'] = new lang_string('errorrolelearner', 'enrol_lti');
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Fill custom fields data for a given enrolment plugin.
+     *
+     * @param array $enrolmentdata enrolment data.
+     * @param int $courseid Course ID.
+     * @param array $assignableroles Assignable roles.
+     * @param array $contextlevels Context levels.
+     * @return array Updated enrolment data with custom fields info.
+     */
+    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid, array $assignableroles, array $contextlevels) : array {
+        global $DB, $CFG;
+        static $roleinstructorfilled = false, $rolelearnerfilled = false;
+        require_once($CFG->dirroot . '/auth/lti/auth.php');
+
+        // Hard coded values - may be plugin has settings somehwere - need to pull that
+        if (!isset($enrolmentdata['ltiversion'])) {
+            $enrolmentdata['ltiversion'] = 'LTI-1p3';
+        }
+
+        if ($courseid) {
+            $context = \context_course::instance($courseid);
+            if (!isset($enrolmentdata['tooltobeprovided'])) {
+                $enrolmentdata['contextid'] = $context->id;
+            }
+        }
+
+        if (isset($enrolmentdata['maxenrolled'])) {
+            $enrolmentdata['maxenrolled'] = intval($enrolmentdata['maxenrolled']);
+        }
+
+        // Sort roles.
+        if (isset($enrolmentdata['roleinstructor'])) {
+            $role = $enrolmentdata['roleinstructor'];
+            $roleid = $DB->get_field('role', 'id', ['shortname' => $role], MUST_EXIST);
+            if ($courseid && !$roleinstructorfilled) {
+                if (array_key_exists($roleid, $assignableroles)) {
+                    $enrolmentdata['roleinstructor'] = intval($roleid);
+                }
+            } else {
+                // We can at least check that context level is correct while actual context not exist.
+                if (!in_array(CONTEXT_COURSE, $contextlevels)) {
+                    $enrolmentdata['roleinstructor'] = false;
+                }
+            }
+        } else {
+            $enrolmentdata['roleinstructor'] = 3;
+        }
+
+        if (isset($enrolmentdata['rolelearner'])) {
+            $role = $enrolmentdata['rolelearner'];
+            $roleid = $DB->get_field('role', 'id', ['shortname' => $role], MUST_EXIST);
+            if ($courseid && !$rolelearnerfilled) {
+                if (array_key_exists($roleid, $assignableroles)) {
+                    $enrolmentdata['rolelearner'] = intval($roleid);
+                }
+            } else {
+                // We can at least check that context level is correct while actual context not exist.
+                if (!in_array(CONTEXT_COURSE, $contextlevels)) {
+                    $enrolmentdata['rolelearner'] = false;
+                }
+            }
+        } else {
+            $enrolmentdata['rolelearner'] = 5;
+        }
+
+        $options = [
+            get_string('provisioningmodeauto', 'auth_lti'),
+            get_string('provisioningmodenewexisting', 'auth_lti'),
+            get_string('provisioningmodeexistingonly', 'auth_lti')
+        ];
+        if (!isset($enrolmentdata['provisioningmodeinstructor'])) {
+            $enrolmentdata['provisioningmodeinstructor'] = auth_plugin_lti::PROVISIONING_MODE_PROMPT_NEW_EXISTING;
+        } else {
+            $enrolmentdata['provisioningmodeinstructor'] = array_search($enrolmentdata['provisioningmodeinstructor'], $options);
+        }
+
+        if (!isset($enrolmentdata['provisioningmodelearner'])) {
+            $enrolmentdata['provisioningmodelearner'] = auth_plugin_lti::PROVISIONING_MODE_AUTO_ONLY;
+        } else {
+            $enrolmentdata['provisioningmodelearner'] = array_search($enrolmentdata['provisioningmodelearner'], $options);
+        }
+
+        if (!isset($enrolmentdata['gradesync'])) {
+            $enrolmentdata['gradesync'] = 1;
+        }
+
+        if (!isset($enrolmentdata['gradesynccompletion'])) {
+            $enrolmentdata['gradesynccompletion'] = 0;
+        }
+
+        if (!isset($enrolmentdata['membersync'])) {
+            $enrolmentdata['membersync'] = 1;
+        }
+
+        if (!isset($enrolmentdata['membersyncmode'])) {
+            $enrolmentdata['membersyncmode'] = helper::MEMBER_SYNC_ENROL_AND_UNENROL;
+        } else {
+            $options = [
+                get_string('membersyncmodeenrolandunenrol', 'enrol_lti'),
+                get_string('membersyncmodeenrolnew', 'enrol_lti'),
+                get_string('membersyncmodeunenrolmissing', 'enrol_lti')
+            ];
+            $enrolmentdata['membersyncmode'] = array_search($enrolmentdata['membersyncmode'], $options);
+        }
+
+        if (!isset($enrolmentdata['maildisplay'])) {
+            $enrolmentdata['maildisplay'] = get_config('enrol_lti', 'emaildisplay');
+        } else {
+            $options = [
+                get_string('emaildisplayno'),
+                get_string('emaildisplayyes'),
+                get_string('emaildisplaycourse')
+            ];
+            $enrolmentdata['maildisplay'] = array_search($enrolmentdata['maildisplay'], $options);
+        }
+
+        if (!isset($enrolmentdata['country'])) {
+            $enrolmentdata['country'] = get_config('enrol_lti', 'country');
+        }
+
+        if (!isset($enrolmentdata['timezone'])) {
+            $enrolmentdata['timezone'] = get_config('enrol_lti', 'timezone');
+        } else {
+            $enrolmentdata['timezone'] = array_search($enrolmentdata['timezone'], core_date::get_list_of_timezones(null, true));
+        }
+
+        if (!isset($enrolmentdata['lang'])) {
+            $enrolmentdata['lang'] = get_config('enrol_lti', 'lang');
+        }
+
+        if (isset($enrolmentdata['instanceid'])) {
+            $ltitool = $DB->get_record('enrol_lti_tools', ['enrolid' => $enrolmentdata['instanceid']], '*', MUST_EXIST);
+            $enrolmentdata['toolid'] = $ltitool->id;
+            $enrolmentdata['uuid'] = $ltitool->uuid;
+            unset($enrolmentdata['instanceid']);
+        }
+
+        return $enrolmentdata;
+    }
+
 }
 
 /**

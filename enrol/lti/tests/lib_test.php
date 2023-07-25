@@ -23,6 +23,9 @@
  */
 namespace enrol_lti;
 
+use auth_plugin_lti;
+use core\plugininfo\enrol;
+use core_date;
 use course_enrolment_manager;
 use enrol_lti_plugin;
 use IMSGlobal\LTI\ToolProvider\ResourceLink;
@@ -248,4 +251,203 @@ class lib_test extends \lti_advantage_testcase {
         $this->assertEquals(ENROL_INSTANCE_DISABLED, $modinstance->status);
         $this->assertEquals(ENROL_INSTANCE_ENABLED, $mod2instance->status);
     }
+
+    /**
+     * Test the behaviour of validate_enrol_plugin_data().
+     *
+     * @covers ::validate_enrol_plugin_data
+     */
+    public function test_validate_enrol_plugin_data() {
+        $this->resetAfterTest();
+
+        $cat = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['category' => $cat->id, 'shortname' => 'ANON']);
+
+        enrol::enable_plugin('lti', false);
+
+        $ltiplugin = enrol_get_plugin('lti');
+
+        // Plugin is disabled in system.
+        $enrolmentdata = [];
+        $errors = $ltiplugin->validate_enrol_plugin_data($enrolmentdata);
+        $this->assertArrayHasKey('plugindisabled', $errors);
+
+        enrol::enable_plugin('lti', true);
+
+        $enrolmentdata['ltiversion'] = 'test';
+        $enrolmentdata['startdate'] = 'abc';
+        $enrolmentdata['enddate'] = 'cde';
+        $enrolmentdata['enrolperiod'] = 'fgh';
+        $enrolmentdata['maxenrolled'] = 'abc';
+        $enrolmentdata['provisioningmodeinstructor'] = false;
+        $enrolmentdata['provisioningmodelearner'] = false;
+        $enrolmentdata['membersyncmode'] = false;
+        $enrolmentdata['maildisplay'] = false;
+        $enrolmentdata['country'] = 'abc';
+        $enrolmentdata['timezone'] = false; /// may be we need to do fields in validate, they are not realy custom
+
+        $errors = $ltiplugin->validate_enrol_plugin_data($enrolmentdata);
+
+        $this->assertArrayHasKey('unsupportedltiversion', $errors);
+        $this->assertArrayHasKey('errorenrolstartdateformat', $errors);
+        $this->assertArrayHasKey('errorenrolenddateformat', $errors);
+        $this->assertArrayHasKey('errorenrolperiodformat', $errors);
+        $this->assertArrayHasKey('errormaxenrolledformat', $errors);
+        $this->assertArrayHasKey('errorprovisioningmodeteacherlaunch', $errors);
+        $this->assertArrayHasKey('errorprovisioningmodelearner', $errors);
+        $this->assertArrayHasKey('errormembersyncmode', $errors);
+        $this->assertArrayHasKey('errormaildisplay', $errors);
+        $this->assertArrayHasKey('errorcountry', $errors);
+        $this->assertArrayHasKey('errortimezone', $errors);
+
+        // Enrol start date is after enrol end date.
+        $enrolmentdata['startdate'] = '17 July 2023';
+        $enrolmentdata['enddate'] = '16 July 2023';
+        $errors = $ltiplugin->validate_enrol_plugin_data($enrolmentdata, $course->id);
+        $this->assertArrayHasKey('errorenrolenddate', $errors);
+
+        // Valid data.
+        $enrolmentdata['ltiversion'] = 'LTI-1p3';
+        $enrolmentdata['enddate'] = '20 July 2023';
+        $enrolmentdata['enrolperiod'] = '1 day';
+        $enrolmentdata['maxenrolled'] = 20;
+        $enrolmentdata['provisioningmodeinstructor'] = get_string('provisioningmodenewexisting', 'auth_lti');
+        $enrolmentdata['provisioningmodelearner'] = get_string('provisioningmodeexistingonly', 'auth_lti');
+        $enrolmentdata['membersyncmode'] = get_string('membersyncmodeenrolandunenrol', 'enrol_lti');
+        $enrolmentdata['maildisplay'] = get_string('emaildisplayyes');
+        $countries = get_string_manager()->get_list_of_countries();
+        $enrolmentdata['country'] = reset($countries);
+        $timezones = core_date::get_list_of_timezones(null, true);
+        $enrolmentdata['timezone'] = reset($timezones);
+        $errors = $ltiplugin->validate_enrol_plugin_data($enrolmentdata, $course->id);
+        $this->assertEmpty($errors);
+    }
+
+    /**
+     * Test the behaviour of fill_enrol_custom_fields().
+     *
+     * @covers ::fill_enrol_custom_fields
+     */
+    public function test_fill_enrol_custom_fields() {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        [
+            $course,
+            $modresource,
+            $modresource2,
+            $courseresource,
+            $registration,
+            $deployment
+        ] = $this->create_test_environment();
+
+        $ltiplugin = enrol_get_plugin('lti');
+
+        // Check defaults are filled.
+        $enrolmentdata = [];
+        $coursecontext = \context_course::instance($course->id);
+        $assignableroles = get_assignable_roles($coursecontext, ROLENAME_SHORT);
+        $enrolmentdata = $ltiplugin->fill_enrol_custom_fields($enrolmentdata, $course->id, $assignableroles, []);
+        $this->assertEquals('LTI-1p3', $enrolmentdata['ltiversion']);
+
+        $context = \context_course::instance($course->id);
+        $this->assertEquals($context->id, $enrolmentdata['contextid']);
+        $this->assertEquals(3, $enrolmentdata['roleinstructor']);
+        $this->assertEquals(5, $enrolmentdata['rolelearner']);
+        $this->assertEquals(auth_plugin_lti::PROVISIONING_MODE_PROMPT_NEW_EXISTING, $enrolmentdata['provisioningmodeinstructor']);
+        $this->assertEquals(auth_plugin_lti::PROVISIONING_MODE_AUTO_ONLY, $enrolmentdata['provisioningmodelearner']);
+        $this->assertEquals(1, $enrolmentdata['gradesync']);
+        $this->assertEquals(0, $enrolmentdata['gradesynccompletion']);
+        $this->assertEquals(1, $enrolmentdata['membersync']);
+        $this->assertEquals(helper::MEMBER_SYNC_ENROL_AND_UNENROL, $enrolmentdata['membersyncmode']);
+        $this->assertEquals(get_config('enrol_lti', 'emaildisplay'), $enrolmentdata['maildisplay']);
+        $this->assertEquals(get_config('enrol_lti', 'country'), $enrolmentdata['country']);
+        $this->assertEquals(get_config('enrol_lti', 'timezone'), $enrolmentdata['timezone']);
+        $this->assertEquals(get_config('enrol_lti', 'lang'), $enrolmentdata['lang']);
+        $this->assertArrayNotHasKey('toolid', $enrolmentdata);
+        $this->assertArrayNotHasKey('uuid', $enrolmentdata);
+
+        $instance = $DB->get_record('enrol', ['id' => $modresource->enrolid]);
+
+        $expected = [
+            'ltiversion' => 'LTI-1p3',
+            'tooltobeprovided' => 'Assignment 1',
+            'roleinstructor' => 'teacher',
+            'rolelearner' => 'teacher',
+            'provisioningmodeteacherlaunch' => auth_plugin_lti::PROVISIONING_MODE_PROMPT_EXISTING_ONLY,
+            'provisioningmodestudentlaunch' => auth_plugin_lti::PROVISIONING_MODE_PROMPT_NEW_EXISTING,
+            'gradesync' => 0,
+            'gradesynccompletion' => 1,
+            'membersync' => 0,
+            'membersyncmode' => helper::MEMBER_SYNC_ENROL_NEW,
+            'maildisplay' => 1,
+            'country' => 'GB',
+            'timezone' => 'Europe/London',
+            'lang' => 'fr',
+        ];
+        $enrolmentdata = $expected;
+        $expected['roleinstructor'] = 4;
+        $expected['rolelearner'] = 4;
+
+        $enrolmentdata = $ltiplugin->fill_enrol_custom_fields($enrolmentdata, $course->id, $assignableroles, []);
+        $this->assertEquals($expected, $enrolmentdata);
+
+        $enrolmentdata['instanceid'] = $instance->id;
+        $enrolmentdata = $ltiplugin->fill_enrol_custom_fields($enrolmentdata, $course->id, $assignableroles, []);
+        $ltitool = $DB->get_record('enrol_lti_tools', ['enrolid' => $instance->id], '*', MUST_EXIST);
+        $this->assertEquals($ltitool->id, $enrolmentdata['toolid']);
+        $this->assertEquals($ltitool->uuid, $enrolmentdata['uuid']);
+        $this->assertArrayNotHasKey('instanceid', $enrolmentdata);
+    }
+
+    /**
+     * Test the behaviour of validate_plugin_data_context().
+     *
+     * @covers ::validate_plugin_data_context
+     */
+    public function test_validate_plugin_data_context() {
+        $this->resetAfterTest();
+
+        $cohortplugin = enrol_get_plugin('lti');
+
+        [
+            $course,
+            $modresource,
+            $modresource2,
+            $courseresource,
+            $registration,
+            $deployment
+        ] = $this->create_test_environment();
+
+        // Create module with completion disabled.
+        $data = $this->getDataGenerator()->create_module('data', ['course' => $course->id], ['completion' => 0]);
+
+        $enrolmentdata = [];
+        $enrolmentdata['tooltobeprovided'] = 'test';
+        $enrolmentdata['requirecompletion'] = 1;
+        $enrolmentdata['roleinstructor'] = false;
+        $enrolmentdata['rolelearner'] = false;
+
+        $errors = $cohortplugin->validate_plugin_data_context($enrolmentdata, $course->id);
+        $this->assertArrayHasKey('errortooltobeprovided', $errors);
+        $this->assertArrayNotHasKey('errorrequirecompletion', $errors);
+        $this->assertArrayHasKey('errorroleinstructor', $errors);
+        $this->assertArrayHasKey('errorrolelearner', $errors);
+
+        $enrolmentdata['tooltobeprovided'] = $data->name;
+        $enrolmentdata['roleinstructor'] = 3;
+        $enrolmentdata['rolelearner'] = 5;
+
+        $errors = $cohortplugin->validate_plugin_data_context($enrolmentdata, $course->id);
+        $this->assertArrayNotHasKey('errortooltobeprovided', $errors);
+        $this->assertArrayHasKey('errorrequirecompletion', $errors);
+        $this->assertArrayNotHasKey('errorroleinstructor', $errors);
+        $this->assertArrayNotHasKey('errorrolelearner', $errors);
+
+        $enrolmentdata['tooltobeprovided'] = 'Assignment 1';
+        $errors = $cohortplugin->validate_plugin_data_context($enrolmentdata, $course->id);
+        $this->assertEmpty($errors);
+    }
+
 }

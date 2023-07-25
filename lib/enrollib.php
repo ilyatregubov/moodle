@@ -3446,9 +3446,11 @@ abstract class enrol_plugin {
      *
      * @param array $enrolmentdata enrolment data.
      * @param int $courseid Course ID.
+     * @param array $assignableroles Assignable roles.
+     * @param array $contextlevels Context levels.
      * @return array Updated enrolment data with custom fields info.
      */
-    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid) : array {
+    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid, array $assignableroles, array $contextlevels) : array {
         return $enrolmentdata;
     }
 
@@ -3468,10 +3470,10 @@ abstract class enrol_plugin {
      *
      * @param array $enrolmentdata enrolment data to validate.
      * @param int|null $courseid Course ID.
-     * @return lang_string|null Error
+     * @return array Errors
      */
-    public function validate_plugin_data_context(array $enrolmentdata, ?int $courseid = null) : ?lang_string {
-        return null;
+    public function validate_plugin_data_context(array $enrolmentdata, ?int $courseid = null): array {
+        return [];
     }
 
 }
