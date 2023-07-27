@@ -44,6 +44,7 @@ $PAGE->add_body_class('limitedwidth');
 
 require_capability('gradereport/summary:view', $context);
 require_capability('moodle/grade:viewall', $context);
+require_capability('moodle/grade:viewhidden', $context);
 
 print_grade_page_head($courseid, 'report', 'summary', false,
     false, false, true, null, null,

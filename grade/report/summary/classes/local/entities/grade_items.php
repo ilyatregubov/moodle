@@ -93,7 +93,8 @@ class grade_items extends base {
         );
 
         $this->report = new grade_report_summary($this->course->id, $gpr, $context);
-        $this->ungradedcounts = $this->report->ungraded_counts();
+        // Include hidden since this report is available for teachers only adn we check for viewhidden capability.
+        $this->ungradedcounts = $this->report->ungraded_counts(null, true);
 
         $columns = $this->get_all_columns();
         foreach ($columns as $column) {

@@ -16,10 +16,12 @@
 
 namespace gradereport_user\report;
 
+use cache;
 use context_course;
 use course_modinfo;
 use grade_grade;
 use grade_helper;
+use grade_item;
 use grade_report;
 use grade_tree;
 use html_writer;
@@ -209,6 +211,12 @@ class user extends grade_report {
     protected $aggregationhints = [];
 
     /**
+     * Used for proper column indentation.
+     * @var int
+     */
+    public $columncount = 0;
+
+    /**
      * Constructor. Sets local copies of user preferences and initialises grade_tree.
      * @param int $courseid
      * @param null|object $gpr grade plugin return tracking object
@@ -264,6 +272,7 @@ class user extends grade_report {
             'report_user_showlettergrade',
             !empty($CFG->grade_report_user_showlettergrade)
         );
+
         $this->showaverage = grade_get_setting(
             $this->courseid,
             'report_user_showaverage',
@@ -322,7 +331,45 @@ class user extends grade_report {
         $this->setup_table();
 
         // Optionally calculate grade item averages.
-        $this->calculate_averages();
+        if ($this->showaverage) {
+            $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'gradereport_user', 'averages');
+            $avg = $cache->get(get_class($this));
+            if (!$avg) {
+                $ungradedcounts = $this->ungraded_counts();
+                $this->columncount = 0;
+                $avgrow = $this->format_averages($ungradedcounts);
+                // Save to cache.
+                $cache->set(get_class($this), $avgrow->cells);
+            }
+        }
+
+    }
+
+    /**
+     * Returns a row of grade items averages
+     *
+     * @param grade_item $gradeitem Grade item.
+     * @param array $aggr Average value and meancount information.
+     * @param bool $shownumberofgrades Whether to show number of grades.
+     * @return mixed Formatted average cell.
+     */
+    public function format_average_cell(grade_item $gradeitem, array $aggr = [], bool $shownumberofgrades = false): mixed {
+
+        if ($gradeitem->needsupdate) {
+            $avg = '<td class="cell c' . $this->columncount++.'">' .
+                '<span class="gradingerror">' . get_string('error').'</span></td>';
+        } else {
+            if (empty($aggr['average'])) {
+                $avg = '-';
+            } else {
+                $numberofgrades = '';
+                if ($shownumberofgrades) {
+                    $numberofgrades = " (" . $aggr['meancount'] . ")";
+                }
+                $avg = $aggr['average'] . $numberofgrades;
+            }
+        }
+        return $avg;
     }
 
     /**
@@ -786,15 +833,12 @@ class user extends grade_report {
 
                 // Average.
                 if ($this->showaverage) {
-                    $gradeitemdata['averageformatted'] = '';
-
                     $data['average']['class'] = $class;
-                    if (!empty($this->gtree->items[$eid]->avg)) {
-                        $data['average']['content'] = $this->gtree->items[$eid]->avg;
-                        $gradeitemdata['averageformatted'] = $this->gtree->items[$eid]->avg;
-                    } else {
-                        $data['average']['content'] = '-';
-                    }
+                    $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'gradereport_user', 'averages');
+                    $avg = $cache->get(get_class($this));
+
+                    $data['average']['content'] = $avg[$eid];
+                    $gradeitemdata['averageformatted'] = $avg[$eid];
                     $data['average']['headers'] = "$headercat $headerrow average";
                 }
 
@@ -1105,10 +1149,14 @@ class user extends grade_report {
     }
 
     /**
+     * @deprecated since Moodle 4.3 - Call calculate_average instead.
      * Builds the grade item averages.
      */
     private function calculate_averages() {
         global $USER, $DB, $CFG;
+
+        debugging('user::calculate_averages() is deprecated.
+            Call grade_report::calculate_average() instead.', DEBUG_DEVELOPER);
 
         if ($this->showaverage) {
             // This settings are actually grader report settings (not user report)
