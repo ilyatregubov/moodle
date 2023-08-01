@@ -478,6 +478,26 @@ class enrol_guest_plugin extends enrol_plugin {
         return $errors;
     }
 
+    /**
+     * Finds matching instances for a given course.
+     *
+     * @param array $enrolmentdata enrolment data.
+     * @param int $courseid Course ID.
+     * @return stdClass|null Matching instance
+     */
+    public function find_instance(array $enrolmentdata, int $courseid) : ?stdClass {
+
+        $instances = enrol_get_instances($courseid, false);
+        $instance = null;
+        foreach ($instances as $i) {
+            if ($i->enrol == 'guest') {
+                // There can be only one guest enrol instance so find first available.
+                $instance = $i;
+                break;
+            }
+        }
+        return $instance;
+    }
 
 }
 
