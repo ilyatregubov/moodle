@@ -190,6 +190,11 @@ $string['dynreg_update_btn_update'] = 'Update';
 $string['dynreg_update_btn_new'] = 'Register as a new external tool';
 $string['duplicateregurl'] = 'This registration URL is already in use';
 $string['editdescription'] = 'Click here to give this tool a description';
+$string['editmanualinstancedeprecationwarning'] = 'Manually configured External tool activities are no longer supported. Don\'t worry, this activity will still work as it is, but you can\'t make changes to the tool configuration here anymore.
+<br><br>
+To make any changes to the tool, or to create new activities with it, the tool needs to be added to your course in Course > More > LTI External tools. Then, you will be able to create new activities, selecting the tool directly in the Activity chooser.
+<br><br>
+You can read more about adding LTI External tools in the documentation <a href="{$a}" target="_blank">External tool</a>.';
 $string['edittype'] = 'Edit preconfigured tool';
 $string['embed'] = 'Embed';
 $string['embed_no_blocks'] = 'Embed, without blocks';

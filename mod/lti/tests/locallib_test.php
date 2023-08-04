@@ -2227,22 +2227,14 @@ MwIDAQAB
         $this->assertCount(1, $coursetooltypes);
 
         // Request for a teacher who cannot use preconfigured tools in the course.
-        // Only return course tools, which is broken legacy behaviour.
+        // No tools are available.
         $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'));
         assign_capability('mod/lti:addpreconfiguredinstance', CAP_PROHIBIT, $teacherrole->id,
             \core\context\course::instance($course->id));
         $coursetooltypes = lti_get_lti_types_by_course($course->id);
         $this->assertDebuggingCalled();
-        $this->assertCount(1, $coursetooltypes);
+        $this->assertCount(0, $coursetooltypes);
         $this->unassignUserCapability('mod/lti:addpreconfiguredinstance', (\core\context\course::instance($course->id))->id,
             $teacherrole->id);
-
-        // Request for a teacher who cannot use manually configured tools in the course.
-        // Only return site tools, which is broken legacy behaviour.
-        assign_capability('mod/lti:addmanualinstance', CAP_PROHIBIT, $teacherrole->id,
-            \context_course::instance($course->id));
-        $coursetooltypes = lti_get_lti_types_by_course($course->id);
-        $this->assertDebuggingCalled();
-        $this->assertCount(2, $coursetooltypes);
     }
 }

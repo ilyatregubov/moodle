@@ -2316,33 +2316,8 @@ function lti_get_lti_types_by_course($courseid, $coursevisible = null) {
     debugging(__FUNCTION__ . '() is deprecated. Please use \mod_lti\local\types_helper::get_lti_types_by_course() instead.',
         DEBUG_DEVELOPER);
 
-    global $DB, $SITE;
-
-    if ($coursevisible === null) {
-        $coursevisible = [LTI_COURSEVISIBLE_PRECONFIGURED, LTI_COURSEVISIBLE_ACTIVITYCHOOSER];
-    }
-
-    list($coursevisiblesql, $coursevisparams) = $DB->get_in_or_equal($coursevisible, SQL_PARAMS_NAMED, 'coursevisible');
-    $courseconds = [];
-    if (has_capability('mod/lti:addmanualinstance', context_course::instance($courseid))) {
-        $courseconds[] = "course = :courseid";
-    }
-    if (has_capability('mod/lti:addpreconfiguredinstance', context_course::instance($courseid))) {
-        $courseconds[] = "course = :siteid";
-    }
-    if (!$courseconds) {
-        return [];
-    }
-    $coursecond = implode(" OR ", $courseconds);
-    $query = "SELECT *
-                FROM {lti_types}
-               WHERE coursevisible $coursevisiblesql
-                 AND ($coursecond)
-                 AND state = :active
-            ORDER BY name ASC";
-
-    return $DB->get_records_sql($query,
-        array('siteid' => $SITE->id, 'courseid' => $courseid, 'active' => LTI_TOOL_STATE_CONFIGURED) + $coursevisparams);
+    global $USER;
+    return \mod_lti\local\types_helper::get_lti_types_by_course($courseid, $USER->id, $coursevisible ?? []);
 }
 
 /**
@@ -2352,13 +2327,11 @@ function lti_get_lti_types_by_course($courseid, $coursevisible = null) {
  */
 function lti_get_types_for_add_instance() {
     global $COURSE, $USER;
+
+    // Always return the 'manual' type option, despite manual config being deprecated, so that we have it for legacy instances.
+    $types = [(object) ['name' => get_string('automatic', 'lti'), 'course' => 0, 'toolproxyid' => null]];
+
     $preconfiguredtypes = \mod_lti\local\types_helper::get_lti_types_by_course($COURSE->id, $USER->id);
-
-    $types = [];
-    if (has_capability('mod/lti:addmanualinstance', context_course::instance($COURSE->id))) {
-        $types[0] = (object)array('name' => get_string('automatic', 'lti'), 'course' => 0, 'toolproxyid' => null);
-    }
-
     foreach ($preconfiguredtypes as $type) {
         $types[$type->id] = $type;
     }
