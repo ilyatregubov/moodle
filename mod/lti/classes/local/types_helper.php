@@ -48,17 +48,32 @@ class types_helper {
         if (empty($coursevisible)) {
             $coursevisible = [LTI_COURSEVISIBLE_PRECONFIGURED, LTI_COURSEVISIBLE_ACTIVITYCHOOSER];
         }
-        list($coursevisiblesql, $coursevisparams) = $DB->get_in_or_equal($coursevisible, SQL_PARAMS_NAMED, 'coursevisible');
+        [$coursevisiblesql, $coursevisparams] = $DB->get_in_or_equal($coursevisible, SQL_PARAMS_NAMED, 'coursevisible');
+        [$coursevisiblesql1, $coursevisparams1] = $DB->get_in_or_equal($coursevisible, SQL_PARAMS_NAMED, 'coursevisible');
+        [$coursevisibleoverriddensql, $coursevisoverriddenparams] = $DB->get_in_or_equal(
+            $coursevisible,
+            SQL_PARAMS_NAMED,
+            'coursevisibleoverridden');
 
-        $coursecond = implode(" OR ", ["course = :courseid", "course = :siteid"]);
+        $coursecond = implode(" OR ", ["t.course = :courseid", "t.course = :siteid"]);
         $query = "SELECT *
-                FROM {lti_types}
-               WHERE coursevisible $coursevisiblesql
-                 AND ($coursecond)
-                 AND state = :active
-            ORDER BY name ASC";
+                    FROM (SELECT t.*, c.coursevisible as coursevisibleoverridden
+                            FROM {lti_types} t
+                       LEFT JOIN {lti_coursevisible} c ON c.typeid = t.id AND c.courseid = $courseid
+                           WHERE (t.coursevisible $coursevisiblesql OR c.coursevisible $coursevisiblesql1)
+                             AND ($coursecond)
+                             AND t.state = :active) tt
+                   WHERE tt.coursevisibleoverridden IS NULL
+                      OR tt.coursevisibleoverridden $coursevisibleoverriddensql";
 
-        return $DB->get_records_sql($query,
-            ['siteid' => $SITE->id, 'courseid' => $courseid, 'active' => LTI_TOOL_STATE_CONFIGURED] + $coursevisparams);
+        return $DB->get_records_sql(
+            $query,
+            [
+                'siteid' => $SITE->id,
+                'courseid' => $courseid,
+                'active' => LTI_TOOL_STATE_CONFIGURED,
+                'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+            ] + $coursevisparams + $coursevisparams1 + $coursevisoverriddenparams
+        );
     }
 }

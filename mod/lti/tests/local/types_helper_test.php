@@ -65,12 +65,19 @@ class types_helper_test extends mod_lti_testcase {
         $course = $this->getDataGenerator()->create_course();
         $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
 
-        // Create the following tool types for testing:
-        // - Site tool configured as "Do not show" (LTI_COURSEVISIBLE_NO).
-        // - Site tool configured as "Show as a preconfigured tool only" (LTI_COURSEVISIBLE_PRECONFIGURED).
-        // - Site tool configured as "Show as a preconfigured tool and in the activity chooser" (LTI_COURSEVISIBLE_ACTIVITYCHOOSER).
-        // - Course tool which, by default, is configured as LTI_COURSEVISIBLE_ACTIVITYCHOOSER).
-
+        /*
+            Create the following tool types for testing:
+            | tooltype | sitecoursevisible                 | coursecoursevisible               |
+            | site     | LTI_COURSEVISIBLE_NO              |                                   |
+            | site     | LTI_COURSEVISIBLE_PRECONFIGURED   |                                   |
+            | site     | LTI_COURSEVISIBLE_PRECONFIGURED   | LTI_COURSEVISIBLE_PRECONFIGURED   |
+            | site     | LTI_COURSEVISIBLE_PRECONFIGURED   | LTI_COURSEVISIBLE_ACTIVITYCHOOSER |
+            | site     | LTI_COURSEVISIBLE_ACTIVITYCHOOSER |                                   |
+            | site     | LTI_COURSEVISIBLE_ACTIVITYCHOOSER | LTI_COURSEVISIBLE_ACTIVITYCHOOSER |
+            | site     | LTI_COURSEVISIBLE_ACTIVITYCHOOSER | LTI_COURSEVISIBLE_PRECONFIGURED   |
+            | course   | LTI_COURSEVISIBLE_ACTIVITYCHOOSER |                                   |
+            | course   | LTI_COURSEVISIBLE_PRECONFIGURED   |                                   |
+        */
         /** @var \mod_lti_generator $ltigenerator */
         $ltigenerator = $this->getDataGenerator()->get_plugin_generator('mod_lti');
         $ltigenerator->create_tool_types([
@@ -85,31 +92,95 @@ class types_helper_test extends mod_lti_testcase {
             'coursevisible' => LTI_COURSEVISIBLE_PRECONFIGURED,
             'state' => LTI_TOOL_STATE_CONFIGURED
         ]);
+
+        $ltigenerator->create_tool_types([
+            'name' => 'site tool preconfigured only, overridden to preconfigured only in course',
+            'baseurl' => 'http://example.com/tool/2',
+            'coursevisible' => LTI_COURSEVISIBLE_PRECONFIGURED,
+            'state' => LTI_TOOL_STATE_CONFIGURED
+        ]);
+        $tool = $DB->get_record('lti_types',
+            ['name' => 'site tool preconfigured only, overridden to preconfigured only in course']);
+        $record = new \stdClass();
+        $record->typeid = $tool->id;
+        $record->courseid = $course->id;
+        $record->coursevisible = LTI_COURSEVISIBLE_PRECONFIGURED;
+        $DB->insert_record('lti_coursevisible', $record);
+
+        $ltigenerator->create_tool_types([
+            'name' => 'site tool preconfigured only, overridden to activity chooser in course',
+            'baseurl' => 'http://example.com/tool/2',
+            'coursevisible' => LTI_COURSEVISIBLE_PRECONFIGURED,
+            'state' => LTI_TOOL_STATE_CONFIGURED
+        ]);
+        $tool = $DB->get_record('lti_types', ['name' => 'site tool preconfigured only, overridden to activity chooser in course']);
+        $record = new \stdClass();
+        $record->typeid = $tool->id;
+        $record->courseid = $course->id;
+        $record->coursevisible = LTI_COURSEVISIBLE_ACTIVITYCHOOSER;
+        $DB->insert_record('lti_coursevisible', $record);
+
         $ltigenerator->create_tool_types([
             'name' => 'site tool preconfigured and activity chooser',
             'baseurl' => 'http://example.com/tool/3',
             'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
             'state' => LTI_TOOL_STATE_CONFIGURED
         ]);
+
+        $ltigenerator->create_tool_types([
+            'name' => 'site tool preconfigured and activity chooser, overridden to activity chooser in course',
+            'baseurl' => 'http://example.com/tool/2',
+            'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+            'state' => LTI_TOOL_STATE_CONFIGURED
+        ]);
+        $tool = $DB->get_record('lti_types',
+            ['name' => 'site tool preconfigured and activity chooser, overridden to activity chooser in course']);
+        $record = new \stdClass();
+        $record->typeid = $tool->id;
+        $record->courseid = $course->id;
+        $record->coursevisible = LTI_COURSEVISIBLE_ACTIVITYCHOOSER;
+        $DB->insert_record('lti_coursevisible', $record);
+
+        $ltigenerator->create_tool_types([
+            'name' => 'site tool preconfigured and activity chooser, overridden to preconfigured in course',
+            'baseurl' => 'http://example.com/tool/2',
+            'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+            'state' => LTI_TOOL_STATE_CONFIGURED
+        ]);
+        $tool = $DB->get_record('lti_types',
+            ['name' => 'site tool preconfigured and activity chooser, overridden to preconfigured in course']);
+        $record = new \stdClass();
+        $record->typeid = $tool->id;
+        $record->courseid = $course->id;
+        $record->coursevisible = LTI_COURSEVISIBLE_PRECONFIGURED;
+        $DB->insert_record('lti_coursevisible', $record);
+
         $ltigenerator->create_course_tool_types([
             'name' => 'course tool preconfigured and activity chooser',
             'baseurl' => 'http://example.com/tool/4',
             'course' => $course->id
         ]);
 
+        $ltigenerator->create_course_tool_types([
+            'name' => 'course tool preconfigured',
+            'baseurl' => 'http://example.com/tool/4',
+            'course' => $course->id,
+            'coursevisible' => LTI_COURSEVISIBLE_PRECONFIGURED
+        ]);
+
         // Request using the default 'coursevisible' param will include all tools except the one configured as "Do not show".
         $coursetooltypes = types_helper::get_lti_types_by_course($course->id, $teacher->id);
-        $this->assertCount(3, $coursetooltypes);
+        $this->assertCount(8, $coursetooltypes);
 
         // Request for only those tools configured to show in the activity chooser for the teacher.
         $coursetooltypes = types_helper::get_lti_types_by_course($course->id, $teacher->id,
             [LTI_COURSEVISIBLE_ACTIVITYCHOOSER]);
-        $this->assertCount(2, $coursetooltypes);
+        $this->assertCount(4, $coursetooltypes);
 
         // Request for only those tools configured to show as a preconfigured tool for the teacher.
         $coursetooltypes = types_helper::get_lti_types_by_course($course->id, $teacher->id,
             [LTI_COURSEVISIBLE_PRECONFIGURED]);
-        $this->assertCount(1, $coursetooltypes);
+        $this->assertCount(4, $coursetooltypes);
 
         // Request for a teacher who cannot use preconfigured tools in the course.
         $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'));
