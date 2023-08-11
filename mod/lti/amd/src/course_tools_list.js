@@ -78,5 +78,21 @@ export const init = () => {
                 return;
             });
         }
+
+        const courseShowInActivityChooser = event.target.closest('[data-action="showinactivitychooser-toggle"]');
+        if (courseShowInActivityChooser) {
+            //event.preventDefault();
+            const showInActivityChooserStateToggle = +!Number(courseShowInActivityChooser.dataset.state);
+
+            const request = {
+                methodname: 'mod_lti_toggle_showinactivitychooser',
+                args: {tooltypeid: courseShowInActivityChooser.dataset.id,
+                    coursevisible: showInActivityChooserStateToggle}
+            };
+
+            return Ajax.call([request])[0];
+
+        }
+
     });
 };

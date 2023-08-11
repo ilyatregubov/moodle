@@ -20,6 +20,7 @@ use core_reportbuilder\local\helpers\database;
 use core_reportbuilder\local\report\column;
 use mod_lti\reportbuilder\local\entities\tool_types;
 use core_reportbuilder\system_report;
+use stdClass;
 
 /**
  * Course external tools list system report class implementation.
@@ -110,6 +111,41 @@ class course_external_tools_list extends system_report {
             ->set_type(column::TYPE_INTEGER)
             ->set_is_sortable(true)
             ->add_field($sql, 'usage');
+
+        // Enable toggle column.
+        $this->add_column((new column(
+            'showinactivitychooser',
+            new \lang_string('showinactivitychooser', 'mod_lti'),
+            $tooltypesentity->get_entity_name()
+        ))
+            ->set_type(column::TYPE_INTEGER)
+            ->add_fields("{$entitymainalias}.id, {$entitymainalias}.coursevisible")
+            ->set_is_sortable(false)
+            ->set_callback(static function(int $coursevisible, stdClass $row): string {
+                global $PAGE;
+                if ($row->coursevisible == LTI_COURSEVISIBLE_ACTIVITYCHOOSER) {
+                    $row->coursevisible = true;
+                } else {
+                    $row->coursevisible = false;
+                }
+
+                $renderer = $PAGE->get_renderer('core_reportbuilder');
+                $attributes = [
+                    ['name' => 'id', 'value' => $row->id],
+                    ['name' => 'action', 'value' => 'showinactivitychooser-toggle'],
+                    ['name' => 'state', 'value' => $row->coursevisible],
+                ];
+                $label = $row->coursevisible ? get_string('dontshowinactivitychooser', 'mod_lti')
+                    : get_string('showinactivitychooser', 'mod_lti');
+                return $renderer->render_from_template('core/toggle', [
+                    'id' => 'showinactivitychooser-toggle-' . $row->id,
+                    'checked' => $row->coursevisible,
+                    'dataattributes' => $attributes,
+                    'label' => $label,
+                    'labelclasses' => 'sr-only'
+                ]);
+            })
+        );
 
         // Attempt to create a dummy actions column, working around the limitations of the official actions feature.
         $this->add_column(new column(
