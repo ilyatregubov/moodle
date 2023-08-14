@@ -118,28 +118,35 @@ class course_external_tools_list extends system_report {
             new \lang_string('showinactivitychooser', 'mod_lti'),
             $tooltypesentity->get_entity_name()
         ))
+            // Site tools can be overridden on course level.
+            ->add_join("LEFT JOIN {lti_coursevisible} lc ON lc.typeid = {$entitymainalias}.id")
             ->set_type(column::TYPE_INTEGER)
-            ->add_fields("{$entitymainalias}.id, {$entitymainalias}.coursevisible")
+            ->add_fields("{$entitymainalias}.id, {$entitymainalias}.coursevisible, lc.coursevisible as coursevisibleoverridden")
             ->set_is_sortable(false)
-            ->set_callback(static function(int $coursevisible, stdClass $row): string {
+            ->set_callback(static function(int $id, stdClass $row): string {
                 global $PAGE;
-                if ($row->coursevisible == LTI_COURSEVISIBLE_ACTIVITYCHOOSER) {
-                    $row->coursevisible = true;
+                $coursevisible = $row->coursevisible;
+                if (!empty($row->coursevisibleoverridden)) {
+                    $coursevisible = $row->coursevisibleoverridden;
+                }
+
+                if ($coursevisible == LTI_COURSEVISIBLE_ACTIVITYCHOOSER) {
+                    $coursevisible = true;
                 } else {
-                    $row->coursevisible = false;
+                    $coursevisible = false;
                 }
 
                 $renderer = $PAGE->get_renderer('core_reportbuilder');
                 $attributes = [
                     ['name' => 'id', 'value' => $row->id],
                     ['name' => 'action', 'value' => 'showinactivitychooser-toggle'],
-                    ['name' => 'state', 'value' => $row->coursevisible],
+                    ['name' => 'state', 'value' => $coursevisible],
                 ];
                 $label = $row->coursevisible ? get_string('dontshowinactivitychooser', 'mod_lti')
                     : get_string('showinactivitychooser', 'mod_lti');
                 return $renderer->render_from_template('core/toggle', [
                     'id' => 'showinactivitychooser-toggle-' . $row->id,
-                    'checked' => $row->coursevisible,
+                    'checked' => $coursevisible,
                     'dataattributes' => $attributes,
                     'label' => $label,
                     'labelclasses' => 'sr-only'

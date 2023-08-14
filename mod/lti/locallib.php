@@ -2321,21 +2321,24 @@ function lti_get_lti_types_by_course($courseid, $coursevisible = null) {
     list($coursevisiblesql, $coursevisparams) = $DB->get_in_or_equal($coursevisible, SQL_PARAMS_NAMED, 'coursevisible');
     $courseconds = [];
     if (has_capability('mod/lti:addmanualinstance', context_course::instance($courseid))) {
-        $courseconds[] = "course = :courseid";
+        $courseconds[] = "t.course = :courseid";
     }
     if (has_capability('mod/lti:addpreconfiguredinstance', context_course::instance($courseid))) {
-        $courseconds[] = "course = :siteid";
+        $courseconds[] = "t.course = :siteid";
     }
     if (!$courseconds) {
         return [];
     }
     $coursecond = implode(" OR ", $courseconds);
     $query = "SELECT *
-                FROM {lti_types}
-               WHERE coursevisible $coursevisiblesql
-                 AND ($coursecond)
-                 AND state = :active
-            ORDER BY name ASC";
+                FROM (SELECT t.*, c.coursevisible as coursevisibleoverridden
+                        FROM {lti_types} t
+                        LEFT JOIN {lti_coursevisible} c ON c.typeid = t.id AND c.courseid = t.course
+                       WHERE (t.coursevisible $coursevisiblesql OR c.coursevisible = 2)
+                         AND ($coursecond)
+                         AND t.state = :active
+                    ORDER BY t.name ASC) tt
+               WHERE tt.coursevisibleoverridden IS NULL OR tt.coursevisibleoverridden = 2";
 
     return $DB->get_records_sql($query,
         array('siteid' => $SITE->id, 'courseid' => $courseid, 'active' => LTI_TOOL_STATE_CONFIGURED) + $coursevisparams);

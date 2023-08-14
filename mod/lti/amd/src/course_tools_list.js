@@ -81,7 +81,6 @@ export const init = () => {
 
         const courseShowInActivityChooser = event.target.closest('[data-action="showinactivitychooser-toggle"]');
         if (courseShowInActivityChooser) {
-            //event.preventDefault();
             const showInActivityChooserStateToggle = +!Number(courseShowInActivityChooser.dataset.state);
 
             const request = {

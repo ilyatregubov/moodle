@@ -19,6 +19,7 @@ namespace mod_lti\external;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_value;
+use mod_lti\local\ltiopenid\registration_helper;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -74,9 +75,29 @@ class toggle_showinactivitychooser extends external_api {
         } else {
             $coursevisible = LTI_COURSEVISIBLE_PRECONFIGURED;
         }
-        $record = $DB->get_record('lti_types',['id' => $tooltypeid]);
+        $record = $DB->get_record('lti_types', ['id' => $tooltypeid]);
         $record->coursevisible = $coursevisible;
-        $DB->update_record('lti_types', $record);
+
+        $config = new \stdClass();
+        $config->lti_coursevisible = $coursevisible;
+
+        if (intval($record->course) !== 1) {
+            // It is course tool - just update it.
+            lti_update_type($record, $config);
+        } else {
+            // This is site tool, but we would like to have course level setting for it.
+            $record = $DB->get_record('lti_coursevisible', ['typeid' => $tooltypeid, 'courseid' => $course]);
+            if (!$record) {
+                $record = new \stdClass();
+                $record->typeid = $tooltypeid;
+                $record->courseid = $course;
+                $record->coursevisible = $coursevisible;
+                $DB->insert_record('lti_coursevisible', $record);
+            } else {
+                $record->coursevisible = $coursevisible;
+                $DB->update_record('lti_coursevisible', $record);
+            }
+        }
 
         return true;
     }
