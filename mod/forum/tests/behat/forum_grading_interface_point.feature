@@ -41,6 +41,7 @@ Feature: I can grade a students interaction across a basic point based forum
     And I should see "Grading (Point Forum)"
     # Navigate between users.
     When I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     Then I should see "Student 1"
     # Set and confirm the input.
     And I set the field "grade" to "6"
@@ -48,6 +49,7 @@ Feature: I can grade a students interaction across a basic point based forum
     # Save the grade & Check it shows on user navigation
     And I click on "Save" "button"
     And I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     And I should see "Student 2"
     And the field "grade" does not match value "6"
     And I click on "Save changes and proceed to the previous user" "button"

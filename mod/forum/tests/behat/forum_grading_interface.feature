@@ -57,7 +57,7 @@ Feature: I can set up & perform basic operations
     And I follow "Test Forum 1"
     And I click on "Grade users" "button"
     # Close the grader interface back to the forum / Waits in place till event handlers moved
-    And I click on "Test Forum 1" "button" in the "Forum grader" "Fullscreen interface"
+    And I click on "Test Forum 1" "link" in the "Forum grader" "Fullscreen interface"
     And I should not see "Grading (Test Forum 1)"
     And I click on "Grade users" "button"
     And I should see "Grading (Test Forum 1)"
@@ -74,6 +74,7 @@ Feature: I can set up & perform basic operations
     And I should see "Teacher 1"
     And I should see "1 out of 3"
     And I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     And I should see "Student 1"
     And I should see "2 out of 3"
     And I set the field "Grade" to "6"
@@ -82,6 +83,7 @@ Feature: I can set up & perform basic operations
     And I should see "Teacher 1"
     And I should not see "2 out of 3"
     And I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     And I should see "Student 1"
     And I should not see "1 out of 3"
     And the field "Grade" matches value "6"
@@ -112,6 +114,7 @@ Feature: I can set up & perform basic operations
     And I click on "Test Forum 1" "link"
     And I click on "Grade users" "button"
     And I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     # Parent post
     And I should see "Discussion started by Teacher 1"
     And I should see "Photosynthesis discussion"

@@ -44,14 +44,18 @@ Feature: I can grade a students interaction across a scale forum
     And I should see "Grading (Scale Forum)"
     # Navigate between users.
     When I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     Then I should see "Student 1"
     And I set the field "Grade" to "Very good"
     # Save the grade & Check it shows on user navigation
     And I click on "Save" "button"
+    And I wait until the page is ready
     And I click on "Save changes and proceed to the next user" "button"
+    And I wait until the page is ready
     And I should see "Student 2"
     And the field "Grade" does not match value "Very good"
     And I click on "Save changes and proceed to the previous user" "button"
+    And I wait until the page is ready
     And I should see "Student 1"
     And the field "Grade" matches value "Very good"
     # Confirm the grade is now in the grading report.
