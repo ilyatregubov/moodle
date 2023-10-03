@@ -30,7 +30,7 @@ Feature: Edit activities in main menu block
       | allowstealth | 1 |
     And the following "blocks" exist:
       | blockname      | contextlevel | reference | pagetypepattern | defaultregion |
-      | site_main_menu | System       | 1         | site-index      | side-pre      |
+      | site_main_menu | System       | 1         | site-index      | side-post     |
     And the following "activities" exist:
       | activity | course               | section | name          |
       | forum    | Acceptance test site | 0       | Visible forum |
