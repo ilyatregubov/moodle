@@ -415,10 +415,10 @@ abstract class screen {
      * @return array A list of enroled users.
      */
     protected function load_users(): array {
-        debugging('The function ' . __FUNCTION__ . '() is deprecated. Please use get_gradable_users() instead.',
+        debugging('The function ' . __FUNCTION__ . '() is deprecated. Please use grade_report_get_gradable_users() instead.',
             DEBUG_DEVELOPER);
 
-        return get_gradable_users($this->courseid, $this->groupid);
+        return grade_report_get_gradable_users($this->courseid, $this->groupid);
     }
 
     /**
