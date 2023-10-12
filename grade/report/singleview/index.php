@@ -90,7 +90,8 @@ switch ($itemtype) {
         // If there is a stored user item (last viewed) in a session variable, bypass the user select zero state
         // and display this user item. Also, make sure that the stored last viewed user is part of the current
         // list of gradable users in this course.
-        if ($lastvieweduseritemid && array_key_exists($lastvieweduseritemid, get_gradable_users($courseid, $currentgroup))) {
+        if ($lastvieweduseritemid &&
+                array_key_exists($lastvieweduseritemid, grade_report_get_gradable_users($courseid, $currentgroup))) {
             $itemtype = 'user';
             $itemid = $lastvieweduseritemid;
         } else {
@@ -103,7 +104,7 @@ switch ($itemtype) {
         }
         // If the item id (user id) cannot be defined or the user id is not part of the list of gradable users,
         // display the user select zero state.
-        if (is_null($itemid) || !array_key_exists($itemid, get_gradable_users($courseid, $currentgroup))) {
+        if (is_null($itemid) || !array_key_exists($itemid, grade_report_get_gradable_users($courseid, $currentgroup))) {
             $itemtype = 'user_select';
         }
         break;
