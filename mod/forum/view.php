@@ -198,6 +198,7 @@ switch ($forum->get_type()) {
                     'gradingcomponentsubtype' => $forumgradeitem->get_grading_component_subtype(),
                     'sendstudentnotifications' => $forum->should_notify_students_default_when_grade_for_forum(),
                     'gradeonlyactiveusers' => $forumgradeitem->should_grade_only_active_users(),
+                    'gradeonlygradableusers' => 1,
                 ];
                 echo $OUTPUT->render_from_template('mod_forum/grades/grade_button', $gradeobj);
             }

@@ -63,10 +63,11 @@ const getContentForUserIdFunction = (cmid, experimentalDisplayMode) => (userid) 
  * @param {Number} cmid
  * @param {Number} groupID
  * @param {Boolean} onlyActive Whether to fetch only the active enrolled users or all enrolled users in the course.
+ * @param {Boolean} onlyGradable Whether to fetch only the gradable users in the course.
  * @return {Array} Array of users for a given context.
  */
-const getUsersForCmidFunction = (cmid, groupID, onlyActive) => async() => {
-    const context = await CourseRepository.getUsersFromCourseModuleID(cmid, groupID, onlyActive);
+const getUsersForCmidFunction = (cmid, groupID, onlyActive, onlyGradable) => async() => {
+    const context = await CourseRepository.getUsersFromCourseModuleID(cmid, groupID, onlyActive, onlyGradable);
 
     return context.users;
 };
@@ -130,9 +131,10 @@ const launchWholeForumGrading = async(rootNode, {
 
     const groupID = data.group ? data.group : 0;
     const onlyActive = data.gradeOnlyActiveUsers;
+    const onlyGradable = data.gradeOnlyGradableUsers;
 
     await Grader.launch(
-        getUsersForCmidFunction(data.cmid, groupID, onlyActive),
+        getUsersForCmidFunction(data.cmid, groupID, onlyActive, onlyGradable),
         getContentForUserIdFunction(data.cmid, data.experimentalDisplayMode == "1"),
         gradingPanelFunctions.getter,
         gradingPanelFunctions.setter,
