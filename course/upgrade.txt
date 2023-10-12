@@ -12,6 +12,8 @@ information provided here is intended especially for developers.
   Alongside with that, the following methods have been deprecated too:
   - `core_course_renderer::render_activity_information()`
   - `renderer_base::activity_information()`
+* Web service 'core_course_get_enrolled_users_by_cmid' accepts new parameter 'onlygradable' to show only those
+  users that can be graded.
 
 === 4.2 ===
 * course/mod.php now accepts parameter beforemod for adding course modules. It contains the course module id
