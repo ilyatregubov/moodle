@@ -1,6 +1,10 @@
 This files describes API changes in /course/*,
 information provided here is intended especially for developers.
 
+=== 4.4 ===
+* Web service 'core_course_get_enrolled_users_by_cmid' accepts new parameter 'onlygradable' to show only those
+  users that can be graded.
+
 === 4.3 ===
 * The `core_course_renderer::course_section_cm_completion` method has been removed, and can no longer be used
 * External function core_course_external::get_course_contents() now returns a new field activitybadge with the data to display
