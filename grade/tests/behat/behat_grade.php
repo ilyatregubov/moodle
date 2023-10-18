@@ -103,6 +103,7 @@ class behat_grade extends behat_base {
             $this->execute("behat_grades::i_click_on_grade_item_menu", [$gradeitem, $type, $page]);
         }
 
+//        sleep(1000);
         $this->execute("behat_action_menu::i_choose_in_the_open_action_menu", $linktext);
     }
 
