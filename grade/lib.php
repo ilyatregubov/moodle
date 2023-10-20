@@ -4073,12 +4073,12 @@ abstract class grade_helper {
     /**
      * Returns icon of element
      *
-     * @param array $element An array representing an element in the grade_tree
+     * @param array &$element An array representing an element in the grade_tree
      * @param bool  $spacerifnone return spacer if no icon found
      *
      * @return string icon or spacer
      */
-    public static function get_element_icon(array $element, bool $spacerifnone = false): string {
+    public static function get_element_icon(array &$element, bool $spacerifnone = false): string {
         global $CFG, $OUTPUT;
         require_once($CFG->libdir . '/filelib.php');
 
@@ -4221,7 +4221,7 @@ abstract class grade_helper {
     /**
      * Returns name of element optionally with icon and link
      *
-     * @param array $element An array representing an element in the grade_tree
+     * @param array &$element An array representing an element in the grade_tree
      * @param bool  $withlink Whether or not this header has a link
      * @param bool  $icon Whether or not to display an icon with this header
      * @param bool  $spacerifnone return spacer if no icon found
@@ -4232,7 +4232,7 @@ abstract class grade_helper {
      *
      * @return string header
      */
-    public static function get_element_header(array $element, bool $withlink = false, bool $icon = true,
+    public static function get_element_header(array &$element, bool $withlink = false, bool $icon = true,
             bool $spacerifnone = false, bool $withdescription = false, bool $fulltotal = false,
             ?moodle_url $sortlink = null): string {
         $header = '';
