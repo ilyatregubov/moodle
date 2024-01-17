@@ -38,10 +38,12 @@ function xmldb_qtype_calculatedmulti_upgrade($oldversion) {
         // From this version on, answer options may use HTML, so the answerformat does now have a
         // meaning. For backwards compatibility, all existing answer options for this question
         // type must have their answerformat set to FORMAT_PLAIN.
-        $DB->execute("UPDATE {question_answers} AS answers, {question} AS questions
-                         SET answerformat = '" . FORMAT_PLAIN . "'
-                       WHERE answers.question = questions.id
-                             AND questions.qtype = 'calculatedmulti'");
+        $sql = "UPDATE {question_answers} qa
+                   SET qa.answerformat = '" . FORMAT_PLAIN . "'
+                  FROM qa
+                  JOIN {question} q ON qa.question = q.id
+                 WHERE q.qtype = 'calculatedmulti'";
+        $DB->execute($sql);
 
         // Calculatedmulti savepoint reached.
         upgrade_plugin_savepoint(true, 2024011700, 'qtype', 'calculatedmulti');
