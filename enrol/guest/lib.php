@@ -529,6 +529,49 @@ class enrol_guest_plugin extends enrol_plugin {
     public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid): array {
         return $enrolmentdata + ['password' => ''];
     }
+
+    /**
+     * Updates enrol plugin instance with provided data.
+     * @param int $courseid Course ID.
+     * @param array $enrolmentdata enrolment data.
+     * @param stdClass $instance Instance to update.
+     *
+     * @return stdClass updated instance
+     */
+    public function update_enrol_plugin_data(int $courseid, array $enrolmentdata, stdClass $instance): stdClass {
+        if (!empty($enrolmentdata['password'])) {
+            $instance->password = $enrolmentdata['password'];
+        }
+        return parent::update_enrol_plugin_data($courseid, $enrolmentdata, $instance);
+    }
+
+    /**
+     * Check if data is valid for a given enrolment plugin
+     *
+     * @param array $enrolmentdata enrolment data to validate.
+     * @param int|null $courseid Course ID.
+     * @return array Errors
+     */
+    public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null): array {
+        global $CFG;
+
+        // If password is omitted or empty in csv it will be generated automatically if it is a required policy.
+
+        $errors = parent::validate_enrol_plugin_data($enrolmentdata, $courseid);
+
+        $policy = $this->get_config('usepasswordpolicy');
+        if (!empty($enrolmentdata['password']) && $policy) {
+            $errmsg = '';
+            $errarray = [];
+            if (!check_password_policy($enrolmentdata['password'], $errmsg, null, $errarray)) {
+                foreach ($errarray as $err) {
+                    $passwordconfig = str_replace('error', '', $err);
+                    $errors[$err] = new lang_string($err, 'auth', $CFG->$passwordconfig);
+                }
+            }
+        }
+        return $errors;
+    }
 }
 
 /**
