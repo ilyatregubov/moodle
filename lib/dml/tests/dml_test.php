@@ -6398,6 +6398,56 @@ EOD;
             "Found invalid DB server version format when reading version from DB: '{$version}' ({$description}).");
         $db2->dispose();
     }
+
+    /**
+     * Test the COUNT() window function with the actual DB Server.
+     *
+     * @covers \moodle_database::get_counted_recordset_sql()
+     * @covers \moodle_database::get_counted_records_sql()
+     * @covers \moodle_database::generate_fullcount_sql()
+     * @return void
+     */
+    public function test_count_window_function(): void {
+        $DB = $this->tdb;
+        $dbman = $DB->get_manager();
+
+        $table = $this->get_test_table();
+        $tablename = $table->getName();
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('course', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $dbman->create_table($table);
+
+        for ($i = 1; $i <= 5; $i++) {
+            $DB->insert_record($tablename, ['course' => $i], false);
+        }
+
+        // Test with the get_recordset_select().
+        $rs = $DB->get_counted_recordset_sql(
+            sql: "SELECT * FROM {{$tablename}}",
+            sort: "ORDER BY course DESC",
+            limitfrom: 1,
+            limitnum: 3,
+        );
+        // Check whether the fullcount column returns the correct number.
+        $this->assertEquals(5, $rs->current()->{$DB::COUNTED_COLUMN_NAME_DEFAULT});
+        // Check whether the limit works properly.
+        $this->assertEquals(4, $rs->current()->course);
+
+        // Test with the get_records_select().
+        $rs = $DB->get_counted_records_sql(
+            sql: "SELECT * FROM {{$tablename}}",
+            sort: "ORDER BY course DESC",
+            limitfrom: 3,
+            limitnum: 2,
+        );
+        $resetrs = reset($rs);
+        // Check whether the fullcount column returns the correct number.
+        $this->assertEquals(5, $resetrs->{$DB::COUNTED_COLUMN_NAME_DEFAULT});
+        // Check whether the limit works properly.
+        $this->assertEquals(2, $resetrs->course);
+    }
 }
 
 /**
