@@ -105,16 +105,14 @@ class participants_search {
             'params' => $params,
         ] = $this->get_participants_sql($additionalwhere, $additionalparams);
 
-        $sql = "{$outerselect}
-                          FROM ({$innerselect}
-                                          FROM {$innerjoins}
-                                 {$innerwhere}
-                               ) {$subqueryalias}
-                 {$outerjoins}
-                 {$outerwhere}
-                       {$sort}";
-
-        return $DB->get_recordset_sql($sql, $params, $limitfrom, $limitnum);
+        $select = "{$outerselect}
+                        FROM ({$innerselect}
+                                FROM {$innerjoins}
+                              {$innerwhere}
+                        ) {$subqueryalias}
+                   {$outerjoins}
+                   {$outerwhere}";
+        return $DB->get_counted_recordset_sql($select, $sort, $params, $limitfrom, $limitnum);
     }
 
     /**
