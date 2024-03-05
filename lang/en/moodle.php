@@ -2378,6 +2378,7 @@ $string['viewing'] = 'Viewing:';
 $string['viewallcourses'] = 'View all courses';
 $string['viewallcoursescategories'] = 'View all courses and categories';
 $string['viewallresults'] = 'View all results ({$a})';
+$string['viewallresultsfor'] = 'View all results for \'{$a}\'';
 $string['viewmore'] = 'View more';
 $string['viewallsubcategories'] = 'View all subcategories';
 $string['viewfileinpopup'] = 'View file in a popup window';

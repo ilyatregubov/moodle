@@ -31,6 +31,11 @@ $courseid = required_param('id', PARAM_INT);
 $userid   = optional_param('userid', null, PARAM_INT);
 $userview = optional_param('userview', 0, PARAM_INT);
 
+$useridsfiltered = optional_param('useridsfiltered', '', PARAM_SEQUENCE);
+if ($useridsfiltered) {
+    $useridsfiltered = explode(',', $useridsfiltered);
+}
+
 $PAGE->set_url(new moodle_url('/grade/report/user/index.php', ['id' => $courseid]));
 
 if ($userview == 0) {
@@ -159,15 +164,28 @@ if (has_capability('moodle/grade:viewall', $context)) {
         print_grade_page_head($courseid, 'report', 'user', false, false, null, true,
             null, null, null, $actionbar);
 
-        while ($userdata = $gui->next_user()) {
-            $user = $userdata->user;
-            $report = new gradereport_user\report\user($courseid, $gpr, $context, $user->id, $viewasuser);
-            $userheading = $gradesrenderer->user_heading($report->user, $courseid, false);
+        if ($useridsfiltered) {
+            foreach ($useridsfiltered as $user) {
+                $report = new gradereport_user\report\user($courseid, $gpr, $context, $user, $viewasuser);
+                $userheading = $gradesrenderer->user_heading($report->user, $courseid, false);
 
-            echo $userheading;
+                echo $userheading;
 
-            if ($report->fill_table()) {
-                echo $report->print_table(true);
+                if ($report->fill_table()) {
+                    echo $report->print_table(true);
+                }
+            }
+        } else {
+            while ($userdata = $gui->next_user()) {
+                $user = $userdata->user;
+                $report = new gradereport_user\report\user($courseid, $gpr, $context, $user->id, $viewasuser);
+                $userheading = $gradesrenderer->user_heading($report->user, $courseid, false);
+
+                echo $userheading;
+
+                if ($report->fill_table()) {
+                    echo $report->print_table(true);
+                }
             }
         }
         $gui->close();

@@ -39,7 +39,7 @@ export default class User extends UserSearch {
      * Build the content then replace the node.
      */
     async renderDropdown() {
-        const {html, js} = await renderForPromise('core_user/comboboxsearch/resultset', {
+        const {html, js} = await renderForPromise('gradereport_user/resultset', {
             users: this.getMatchedResults().slice(0, 5),
             hasresults: this.getMatchedResults().length > 0,
             matches: this.getDatasetSize(),
@@ -58,7 +58,8 @@ export default class User extends UserSearch {
         return Url.relativeUrl('/grade/report/user/index.php', {
             id: this.courseID,
             userid: 0,
-            searchvalue: this.getSearchTerm()
+            searchvalue: this.getSearchTerm(),
+            useridsfiltered: this.getMatchedResults().slice(0, 5).map(user => user.id),
         }, false);
     }
 
