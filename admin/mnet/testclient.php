@@ -157,7 +157,7 @@ if (!empty($hostid) && array_key_exists($hostid, $hosts)) {
     $table->data = array();
 
     foreach ($methods as $id => $method) {
-        $params = array('hostid' => $host->id, 'method' => $id+1);
+        $params = ['hostid' => $host->id, 'method' => intval($id) + 1];
         if (isset($servicename)) {
             $params['servicename'] = $servicename;
         }
