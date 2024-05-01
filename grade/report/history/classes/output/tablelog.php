@@ -221,13 +221,24 @@ class tablelog extends \table_sql implements \renderable {
      * @return string HTML to display
      */
     public function col_finalgrade(\stdClass $history) {
+        global $DB;
+
         if (!empty($this->gradeitems[$history->itemid])) {
             $decimalpoints = $this->gradeitems[$history->itemid]->get_decimals();
         } else {
             $decimalpoints = $this->defaultdecimalpoints;
         }
 
-        return format_float($history->finalgrade, $decimalpoints);
+        $calculationerror = false;
+        if (!$history->overridden && $this->gradeitems[$history->itemid]->is_calculated()) {
+            $calculationerror = $DB->record_exists('grade_items_calculation_error', ['itemid' => $history->itemid]);
+        }
+
+        if ($calculationerror) {
+            return get_string('error');
+        } else {
+            return format_float($history->finalgrade, $decimalpoints);
+        }
     }
 
     /**
