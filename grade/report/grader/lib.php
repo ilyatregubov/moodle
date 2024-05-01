@@ -1231,9 +1231,14 @@ class grade_report_grader extends grade_report {
      * @return html_table_cell Formatted average cell.
      */
     protected function format_average_cell(grade_item $gradeitem, ?array $aggr = null, ?bool $shownumberofgrades = null): html_table_cell {
-        global $OUTPUT;
+        global $OUTPUT, $DB;
 
-        if ($gradeitem->needsupdate) {
+        $calculationerror = false;
+        if ($gradeitem->is_calculated()) {
+            $calculationerror = $DB->record_exists('grade_items_calculation_error', ['itemid' => $gradeitem->id]);
+        }
+
+        if ($gradeitem->needsupdate || $calculationerror) {
             $avgcell = new html_table_cell();
             $avgcell->attributes['class'] = 'i' . $gradeitem->id;
             $avgcell->text = $OUTPUT->container(get_string('error'), 'gradingerror');
@@ -1576,7 +1581,12 @@ class grade_report_grader extends grade_report {
             foreach ($this->gtree->items as $itemid => $unused) {
                 $item =& $this->gtree->items[$itemid];
 
-                if ($item->needsupdate) {
+                $calculationerror = false;
+                if ($item->is_calculated()) {
+                    $calculationerror = $DB->record_exists('grade_items_calculation_error', ['itemid' => $item->id]);
+                }
+
+                if ($item->needsupdate || $calculationerror) {
                     $avgcell = new html_table_cell();
                     $avgcell->attributes['class'] = 'i'. $itemid;
                     $avgcell->text = $OUTPUT->container(get_string('error'), 'gradingerror');
