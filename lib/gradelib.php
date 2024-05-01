@@ -1151,6 +1151,8 @@ function grade_recover_history_grades($userid, $courseid) {
  * @return array|true true if ok, array of errors if problems found. Grade item id => error message
  */
 function grade_regrade_final_grades($courseid, $userid=null, $updated_item=null, $progress=null) {
+    global $DB;
+
     // This may take a very long time and extra memory.
     \core_php_time_limit::raise();
     raise_memory_limit(MEMORY_EXTRA);
@@ -1247,6 +1249,17 @@ function grade_regrade_final_grades($courseid, $userid=null, $updated_item=null,
             $progresscurrent = $thisprogress;
 
             foreach ($depends_on[$gid] as $did) {
+                if (!in_array($did, array_keys($grade_items))) {
+                    // There is a missing item.
+                    if (!$DB->record_exists('grade_items_calculation_error', ['itemid' => $gid, 'missingitemid' => $did])) {
+                        $DB->insert_record('grade_items_calculation_error', ['itemid' => $gid, 'missingitemid' => $did]);
+                    }
+                    continue 2;
+                } else {
+                    if ($DB->record_exists('grade_items_calculation_error', ['itemid' => $gid, 'missingitemid' => $did])) {
+                        $DB->delete_records('grade_items_calculation_error', ['itemid' => $gid, 'missingitemid' => $did]);
+                    }
+                }
                 if (!in_array($did, $finalids)) {
                     // This item depends on something that is not yet in finals array.
                     continue 2;

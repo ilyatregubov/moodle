@@ -824,7 +824,6 @@ class grade_item extends grade_object {
             } else {
                 return "Could not calculate grades for grade item"; // TODO: improve and localize
             }
-
         // noncalculated outcomes already have final values - raw grades not used
         } else if ($this->is_outcome_item()) {
             return true;

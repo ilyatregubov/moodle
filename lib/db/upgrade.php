@@ -1170,5 +1170,27 @@ function xmldb_main_upgrade($oldversion) {
     // Automatically generated Moodle v4.4.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2024042200.04) {
+        // Define communication table.
+        $table = new xmldb_table('grade_items_calculation_error');
+
+        // Adding fields to table communication.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('itemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
+        $table->add_field('missingitemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'itemid');
+
+        // Add keys.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'grade_items', ['id']);
+
+        // Conditionally launch create table for grade_items_calculation_error.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024042200.04);
+    }
+
     return true;
 }

@@ -1022,9 +1022,14 @@ class grade_report_grader extends grade_report {
                 }
                 $context->statusicons = $this->gtree->set_grade_status_icons($element);
 
+                $calculationerror = false;
+                if (!$grade->is_overridden() && $item->is_calculated()) {
+                    $calculationerror = $DB->record_exists('grade_items_calculation_error', ['itemid' => $itemid]);
+                }
+
                 // If in editing mode, we need to print either a text box or a drop down (for scales)
                 // grades in item of type grade category or course are not directly editable.
-                if ($item->needsupdate) {
+                if ($item->needsupdate || $calculationerror) {
                     $context->text = $strerror;
                     $context->extraclasses = 'gradingerror';
                 } else if (!empty($USER->editing)) {
@@ -1155,7 +1160,12 @@ class grade_report_grader extends grade_report {
                         $itemcell->attributes['class'] .= ' grade_type_value';
                     }
 
-                    if ($item->needsupdate) {
+                    $calculationerror = false;
+                    if (!$grade->is_overridden() && $item->is_calculated()) {
+                        $calculationerror = $DB->record_exists('grade_items_calculation_error', ['itemid' => $itemid]);
+                    }
+
+                    if ($item->needsupdate || $calculationerror) {
                         $context->text = $strerror;
                         $context->extraclasses = 'gradingerror' . $hidden . $gradepass;
                     } else {
