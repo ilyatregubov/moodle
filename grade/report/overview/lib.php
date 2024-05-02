@@ -315,7 +315,18 @@ class grade_report_overview extends grade_report {
                     ]), $coursenamelink);
                 }
 
-                $data = [$coursenamelink, grade_format_gradevalue($finalgrade, $courseitem, true)];
+                $coursegrade = new grade_grade(['itemid' => $courseitem->id, 'userid' => $this->user->id]);
+
+                $calculationerror = false;
+                if (!$coursegrade->is_overridden() && $courseitem->is_calculated()) {
+                    $calculationerror =
+                        $DB->record_exists('grade_items_calculation_error', ['itemid' => $courseitem->id]);
+                }
+
+                $data = [
+                    $coursenamelink,
+                    ($courseitem->needsupdate || $calculationerror) ? get_string('error') : grade_format_gradevalue($finalgrade, $courseitem, true)
+                ];
 
                 if ($this->showrank['any']) {
                     if ($this->showrank[$course->id] && !is_null($finalgrade)) {
