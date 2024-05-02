@@ -73,7 +73,13 @@ foreach ($outcomes as $outcomeid => $outcome) {
                 $calculationerror = true;
                 $report_info[$outcomeid]['items'][$itemid]->avg = get_string('error');
                 $report_info[$outcomeid]['items'][$itemid]->count = '';
-                continue 2;
+
+                // We don't item at all if no grades exist.
+                if (!$DB->record_exists('grade_grades', ['itemid' => $itemid])) {
+                    unset($report_info[$outcomeid]['items'][$itemid]);
+                }
+
+                continue;
             }
 
             $params = array();
