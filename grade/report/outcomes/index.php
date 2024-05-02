@@ -69,7 +69,8 @@ foreach ($outcomes as $outcomeid => $outcome) {
         foreach ($report_info[$outcomeid]['items'] as $itemid => $item) {
             $gradeitem = new grade_item($item, false);
 
-            if ($gradeitem->is_calculated() && $DB->record_exists('grade_items_calculation_error', ['itemid' => $gradeitem->id])) {
+            if ($gradeitem->needsupdate ||
+                ($gradeitem->is_calculated() && $DB->record_exists('grade_items_calculation_error', ['itemid' => $gradeitem->id]))) {
                 $calculationerror = true;
                 $report_info[$outcomeid]['items'][$itemid]->avg = get_string('error');
                 $report_info[$outcomeid]['items'][$itemid]->count = '';
