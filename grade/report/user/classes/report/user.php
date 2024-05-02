@@ -354,8 +354,16 @@ class user extends grade_report {
      * @return \html_table_cell Formatted average cell.
      */
     protected function format_average_cell(grade_item $gradeitem, ?array $aggr = null, ?bool $shownumberofgrades = null): \html_table_cell {
+        global $DB;
 
-        if ($gradeitem->needsupdate) {
+        $calculationerror = false;
+        if ($gradeitem->is_calculated()) {
+            // Some grades might be overridden, so they are computed, but it is safer to fail average calculation.
+            $calculationerror =
+                $DB->record_exists('grade_items_calculation_error', ['itemid' => $gradeitem->id]);
+        }
+
+        if ($gradeitem->needsupdate || $calculationerror) {
             $avg = '<td class="cell c' . $this->columncount++.'">' .
                 '<span class="gradingerror">' . get_string('error').'</span></td>';
         } else {
@@ -523,6 +531,12 @@ class user extends grade_report {
 
             $gradegrade->load_grade_item();
 
+            $calculationerror = false;
+            if (!$gradegrade->is_overridden() && $gradegrade->grade_item->is_calculated()) {
+                $calculationerror =
+                    $DB->record_exists('grade_items_calculation_error', ['itemid' => $gradegrade->grade_item->id]);
+            }
+
             // Hidden Items.
             if ($gradegrade->grade_item->is_hidden()) {
                 $hidden = ' dimmed_text';
@@ -675,7 +689,7 @@ class user extends grade_report {
                     $gradeitemdata['gradeislocked'] = $canviewall ? $gradegrade->is_locked() : null;
                     $gradeitemdata['gradeisoverridden'] = $canviewall ? $gradegrade->is_overridden() : null;
 
-                    if ($gradegrade->grade_item->needsupdate) {
+                    if ($gradegrade->grade_item->needsupdate || $calculationerror) {
                         $data['grade']['class'] = $class.' gradingerror';
                         $data['grade']['content'] = get_string('error');
                     } else if (
@@ -764,7 +778,7 @@ class user extends grade_report {
 
                 // Percentage.
                 if ($this->showpercentage) {
-                    if ($gradegrade->grade_item->needsupdate) {
+                    if ($gradegrade->grade_item->needsupdate || $calculationerror) {
                         $data['percentage']['class'] = $class.' gradingerror';
                         $data['percentage']['content'] = get_string('error');
                     } else if ($gradegrade->is_hidden()) {
@@ -793,7 +807,7 @@ class user extends grade_report {
 
                 // Lettergrade.
                 if ($this->showlettergrade) {
-                    if ($gradegrade->grade_item->needsupdate) {
+                    if ($gradegrade->grade_item->needsupdate || $calculationerror) {
                         $data['lettergrade']['class'] = $class.' gradingerror';
                         $data['lettergrade']['content'] = get_string('error');
                     } else if ($gradegrade->is_hidden()) {
@@ -824,7 +838,7 @@ class user extends grade_report {
                 // Rank.
                 if ($this->showrank) {
                     $gradeitemdata['rank'] = 0;
-                    if ($gradegrade->grade_item->needsupdate) {
+                    if ($gradegrade->grade_item->needsupdate || $calculationerror) {
                         $data['rank']['class'] = $class.' gradingerror';
                         $data['rank']['content'] = get_string('error');
                     } else if ($gradegrade->is_hidden()) {
