@@ -166,7 +166,7 @@ class user extends tablelike implements selectable_items {
      * @return array
      */
     public function format_line($item): array {
-        global $OUTPUT;
+        global $OUTPUT, $DB;
 
         $grade = $this->fetch_grade_or_default($item, $this->item->id);
         $gradestatus = '';
@@ -207,11 +207,17 @@ class user extends tablelike implements selectable_items {
             $itemcontent = html_writer::div($itemname);
         }
 
+        $calculationerror = false;
+        if (!$grade->is_overridden() && $item->is_calculated()) {
+            $calculationerror =
+                $DB->record_exists('grade_items_calculation_error', ['itemid' => $item->id]);
+        }
+
         $line = [
             html_writer::div($itemicon . $itemcontent, "{$type} d-flex align-items-center"),
             $this->get_item_action_menu($item),
             $this->category($item),
-            $formatteddefinition['finalgrade'] . $gradestatus,
+            ($item->needsupdate || $calculationerror) ? get_string('error') : $formatteddefinition['finalgrade'] . $gradestatus,
             new range($item),
             $formatteddefinition['feedback'],
             $formatteddefinition['override'],
