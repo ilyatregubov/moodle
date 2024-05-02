@@ -58,6 +58,7 @@ if ($showonlyactiveenrol) {
     $suspendedusers = get_suspended_userids($context);
 }
 
+$calculationerror = false;
 // Get grade_items that use each outcome.
 foreach ($outcomes as $outcomeid => $outcome) {
     $report_info[$outcomeid]['items'] = $DB->get_records_select('grade_items', "outcomeid = ? AND courseid = ?", array($outcomeid, $courseid));
@@ -66,6 +67,15 @@ foreach ($outcomes as $outcomeid => $outcome) {
     // Get average grades for each item.
     if (is_array($report_info[$outcomeid]['items'])) {
         foreach ($report_info[$outcomeid]['items'] as $itemid => $item) {
+            $gradeitem = new grade_item($item, false);
+
+            if ($gradeitem->is_calculated() && $DB->record_exists('grade_items_calculation_error', ['itemid' => $gradeitem->id])) {
+                $calculationerror = true;
+                $report_info[$outcomeid]['items'][$itemid]->avg = get_string('error');
+                $report_info[$outcomeid]['items'][$itemid]->count = '';
+                continue 2;
+            }
+
             $params = array();
             $hidesuspendedsql = '';
             if ($showonlyactiveenrol && !empty($suspendedusers)) {
@@ -143,11 +153,16 @@ foreach ($report_info as $outcomeid => $outcomedata) {
                 $itemname = $grade_item->get_name();
             }
 
-            $outcomedata['outcome']->sum += $item->avg;
-            $gradehtml = $scale->get_nearest_item($item->avg);
+            if (is_numeric($item->avg)) {
+                $outcomedata['outcome']->sum += $item->avg;
+                $gradehtml = $scale->get_nearest_item($item->avg);
+                $gradehtml .= " ($item->avg)";
+            } else {
+                $gradehtml = $item->avg;
+            }
 
             $items_html .= "<td class=\"cell c3\">$itemname</td>"
-                         . "<td class=\"cell c4\">$gradehtml ($item->avg)</td>"
+                         . "<td class=\"cell c4\">$gradehtml</td>"
                          . "<td class=\"cell c5\">$item->count</td></tr>\n";
             $print_tr = true;
         }
@@ -156,7 +171,9 @@ foreach ($report_info as $outcomeid => $outcomedata) {
     }
 
     // Calculate outcome average.
-    if (is_array($outcomedata['items'])) {
+    if ($calculationerror) {
+        $avg_html = get_string('error');
+    } else if (is_array($outcomedata['items'])) {
         $count = count($outcomedata['items']);
         if ($count > 0) {
             $avg = $outcomedata['outcome']->sum / $count;
