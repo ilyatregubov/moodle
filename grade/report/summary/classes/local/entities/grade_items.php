@@ -169,6 +169,9 @@ class grade_items extends base {
                     $averageformatted = '-';
                 }
 
+                // There might be an error in calculation formula, but we don't show totals on summary report.
+                // And outcomes calculations seem to be correct for whatever reason so no changes here.
+                // See MDL-53160 for more details.
                 if ($gradeitem->needsupdate) {
                     $averageformatted = get_string('error');
                 }
