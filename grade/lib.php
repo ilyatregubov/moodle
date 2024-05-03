@@ -1765,8 +1765,23 @@ class grade_structure {
      * @return string|null
      */
     public function get_delete_link(array $element, object $gpr): ?string {
+        global $DB;
         if ($element['type'] == 'item' || ($element['type'] == 'category' && $element['depth'] > 1)) {
             if (grade_edit_tree::element_deletable($element)) {
+                // We need to check if this grade item is used in any gradebook calculations.
+                $params[] = $this->courseid;
+                $sqllike = $DB->sql_like('calculation', '?');
+                $params[] = '%##gi' . $element['object']->id . '##%';
+                $sql = "SELECT COUNT(*)
+                          FROM {grade_items}
+                         WHERE courseid = ? AND " . $sqllike;
+
+                $used = $DB->count_records_sql($sql, $params);
+                $calculationused = '';
+                if ($used > 0) {
+                    $calculationused = "IT IS USED";
+                }
+
                 $deleteconfirmationurl = new moodle_url('index.php', [
                     'id' => $this->courseid,
                     'action' => 'delete',
@@ -1776,6 +1791,7 @@ class grade_structure {
                 ]);
                 $gpr->add_url_params($deleteconfirmationurl);
                 $title = get_string('delete');
+                $deletestr = get_string('deletecheck', '', $element['object']->get_name());
                 return html_writer::link(
                     '',
                     $title,
@@ -1785,11 +1801,7 @@ class grade_structure {
                         'role' => 'menuitem',
                         'data-modal' => 'confirmation',
                         'data-modal-title-str' => json_encode(['confirm', 'core']),
-                        'data-modal-content-str' => json_encode([
-                            'deletecheck',
-                            '',
-                            $element['object']->get_name()
-                        ]),
+                        'data-modal-content' => $deletestr . $calculationused,
                         'data-modal-yes-button-str' => json_encode(['delete', 'core']),
                         'data-modal-destination' => $deleteconfirmationurl->out(false),
                     ]
