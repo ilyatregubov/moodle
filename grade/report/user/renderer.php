@@ -100,11 +100,28 @@ class gradereport_user_renderer extends plugin_renderer_base {
         // If a particular option is selected (not in zero state).
         if (!is_null($userid)) {
             if ($userid) { // A single user selected.
+                // $user has too much info. Some fields may be restricted. But we need to get the userpic.
                 $user = core_user::get_user($userid);
+
+                // Get only those fields we are allowed to see.
+                $context = context_course::instance($course->id);
+                $userfieldsapi = \core_user\fields::for_identity($context, false)->with_userpic();
+                $extrauserfields = $userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]);
+
+                $userforselector = new \stdClass();
+                $userforselector->id = $user->id;
+                $userforselector->fullname = fullname($user);
+
+                foreach ($extrauserfields as $field) {
+                    $userforselector->$field = $user->$field;
+                }
+
+                $userpicture = $this->user_picture($user, ['size' => 40, 'link' => false]);
+
                 $data['selectedoption'] = [
-                    'image' => $this->user_picture($user, ['size' => 40, 'link' => false]),
-                    'text' => fullname($user),
-                    'additionaltext' => $user->email,
+                    'image' => $userpicture,
+                    'text' => $userforselector->fullname,
+                    'additionaltext' => $userforselector->email ?? '',
                 ];
             } else { // All users selected.
                 // Get the total number of users.
