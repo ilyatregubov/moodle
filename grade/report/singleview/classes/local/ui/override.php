@@ -24,6 +24,8 @@
 
 namespace gradereport_singleview\local\ui;
 
+use context_course;
+
 defined('MOODLE_INTERNAL') || die;
 
 /**
@@ -94,7 +96,12 @@ class override extends grade_attribute_format implements be_checked, be_disabled
      * @return element
      */
     public function determine_format(): element {
-        if (!$this->grade->grade_item->is_overridable_item()) {
+        $canviewhidden = true;
+        if (($this->grade->is_hidden() || $this->grade->grade_item->is_hidden()) &&
+            !has_capability('moodle/grade:viewhidden', context_course::instance($this->grade->grade_item->courseid))) {
+            $canviewhidden = false;
+        }
+        if (!$this->grade->grade_item->is_overridable_item() || !$canviewhidden) {
             return new empty_element();
         }
         return new checkbox_attribute(
