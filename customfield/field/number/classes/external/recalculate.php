@@ -25,7 +25,7 @@ use core_external\external_value;
 use customfield_number\provider_base;
 
 /**
- * Implementation of web service customfield_number_recalculate
+ * Implementation of web service customfield_number_recalculate_value
  *
  * @package    customfield_number
  * @author     2024 Marina Glancy
@@ -35,19 +35,19 @@ use customfield_number\provider_base;
 class recalculate extends external_api {
 
     /**
-     * Describes the parameters for customfield_number_recalculate
+     * Describes the parameters for customfield_number_recalculate_value
      *
      * @return external_function_parameters
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'fieldid' => new external_value(PARAM_INT, 'Field id'),
-            'instanceid' => new external_value(PARAM_INT, 'Instance id (optional)'),
+            'fieldid' => new external_value(PARAM_INT, 'Field id',VALUE_REQUIRED),
+            'instanceid' => new external_value(PARAM_INT, 'Instance id',VALUE_REQUIRED),
         ]);
     }
 
     /**
-     * Implementation of web service customfield_number_recalculate
+     * Implementation of web service customfield_number_recalculate_value
      *
      * @param int $fieldid
      * @param int $instanceid
@@ -59,10 +59,6 @@ class recalculate extends external_api {
             self::execute_parameters(),
             ['fieldid' => $fieldid, 'instanceid' => $instanceid]
         );
-
-        if ($instanceid <= 0 || $fieldid <= 0) {
-            throw new \moodle_exception('required', '', '', get_string('missingrequired', 'customfield_number'));
-        }
 
         // Access validation.
         $context = \context_system::instance();
@@ -88,7 +84,7 @@ class recalculate extends external_api {
     }
 
     /**
-     * Describe the return structure for customfield_number_recalculate
+     * Describe the return structure for customfield_number_recalculate_value
      *
      * @return external_single_structure
      */

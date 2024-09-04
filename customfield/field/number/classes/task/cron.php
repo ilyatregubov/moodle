@@ -22,7 +22,7 @@ use core_customfield\field_controller;
 use customfield_number\provider_base;
 
 /**
- * Scheduled task for customfield_number
+ * Scheduled task for customfield_number to recalculate automatically populated fields.
  *
  * @package    customfield_number
  * @author     2024 Marina Glancy
@@ -41,18 +41,18 @@ class cron extends scheduled_task {
     }
 
     /**
-     * Do the job.
+     * Recalculate automatically populated number fields.
      *
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute(): void {
         global $DB;
+        // Get all number custom fields.
         $sql = "SELECT f.*, c.component, c.area, c.itemid, c.contextid
                   FROM {customfield_field} f
                   JOIN {customfield_category} c ON f.categoryid = c.id
                  WHERE f.type = ?";
         $res = $DB->get_records_sql($sql, ['number']);
-        $providers = [];
         foreach ($res as $row) {
             $cat = (object)[
                 'id' => $row->categoryid,
@@ -63,6 +63,7 @@ class cron extends scheduled_task {
             ];
             unset($row->component, $row->area, $row->itemid, $row->contextid);
             $category = category_controller::create(0, $cat);
+            // Create an instance of field controller for each field and recalculate the value if field provider is available.
             $field = field_controller::create(0, $row, $category);
             if ($provider = provider_base::instance($field)) {
                 if ($provider->is_available()) {

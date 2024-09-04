@@ -111,7 +111,7 @@ class data_controller extends \core_customfield\data_controller {
      * @return bool
      */
     protected function is_empty($value): bool {
-        return $value === null || $value === '';
+        return (string) $value === '';
     }
 
     /**

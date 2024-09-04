@@ -84,24 +84,38 @@ class nofactivities extends provider_base {
         $types = $this->field->get_configdata_property('activitytypes');
         $displaywhenzero = (bool)$this->field->get_configdata_property('nofactivities_zero');
         if (!empty($types)) {
-            // Prepare the SQL for non-empty types
+            // Prepare the SQL for non-empty types.
             [$sqlin, $params] = $DB->get_in_or_equal($types, SQL_PARAMS_NAMED);
         } else {
             $sqlin = 'IN (NULL)';
         }
+
+        // Subquery to select all modules of selected types.
+        $cmsql = "SELECT m.id
+                    FROM {modules} m
+                   WHERE m.name $sqlin
+                     AND m.visible = 1";
+
         $where = '';
         if ($instanceid) {
             $where = "AND c.id = :courseid ";
             $params['courseid'] = $instanceid;
         }
+
+        // Number of activities is stored in database. So we count the number and check if it matches the stored value.
+        // We update value in database if it doesn't match counted value.
         $sql = "SELECT c.id, COUNT(cm.id) AS cnt, d.id AS dataid, d.decvalue
-            FROM {course} c
-            LEFT JOIN {customfield_data} d ON d.fieldid = :fieldid AND d.instanceid = c.id
-            LEFT JOIN {course_modules} cm ON
-                cm.course = c.id AND cm.visible = 1 AND cm.deletioninprogress = 0 AND
-                cm.module IN (SELECT m.id FROM {modules} m WHERE m.name $sqlin AND m.visible = 1)
-            WHERE c.id <> :siteid $where
-            GROUP BY c.id, d.id, d.decvalue
+                  FROM {course} c
+             LEFT JOIN {customfield_data} d
+                    ON d.fieldid = :fieldid
+                   AND d.instanceid = c.id
+             LEFT JOIN {course_modules} cm
+                    ON cm.course = c.id
+                   AND cm.visible = 1
+                   AND cm.deletioninprogress = 0
+                   AND cm.module IN ($cmsql)
+                 WHERE c.id <> :siteid $where
+              GROUP BY c.id, d.id, d.decvalue
         ";
         $params['fieldid'] = $fieldid = $this->field->get('id');
         $records = $DB->get_records_sql($sql, $params + ['siteid' => SITEID]);
@@ -113,7 +127,7 @@ class nofactivities extends provider_base {
                     (new data_controller((int)$record->dataid, (object)['id' => $record->dataid]))->delete();
                 }
             } else if (empty($record->dataid) || (int)$record->decvalue != $value) {
-                // Save new value.
+                // Stored value is out of date.
                 $data = \core_customfield\api::get_instance_fields_data(
                     [$fieldid => $this->field], (int)$record->id)[$fieldid];
                 $data->set('contextid', context_course::instance($record->id)->id);

@@ -31,11 +31,6 @@ use customfield_number\field_controller;
  */
 class add_custom_providers implements described_hook {
     /**
-     * @var field_controller
-     */
-    protected field_controller $field;
-
-    /**
      * @var array
      */
     protected array $providers = [];
@@ -45,8 +40,7 @@ class add_custom_providers implements described_hook {
      *
      * @param field_controller $field the custom field controller
      */
-    public function __construct(field_controller $field) {
-        $this->field = $field;
+    public function __construct(public readonly field_controller $field) {
     }
 
     /**
@@ -68,15 +62,6 @@ class add_custom_providers implements described_hook {
     }
 
     /**
-     * Get custom field controller instance.
-     *
-     * @return field_controller
-     */
-    public function get_field(): field_controller {
-        return $this->field;
-    }
-
-    /**
      * Add a provider to the hook.
      *
      * @param provider_base $provider
@@ -88,7 +73,7 @@ class add_custom_providers implements described_hook {
     /**
      * Get the list of providers added through the hook.
      *
-     * @return object[]
+     * @return provider_base[]
      */
     public function get_providers(): array {
         return $this->providers;

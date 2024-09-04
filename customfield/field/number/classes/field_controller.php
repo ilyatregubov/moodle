@@ -247,7 +247,6 @@ class field_controller  extends \core_customfield\field_controller {
 
     /**
      * Can the value of this field be manually editable in the edit forms
-     * Can the value of this field be manually fieldtype in the edit forms
      *
      * @return bool
      */

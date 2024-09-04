@@ -24,7 +24,7 @@
 
 import Ajax from 'core/ajax';
 import Notification from 'core/notification';
-import Templates from 'core/templates';
+import {addIconToContainer} from 'core/loadingicon';
 
 const SELECTORS = {
     wrapper: ".customfield_number-recalculate-wrapper",
@@ -45,6 +45,7 @@ export function init() {
     initialised = true;
 
     document.addEventListener('click', (e) => {
+        e.preventDefault();
         const target = e.target.closest(SELECTORS.wrapper + " " + SELECTORS.link);
         if (!target) {
             return;
@@ -53,22 +54,16 @@ export function init() {
         if (!el) {
             return;
         }
-        e.preventDefault();
         const fieldid = target.dataset.fieldid;
         const instanceid = target.dataset.instanceid;
 
-        Templates.render('core/loading', {visible: true}, '')
-        .then((html) => {
-            el.innerHTML = html;
+        addIconToContainer(el).then(() => {
             return Ajax.call([{
-                methodname: 'customfield_number_recalculate',
-                args: {fieldid, instanceid}
+                methodname: 'customfield_number_recalculate_value',
+                args: { fieldid, instanceid }
             }])[0];
-        })
-        .then((data) => {
+        }).then((data) => {
             el.innerHTML = data.value;
-            return null;
-        })
-        .catch(Notification.exception);
+        }).catch(Notification.exception);
     });
 }

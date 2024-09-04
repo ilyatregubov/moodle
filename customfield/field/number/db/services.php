@@ -29,9 +29,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'customfield_number_recalculate' => [
+    'customfield_number_recalculate_value' => [
         'classname' => customfield_number\external\recalculate::class,
-        'description' => 'Recalculate',
+        'description' => 'This web service is used to recalculate the value of automatically populated number custom field.',
         'type' => 'write',
         'ajax' => true,
     ],
