@@ -71,6 +71,12 @@ class field_controller  extends \core_customfield\field_controller {
         $mform->addElement('header', 'specificsettings', get_string('specificsettings', 'customfield_number'));
         $mform->setExpanded('specificsettings');
 
+        $this->add_field_type_select($mform);
+        // Add form config elements for each provider.
+        foreach ($this->get_providers() as $provider) {
+            $provider->config_form_definition($mform);
+        }
+
         // Default value.
         $mform->addElement('float', 'configdata[defaultvalue]', get_string('defaultvalue', 'core_customfield'));
         if ($this->get_configdata_property('defaultvalue') === null) {
@@ -102,9 +108,8 @@ class field_controller  extends \core_customfield\field_controller {
 
         // Display format settings.
         // TODO: Change this after MDL-82996 fixed.
-        $randelname = 'str_' . random_string();
+        $randelname = 'str_display_format';
         $mform->addGroup([], $randelname, html_writer::tag('h4', get_string('headerdisplaysettings', 'customfield_number')));
-        $mform->hideIf($randelname, 'configdata[fieldtype]', 'ne', '');
 
         // Display template.
         $mform->addElement('text', 'configdata[display]', get_string('display', 'customfield_number'),
@@ -114,7 +119,6 @@ class field_controller  extends \core_customfield\field_controller {
         if ($this->get_configdata_property('display') === null) {
             $mform->setDefault('configdata[display]', '{value}');
         }
-        $mform->hideIf('configdata[display]', 'configdata[fieldtype]', 'ne', '');
 
         // Display when zero.
         $mform->addElement('text', 'configdata[displaywhenzero]', get_string('displaywhenzero', 'customfield_number'),
@@ -124,14 +128,6 @@ class field_controller  extends \core_customfield\field_controller {
         if ($this->get_configdata_property('displaywhenzero') === null) {
             $mform->setDefault('configdata[displaywhenzero]', 0);
         }
-
-        $this->add_field_type_select($mform);
-
-        // Add form config elements for each provider.
-        foreach ($this->get_providers() as $provider) {
-            $provider->config_form_definition($mform);
-        }
-
     }
 
     /**

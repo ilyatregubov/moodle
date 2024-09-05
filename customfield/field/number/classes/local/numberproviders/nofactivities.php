@@ -72,6 +72,11 @@ class nofactivities extends provider_base {
         $mform->hideIf('configdata[activitytypes]', 'configdata[fieldtype]', 'ne', get_class($this));
         $mform->addElement('advcheckbox', 'configdata[nofactivities_zero]', get_string('displaywhenzero', 'customfield_number'));
         $mform->hideIf('configdata[nofactivities_zero]', 'configdata[fieldtype]', 'ne', get_class($this));
+
+        $mform->hideIf('configdata[displaywhenzero]', 'configdata[fieldtype]', 'eq', get_class($this));
+        $mform->hideIf('configdata[display]', 'configdata[fieldtype]', 'eq', get_class($this));
+        $mform->hideIf('str_display_format', 'configdata[fieldtype]', 'eq', get_class($this));
+        $mform->hideIf('inputformat', 'configdata[fieldtype]', 'eq', get_class($this));
     }
 
     /**

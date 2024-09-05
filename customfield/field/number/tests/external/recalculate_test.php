@@ -40,41 +40,70 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  */
 final class recalculate_test extends \externallib_advanced_testcase {
 
-    /** @var stdClass  */
-    private $course = null;
-    /** @var \core_customfield\field_controller */
-    private $field = null;
-
     /**
-     * Tests set up.
+     * Tests when teacher can not edit locked field.
      */
-    public function setUp(): void {
+    public function test_execute_no_permission(): void {
         global $DB;
-        parent::setUp();
 
         $this->resetAfterTest();
+        [$course, $field] = $this->prepare_course();
+        $configdata = [
+            'fieldtype' => 'customfield_number\\local\\numberproviders\\nofactivities',
+            'activitytypes' => ['assign', 'forum'],
+            'locked' => 1,
+        ];
+        $field->set('configdata', json_encode($configdata));
+        $field->save();
 
-        $this->course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+        $roleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
+        $this->unassignUserCapability('moodle/course:changelockedcustomfields', $context->id, $roleid);
+
+        $this->expectException(moodle_exception::class);
+        $this->expectExceptionMessage(get_string('update'));
+        recalculate::execute($field->get('id'), (int)$course->id);
+    }
+
+    /**
+     * Tests when all data is valid.
+     */
+    public function test_execute(): void {
+        $this->resetAfterTest();
+        [$course, $field] = $this->prepare_course();
+        $result = recalculate::execute($field->get('id'), (int)$course->id);
+        $result = external_api::clean_returnvalue(recalculate::execute_returns(), $result);
+        $this->assertEquals(3.0, $result['value']);
+    }
+
+    /**
+     * Create a course with number custom field.
+     * @return array An array with the course object and field object.
+     */
+    private function prepare_course(): array {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
 
         // Add teacher to a course.
         $roleids = $DB->get_records_menu('role', null, '', 'shortname, id');
         $teacher = $this->getDataGenerator()->create_user();
-        $this->getDataGenerator()->enrol_user($teacher->id, $this->course->id, $roleids['editingteacher']);
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, $roleids['editingteacher']);
 
-        $this->getDataGenerator()->create_module('assign', ['course' => $this->course->id, 'name' => 'Assign1', 'visible' => 1]);
-        $this->getDataGenerator()->create_module('assign', ['course' => $this->course->id, 'name' => 'Assign2', 'visible' => 1]);
-        $this->getDataGenerator()->create_module('assign', ['course' => $this->course->id, 'name' => 'Assign3', 'visible' => 0]);
+        $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'name' => 'Assign1', 'visible' => 1]);
+        $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'name' => 'Assign2', 'visible' => 1]);
+        $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'name' => 'Assign3', 'visible' => 0]);
 
-        $this->getDataGenerator()->create_module('quiz', ['course' => $this->course->id, 'name' => 'Quiz1', 'visible' => 1]);
-        $this->getDataGenerator()->create_module('quiz', ['course' => $this->course->id, 'name' => 'Quiz2', 'visible' => 0]);
+        $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'name' => 'Quiz1', 'visible' => 1]);
+        $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'name' => 'Quiz2', 'visible' => 0]);
 
-        $this->getDataGenerator()->create_module('forum', ['course' => $this->course->id, 'name' => 'Forum1', 'visible' => 1]);
+        $this->getDataGenerator()->create_module('forum', ['course' => $course->id, 'name' => 'Forum1', 'visible' => 1]);
 
         /** @var core_customfield_generator $generator */
         $generator = $this->getDataGenerator()->get_plugin_generator('core_customfield');
 
         $category = $generator->create_category();
-        $this->field = $generator->create_field(
+        $field = $generator->create_field(
             [
                 'categoryid' => $category->get('id'),
                 'shortname' => 'myfield', 'type' => 'number',
@@ -85,38 +114,8 @@ final class recalculate_test extends \externallib_advanced_testcase {
             ]
         );
         $this->setUser($teacher);
-    }
 
-    /**
-     * Tests when teacher can not edit locked field.
-     */
-    public function test_execute_no_permission(): void {
-        global $DB;
-
-        $configdata = [
-            'fieldtype' => 'customfield_number\\local\\numberproviders\\nofactivities',
-            'activitytypes' => ['assign', 'forum'],
-            'locked' => 1,
-        ];
-        $this->field->set('configdata', json_encode($configdata));
-        $this->field->save();
-
-        $context = \context_course::instance($this->course->id);
-        $roleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
-        $this->unassignUserCapability('moodle/course:changelockedcustomfields', $context->id, $roleid);
-
-        $this->expectException(moodle_exception::class);
-        $this->expectExceptionMessage(get_string('update'));
-        recalculate::execute($this->field->get('id'), (int)$this->course->id);
-    }
-
-    /**
-     * Tests when all data is valid.
-     */
-    public function test_execute(): void {
-        $result = recalculate::execute($this->field->get('id'), (int)$this->course->id);
-        $result = external_api::clean_returnvalue(recalculate::execute_returns(), $result);
-        $this->assertEquals(3.0, $result['value']);
+        return [$course, $field];
     }
 
 }
