@@ -24,7 +24,6 @@
 
 namespace gradereport_singleview\local\screen;
 
-use context_course;
 use grade_report;
 use gradereport_singleview\local\ui\range;
 use gradereport_singleview\local\ui\bulk_insert;
@@ -219,12 +218,8 @@ class grade extends tablelike implements selectable_items, filterable_items {
 
         $gradestatus = '';
 
-        $canviewhidden = true;
-        if (($grade->is_hidden()) &&
-            !has_capability('moodle/grade:viewhidden', context_course::instance($this->courseid))) {
-            $canviewhidden = false;
-        }
-
+        $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'gradereport_singleview', 'canviewhidden');
+        $canviewhidden = $cache->get('canviewhidden');
         $context = [
             'hidden' => $grade->is_hidden() && $canviewhidden,
             'locked' => $grade->is_locked(),

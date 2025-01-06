@@ -24,7 +24,6 @@
 
 namespace gradereport_singleview\local\screen;
 
-use context_course;
 use grade_seq;
 use gradereport_singleview;
 use moodle_url;
@@ -172,12 +171,8 @@ class user extends tablelike implements selectable_items {
         $grade = $this->fetch_grade_or_default($item, $this->item->id);
         $gradestatus = '';
 
-        $canviewhidden = true;
-        if (($grade->is_hidden() || $item->is_hidden()) &&
-        !has_capability('moodle/grade:viewhidden', context_course::instance($item->courseid))) {
-            $canviewhidden = false;
-        }
-
+        $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'gradereport_singleview', 'canviewhidden');
+        $canviewhidden = $cache->get('canviewhidden');
         $context = [
             'hidden' => $grade->is_hidden() && $canviewhidden,
             'locked' => $grade->is_locked(),

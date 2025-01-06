@@ -116,6 +116,13 @@ class singleview extends grade_report {
 
         $this->screen = new $screenclass($courseid, $itemid, $this->currentgroup);
 
+        $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'gradereport_singleview', 'canviewhidden');
+        $canviewhidden = $cache->get('canviewhidden');
+        if ($canviewhidden === false) {
+            $canviewhidden = has_capability('moodle/grade:viewhidden', context_course::instance($this->courseid));
+            $cache->set('canviewhidden', $canviewhidden);
+        }
+
         // Load custom or predifined js.
         $this->screen->js();
     }

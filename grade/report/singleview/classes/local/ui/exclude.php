@@ -26,7 +26,6 @@ namespace gradereport_singleview\local\ui;
 
 defined('MOODLE_INTERNAL') || die;
 
-use context_course;
 use grade_grade;
 
 /**
@@ -84,8 +83,9 @@ class exclude extends grade_attribute_format implements be_checked, be_disabled,
      * @return element
      */
     public function determine_format(): element {
-        if (($this->grade->is_hidden() || $this->grade->grade_item->is_hidden()) &&
-            !has_capability('moodle/grade:viewhidden', context_course::instance($this->grade->grade_item->courseid))) {
+        $cache = \cache::make_from_params(\cache_store::MODE_REQUEST, 'gradereport_singleview', 'canviewhidden');
+        $canviewhidden = $cache->get('canviewhidden');
+        if (($this->grade->is_hidden() || $this->grade->grade_item->is_hidden()) && !$canviewhidden) {
             return new empty_element();
         }
         return new checkbox_attribute(
